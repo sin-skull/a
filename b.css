@@ -114,3 +114,35 @@ section:hover {
     resize: both; /* 水平方向にのみリサイズ可能にする */
     overflow: auto; /* リサイズによるオーバーフローを許可 */
 }
+const frame = document.getElementById("preview-frame");
+let isResizing = false;
+let initialX;
+let currentWidth;
+
+function startResize(e) {
+    isResizing = true;
+    initialX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    currentWidth = frame.offsetWidth;
+}
+
+function resize(e) {
+    if (!isResizing) return;
+
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    const newWidth = currentWidth + (clientX - initialX);
+    frame.style.width = newWidth + "px";
+}
+
+function stopResize() {
+    isResizing = false;
+}
+
+// マウスイベントリスナー
+frame.addEventListener("mousedown", startResize);
+document.addEventListener("mousemove", resize);
+document.addEventListener("mouseup", stopResize);
+
+// タッチイベントリスナー
+frame.addEventListener("touchstart", startResize);
+document.addEventListener("touchmove", resize);
+document.addEventListener("touchend", stopResize);
