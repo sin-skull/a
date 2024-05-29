@@ -16,7 +16,17 @@ runButton.addEventListener('click', () => {
 
     const blob = new Blob([combinedCode], { type: 'text/html' });
     previewFrame.src = URL.createObjectURL(blob);
+
+    previewFrame.onload = function() {
+        adjustIframeHeight();
+    };
 });
+
+// iframeの高さを調整する関数
+function adjustIframeHeight() {
+    const iframeDocument = previewFrame.contentDocument || previewFrame.contentWindow.document;
+    previewFrame.style.height = iframeDocument.documentElement.scrollHeight + 'px';
+}
 
 // 保存されたコードリストの更新
 function updateCodeList() {
@@ -145,6 +155,7 @@ function saveAllCodeSets() {
     localStorage.setItem('allCodeSets', JSON.stringify(codeSetsData));
     alert('全てのコードセットを保存しました。');
 }
+
 const frame = document.getElementById("preview-frame");
 let isResizing = false;
 let initialX;
