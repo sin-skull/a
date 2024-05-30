@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>選択肢追加＆ランダム選択アプリ</title>
+    <link rel="stylesheet" href="cc.css">
+</head>
+<body>
+    <div class="container">
+        <h1>ランダム選択アプリ</h1>
+        <div>
+            <input type="text" id="optionInput" placeholder="選択肢を入力">
+            <button onclick="addOption()">追加</button>
+        </div>
+        <div class="option-list" id="optionList"></div>
+        <button onclick="choose()">選択する</button>
+        <div class="result" id="result"></div>
+        <button onclick="clearOptions()">選択肢を全て消去</button>
+        <h2>選択肢履歴</h2>
+        <div class="history-list" id="historyList"></div>
+        <button onclick="clearHistory()">履歴を消去</button>
+    </div>
+    <script src="cc.js"></script>
+</body>
+</html>

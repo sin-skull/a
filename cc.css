@@ -1,0 +1,99 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #eaeaea;
+    color: #333;
+}
+
+.container {
+    width: 90%;
+    max-width: 400px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+h1, h2 {
+    color: #333;
+}
+
+.input-group {
+    display: flex;
+    justify-content: space-between;
+}
+
+input[type="text"] {
+    width: calc(100% - 90px);
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    background-color: #f9f9f9;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 8px;
+    background-color: #6c757d;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #5a6268;
+}
+
+.action-button {
+    width: calc(100% - 20px);
+}
+
+.result, .history {
+    margin-top: 20px;
+    font-size: 18px;
+}
+
+.option-list, .history-list {
+    margin-top: 10px;
+    text-align: left;
+}
+
+.option-item, .history-item {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+}
+
+.option-item input {
+    margin-right: 10px;
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    background-color: #f9f9f9;
+}
+
+.option-item button, .history-item button {
+    margin-left: 5px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.option-item button:hover, .history-item button:hover {
+    background-color: #c82333;
+}
