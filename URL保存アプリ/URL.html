@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>URL保存アプリ</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>URL保存アプリ</h1>
+
+    <div id="authSection">
+        <h2>サインイン・ログイン</h2>
+        <form id="authForm">
+            <label for="usernameInput">ユーザー名:</label>
+            <input type="text" id="usernameInput" required>
+            <label for="passwordInput">パスワード:</label>
+            <input type="password" id="passwordInput" required>
+            <button type="submit">サインイン / ログイン</button>
+        </form>
+    </div>
+
+    <div id="appSection" style="display: none;">
+        <h2>URL保存</h2>
+        <button id="addUrlButton">＋</button>
+        <form id="urlForm" style="display: none;">
+            <label for="urlInput">URLを入力してください:</label>
+            <input type="text" id="urlInput" required>
+            <label for="titleInput">タイトル:</label>
+            <input type="text" id="titleInput">
+            <label for="descriptionInput">説明:</label>
+            <textarea id="descriptionInput"></textarea>
+            <label for="tagInput">タグ:</label>
+            <select id="tagInput">
+                <option value="#動画">#動画</option>
+                <option value="#サイト">#サイト</option>
+                <option value="#ゲーム">#ゲーム</option>
+            </select>
+            <button type="submit">保存</button>
+        </form>
+
+        <label for="searchInput">検索:</label>
+        <input type="text" id="searchInput" placeholder="タイトル、ドメイン、ハッシュタグ、説明文で検索">
+        <button id="searchButton">検索</button>
+        
+        <label for="openMode">URLを開く方法:</label>
+        <select id="openMode">
+            <option value="samePage">同じページ</option>
+            <option value="newPage">別のページ</option>
+        </select>
+        
+        <h2>保存されたURL</h2>
+        <div id="urlCategories"></div>
+        <button id="logoutButton">ログアウト</button>
+        <div id="exportImportSection">
+            <h2>データのエクスポートとインポート</h2>
+            <button id="exportButton">データをエクスポート</button>
+            <textarea id="importData" placeholder="ここにデータを貼り付けてインポート"></textarea>
+            <button id="importButton">インポート</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
