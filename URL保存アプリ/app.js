@@ -164,21 +164,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createUrlListItem(urlItem, index, domain = null) {
         const li = document.createElement('li');
-
+    
         const a = document.createElement('a');
-        a.href = urlItem.url;
+        a.href = '#';  // Prevent default behavior
         a.textContent = urlItem.title;
         a.classList.add('editable');
+        a.addEventListener('click', (event) => {
+            event.preventDefault();
+            window.open(urlItem.url, '_blank');
+        });
         li.appendChild(a);
-
+    
         const shortDescription = document.createElement('span');
         shortDescription.textContent = urlItem.description.slice(0, 30) + (urlItem.description.length > 30 ? '...' : '');
         shortDescription.classList.add('editable');
         li.appendChild(shortDescription);
-
+    
         const tagSelectDetailsContainer = document.createElement('div');
         tagSelectDetailsContainer.classList.add('tag-select-details-container');
-
+    
         const tagSelect = document.createElement('select');
         tagSelect.innerHTML = `<option value="#動画">#動画</option>
                                 <option value="#サイト">#サイト</option>
@@ -188,49 +192,50 @@ document.addEventListener('DOMContentLoaded', () => {
             updateTag(index, tagSelect.value, domain);
         });
         tagSelectDetailsContainer.appendChild(tagSelect);
-
+    
         const detailsButton = document.createElement('button');
         detailsButton.textContent = '▽';
         detailsButton.addEventListener('click', () => {
             toggleDetails(li, detailsButton);
         });
         tagSelectDetailsContainer.appendChild(detailsButton);
-
+    
         li.appendChild(tagSelectDetailsContainer);
-
+    
         const details = document.createElement('div');
         details.classList.add('details', 'hidden');
         li.appendChild(details);
-
+    
         const openButton = createButton('開く', () => openUrl(urlItem, li));
         details.appendChild(openButton);
-
+    
         const copyButton = createButton('コピー', () => copyUrl(urlItem.url));
         details.appendChild(copyButton);
-
+    
         const editButton = createButton('✎', () => toggleEdit(a, shortDescription, editButton, urlItem, index, domain));
         details.appendChild(editButton);
-
+    
         const deleteButton = createButton('削除', () => {
             deleteUrl(index, domain);
             displayUrls();
         });
         details.appendChild(deleteButton);
-
+    
         const iframeContainer = document.createElement('div');
         iframeContainer.classList.add('iframe-container');
         iframeContainer.style.display = 'none';
         const urlIframe = document.createElement('iframe');
         urlIframe.width = '100%';
-        urlIframe.height = '500px';
+        urlIframe.height = '500';
         urlIframe.frameBorder = '0';
         urlIframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
         urlIframe.allowFullscreen = true;
         iframeContainer.appendChild(urlIframe);
         li.appendChild(iframeContainer);
-
+    
         return li;
     }
+    
 
     function createButton(text, onClick) {
         const button = document.createElement('button');
