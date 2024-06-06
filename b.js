@@ -1,4 +1,5 @@
 const codeNameInput = document.getElementById('code-name');
+const saveButton = document.getElementById('save-button');
 const codeList = document.getElementById('code-list');
 const htmlCodeInput = document.getElementById('html-code');
 const cssCodeInput = document.getElementById('css-code');
@@ -61,6 +62,24 @@ function updateCodeList() {
         codeList.appendChild(li);
     });
 }
+
+// 保存ボタンのイベントリスナー
+saveButton.addEventListener('click', () => {
+    const codeName = codeNameInput.value;
+    if (!codeName) {
+        alert('コード名を入力してください。');
+        return;
+    }
+    const savedCodes = JSON.parse(localStorage.getItem('savedCodes') || '{}');
+    savedCodes[codeName] = {
+        html: htmlCodeInput.value,
+        css: cssCodeInput.value,
+        js: jsCodeInput.value
+    };
+    localStorage.setItem('savedCodes', JSON.stringify(savedCodes));
+    updateCodeList();
+    alert(`${codeName} として保存しました。`);
+});
 
 // ページ読み込み時に保存されたコードリストを更新
 window.onload = updateCodeList;
