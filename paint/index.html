@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>漫画作成ツール</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="toolbar">
+        
+        <button onclick="saveAsPNG()">Save as PNG</button>
+        <button id="brush" onclick="selectTool('brush')">🖌️ Brush</button>
+        <button id="erase" onclick="selectTool('erase')">🧽 Erase</button>
+        <button onclick="toggleGrid()">Toggle Grid</button>
+        <input type="color" id="colorPicker" onchange="changeColor(this.value)" />
+        <input type="range" id="brushSize" min="1" max="10" onchange="changeSize(this.value)" value="5" />
+        <input type="text" id="textInput" style="display:none;" placeholder="Enter text" oninput="updateText()" />
+        <select id="fontSize" style="display:none;" onchange="updateText()">
+           
+        </select>
+        <select id="fontFamily" style="display:none;" onchange="updateText()">
+            <option value="Arial">Arial</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Times New Roman">Times New Roman</option>
+        </select>
+    </div>
+    <canvas id="canvas"></canvas>
+    <script src="script.js"></script>
+</body>
+</html>

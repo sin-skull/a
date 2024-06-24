@@ -1,0 +1,29 @@
+body, html {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#toolbar {
+    display: flex;
+    justify-content: space-around;
+    background-color: #f0f0f0;
+    padding: 10px;
+    flex-wrap: wrap;
+}
+
+canvas {
+    border: 1px solid black;
+    flex-grow: 1;
+}
+
+button, input, select {
+    padding: 5px;
+    margin: 2px;
+}
+
+button.active {
+    background-color: #ccc;
+    border-color: #000;
+}
