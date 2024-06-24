@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>特定テキスト応答ウェブサイト</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>応答サイト</h1>
+        <nav>
+            <ul>
+                <li><a href="#" id="homeLink">ホーム</a></li>
+                <li><a href="#" id="registerLink">テキスト登録</a></li>
+                <li><a href="#" id="editLink">編集・削除</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div id="home" class="container">
+        <textarea id="inputText" placeholder="ここにテキストを入力してください"></textarea>
+        <div id="suggestions" class="suggestions"></div>
+        <button id="checkButton">チェック</button>
+        <div id="outputDiv" class="output"></div>
+        <button id="copyButton" style="display: none;">コピー</button>
+    </div>
+    <div id="register" class="container" style="display: none;">
+        <input type="text" id="registerKey" placeholder="特定テキストを入力してください">
+        <input type="text" id="registerValue" placeholder="応答テキストを入力してください">
+        <button id="registerButton">登録</button>
+        <div id="registerOutput" class="output"></div>
+    </div>
+    <div id="edit" class="container" style="display: none;">
+        <select id="editSelect">
+            <option value="" disabled selected>編集または削除するテキストを選択してください</option>
+        </select>
+        <textarea id="editValue" placeholder="新しい応答テキストを入力してください"></textarea>
+        <button id="editButton">編集</button>
+        <button id="deleteButton">削除</button>
+        <div id="editOutput" class="output"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
