@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テキストの暗号化と復号化</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>テキストの暗号化と復号化</h1>
+        <div class="sections">
+            <div class="input-section">
+                <h2>テキストを暗号化</h2>
+                <textarea id="plainText" placeholder="暗号化するテキストを入力"></textarea>
+                <input type="password" id="encryptionKey" placeholder="暗号化キーを入力">
+                <button onclick="encryptText()">暗号化</button>
+                <textarea id="encryptedText" readonly placeholder="暗号化されたテキストがここに表示されます"></textarea>
+            </div>
+            <div class="input-section">
+                <h2>テキストを復号化</h2>
+                <textarea id="textToDecrypt" placeholder="復号化するテキストを入力"></textarea>
+                <input type="password" id="decryptionKey" placeholder="復号化キーを入力">
+                <button onclick="decryptText()">復号化</button>
+                <textarea id="decryptedText" readonly placeholder="復号化されたテキストがここに表示されます"></textarea>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
