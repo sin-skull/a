@@ -1,0 +1,170 @@
+/* リセットスタイル */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #fbfbfb, #ffffff);
+    color: #ecf0f1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+main {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
+
+#main-content {
+    flex: 3;
+    margin-right: 20px;
+    position: relative;
+}
+
+#visualizer {
+    width: 100%;
+    height: auto;
+    border: 2px solid #34495e;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: block;
+}
+
+#controls-container {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: rgba(44, 62, 80, 0.9);
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#main-content:hover #controls-container {
+    display: flex;
+}
+
+.controls-row {
+    display: flex;
+    align-items: center;
+    background: #34495e;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+button {
+    background: #e74c3c;
+    color: #ecf0f1;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 
+    background 0.3s, transform 0.2s;
+    margin: 5px;
+}
+
+button:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+}
+
+#shapeSelector button {
+    background: #3498db;
+}
+
+#shapeSelector button:hover {
+    background: #2980b9;
+}
+
+#toggle-button {
+    background: #3498db;
+    color: #ffffff;
+    font-size: 16px;
+    border-radius: 10px 10px 10px 10px; /* ボタンの角を丸く */
+    transition: opacity 0.3s ease;
+}
+
+#sidebar {
+    width: auto;
+    transition: transform 0.3s ease, visibility 0.3s ease;
+    transform: translateX(100%);
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: auto;
+    background: #34495e;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+     border-radius: 10px 10px 10px 10px;
+    z-index: 2;
+    visibility: hidden; /* 初期状態を非表示 */
+}
+
+#sidebar.open {
+    transform: translateX(0);
+    visibility: visible; /* 表示状態 */
+}
+
+
+
+
+
+
+/* トグルボタンが表示されるスタイル */
+#toggle-button.show {
+    opacity: 1; /* マウスが近づいた時に表示 */
+}
+
+
+@media (max-width: 480px) {
+    #visualizer {
+        height: 200px;
+    }
+
+    button {
+        font-size: 14px;
+    }
+
+    #controls-container {
+        padding: 5px;
+    }
+
+    .controls-row {
+        padding: 5px;
+    }
+}
+
+h1{
+    color: #62819e;
+}
+h2{
+    color: #62819e;
+}
+p{
+    color: #62819e;
+}
+@media (min-width: 768px) {
+    #visualizer {
+        height: calc(100vh - 100px); /* ヘッダーやフッターの高さを引いた値 */
+    }
+}

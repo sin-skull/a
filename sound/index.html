@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>音楽ビジュアライザー</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main>
+        <div id="main-content">
+            <canvas id="visualizer"></canvas>
+
+               
+            </div>
+        </div>
+        <aside id="sidebar">
+            <div class="related-video">
+                <label for="aspectRatio">スクリーン比率:</label>
+                <select id="aspectRatio">
+                    <option value="16:9">16:9</option>
+                    <option value="3:4">3:4</option>
+                    <option value="9:16">9:16</option>
+                    <option value="background">背景に合わせる</option>
+                </select>
+            </div>
+            <div class="related-video">
+                <label for="backgroundFile">背景ファイルを選択:</label>
+                <input type="file" id="backgroundFile">
+                <label for="backgroundToggle">背景:</label>
+                <select id="backgroundToggle">
+                    <option value="off">なし</option>
+                    <option value="image">画像</option>
+                    <option value="video">動画</option>
+                </select>
+            </div>
+            <div id="fileContainer" class="controls-row">
+                <label for="audioFile">オーディオファイルを選択:</label>
+                <input type="file" id="audioFile">
+            </div>
+            <div id="controls" class="controls-row">
+
+                <button id="resetBtn">リセット</button>
+                <label for="colorMode">色モード:</label>
+                <select id="colorMode">
+                    <option value="single">単色</option>
+                    <option value="multi">マルチカラー</option>
+                </select>
+                <label for="colorPicker">ビジュアルエフェクトの色:</label>
+                <input type="color" id="colorPicker" value="#ff0000">
+            </div>
+            <div id="volumeControl" class="controls-row">
+                <label for="volumeSlider">ボリューム:</label>
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1">
+            </div>
+            <div id="shapeSelector" class="controls-row">
+                <button id="barBtn">バーグラフ</button>
+                <button id="waveBtn">波形</button>
+                <button id="circleBtn">円形</button>
+            </div>
+        </aside>
+    </main>
+    <button id="playPauseBtn">再生/一時停止</button>            <button id="toggle-button">＜</button>
+    <div id="seekBarContainer" class="controls-row">
+        <input type="range" id="seekBar" min="0" value="0" step="1">
+    </div>
+    <h1>使い方</h1>
+    <h2>音声のみの場合</h2>
+    <p>1.「スクリーン比率」を選択</p>
+    <p>2.「オーディオファイルを選択」より使用するファイルを選択</p>
+    <p>3.自動再生なので「再生/一時停止」を押してシークバーを最初に持っていく。</p>
+    <p>4.画面録画をして終了</p>
+    <h2>背景を選択する場合</h2>
+    <p>1.「背景ファイルを選択」から使用するファイルを選択 </p>
+    <p>2.「スクリーン比率」を「背景に合わせる」に変更</p>
+    <p>3.「オーディオファイルを選択」から使用するファイルを選択</p>
+    <p>4.自動再生なので「再生/一時停止」を押してシークバーを最初に持っていく。</p>
+    <p>5.画面録画をして終了</p>
+    <script src="script.js"></script>
+</body>
+</html>
