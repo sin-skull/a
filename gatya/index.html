@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>チートデイガチャ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ===================== ヘッダー ===================== -->
+    <header class="app-header">
+      <div class="app-title">チートデイガチャ</div>
+      <div class="app-status">
+        <span>ジュエル: <span id="jewel-count">0</span></span>
+        <span>総DP: <span id="total-dp">0</span></span>
+      </div>
+      <nav class="app-nav">
+        <button id="nav-home" class="nav-btn active">ガチャ</button>
+        <button id="nav-box" class="nav-btn">BOX</button>
+      </nav>
+    </header>
+
+    <!-- メッセージバー -->
+    <div id="message-bar" class="message-bar"></div>
+
+    <!-- ===================== 画面 ===================== -->
+    <main class="app-main">
+
+      <!-- ▼ ホーム（ガチャ画面） -->
+      <section id="home-screen" class="screen active">
+        <!-- ガチャタブ -->
+        <div class="gacha-tabs">
+          <button class="gacha-tab active" data-gtype="meal">カードガチャ</button>
+          <button class="gacha-tab" data-gtype="char">キャラガチャ</button>
+        </div>
+
+        <!-- カードガチャパネル -->
+        <div id="gacha-panel-meal" class="gacha-panel active">
+          <h2>カードガチャ</h2>
+          <p>料理カードを引いて、その日のチートデイ効果を手に入れよう。</p>
+          <div class="gacha-buttons">
+            <button id="btn-meal-single" class="main-btn">1回ガチャ（30ジュエル）</button>
+            <button id="btn-meal-ten" class="main-btn">10回ガチャ（300ジュエル）</button>
+          </div>
+        </div>
+
+        <!-- キャラガチャパネル -->
+        <div id="gacha-panel-char" class="gacha-panel">
+          <h2>キャラガチャ</h2>
+          <p>食の神々やキャラを召喚してパッシブ効果を獲得。</p>
+          <div class="gacha-buttons">
+            <button id="btn-char-single" class="main-btn">1回ガチャ（30ジュエル）</button>
+            <button id="btn-char-ten" class="main-btn">10回ガチャ（300ジュエル）</button>
+          </div>
+        </div>
+
+        <!-- デイリー＆デバッグ -->
+        <div class="home-utils">
+          <button id="btn-daily" class="sub-btn">デイリーボーナス</button>
+          <button id="btn-add-jewel" class="sub-btn debug-btn">テスト用ジュエル+300</button>
+        </div>
+      </section>
+
+      <!-- ▼ ガチャ演出画面 -->
+      <section id="animation-screen" class="screen">
+        <div class="animation-container">
+          <div id="beam-glow" class="beam-glow"></div>
+          <div class="beam"></div>
+          <div id="hint-silhouette" class="animation-hint">力を召喚中…</div>
+          <div id="animation-text" class="animation-text"></div>
+        </div>
+      </section>
+
+      <!-- ▼ ガチャ結果（めくり）画面 -->
+      <section id="result-screen" class="screen">
+        <h2>ガチャ結果</h2>
+        <div id="reveal-grid" class="reveal-grid"></div>
+
+        <div class="result-actions">
+          <button id="btn-reveal-skip" class="sub-btn">スキップ（全部めくる）</button>
+        </div>
+
+        <div class="result-actions">
+          <button id="result-again-same" class="main-btn">同じ条件でもう一度</button>
+          <button id="result-to-home" class="sub-btn">ホームへ戻る</button>
+          <button id="result-to-box" class="sub-btn">BOXを見る</button>
+        </div>
+      </section>
+
+      <!-- ▼ BOX画面（モンスト風5列グリッド） -->
+      <section id="box-screen" class="screen">
+        <div class="box-header">
+          <button id="box-tab-card" class="box-tab active">カードBOX</button>
+          <button id="box-tab-char" class="box-tab">キャラBOX</button>
+
+          <select id="box-sort">
+            <option value="rarity">レア度順</option>
+            <option value="new">入手順（新しい順）</option>
+            <option value="name">ID順</option>
+            <option value="expiry">期限が短い順（カード）</option>
+          </select>
+
+          <select id="box-filter">
+            <option value="all">全て</option>
+            <option value="5">★5のみ</option>
+            <option value="4up">★4以上</option>
+            <option value="3up">★3以上</option>
+          </select>
+        </div>
+
+        <div id="box-grid" class="box-grid"></div>
+
+        <div class="result-actions">
+          <button id="box-to-home" class="sub-btn">ホームへ戻る</button>
+        </div>
+      </section>
+
+      <!-- ▼ カード詳細画面 -->
+      <section id="detail-screen" class="screen">
+        <div class="detail-card">
+          <div id="detail-rarity" class="detail-rarity"></div>
+          <h2 id="detail-name"></h2>
+          <p id="detail-line1"></p>
+          <p id="detail-line2"></p>
+          <p id="detail-expiry"></p>
+          <p id="detail-desc"></p>
+        </div>
+        <div class="result-actions">
+          <button id="detail-to-box" class="sub-btn">BOXへ戻る</button>
+          <button id="detail-to-home" class="sub-btn">ホームへ</button>
+        </div>
+      </section>
+
+      <!-- ▼ キャラ詳細画面 -->
+      <section id="char-detail-screen" class="screen">
+        <div class="detail-card">
+          <div id="char-detail-rarity" class="detail-rarity"></div>
+          <h2 id="char-detail-name"></h2>
+          <p id="char-detail-food"></p>
+          <p id="char-detail-effect"></p>
+          <p id="char-detail-personality"></p>
+          <p id="char-detail-desc"></p>
+          <p id="char-detail-owned"></p>
+        </div>
+        <div class="result-actions">
+          <button id="char-detail-to-box" class="sub-btn">BOXへ戻る</button>
+          <button id="char-detail-to-home" class="sub-btn">ホームへ</button>
+        </div>
+      </section>
+
+      <!-- ▼ めくり長押しオーバーレイ -->
+      <div id="reveal-overlay" class="reveal-overlay hidden">
+        <div class="reveal-overlay-inner">
+          <div id="overlay-title" class="overlay-title"></div>
+          <div id="overlay-sub" class="overlay-sub"></div>
+          <div id="overlay-text" class="overlay-text"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- データ & ロジック -->
+  <script src="card.js"></script>
+  <script src="characters.js"></script>
+  <script src="gacha.js"></script>
+</body>
+</html>

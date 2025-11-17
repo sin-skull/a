@@ -1,0 +1,1000 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #1b1f3b, #050510);
+  color: #f9f9ff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", sans-serif;
+}
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+
+/* 上部バー */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(8, 10, 40, 0.95);
+  border-radius: 16px;
+  padding: 10px 14px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+  margin-bottom: 10px;
+}
+
+.title {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 0.95rem;
+}
+
+.status {
+  font-size: 0.9rem;
+}
+
+.status span:last-child {
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+.nav {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  background: #22284f;
+  color: #f9f9ff;
+  cursor: pointer;
+}
+
+/* メイン */
+.main {
+  flex: 1;
+  background: rgba(10, 12, 40, 0.9);
+  border-radius: 16px;
+  padding: 18px 12px 12px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+h1, h2, h3 {
+  text-align: center;
+  margin: 0;
+}
+
+.lead {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.small {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.small.center {
+  text-align: center;
+}
+
+/* ガチャタブ */
+.gacha-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.gacha-tab {
+  flex: 1;
+  max-width: 180px;
+  border-radius: 999px;
+  padding: 8px 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  background: #1d2140;
+  color: #c5c9ff;
+}
+
+.gacha-tab.active {
+  background: linear-gradient(90deg, #ffcc00, #ff9800);
+  color: #222;
+}
+
+.gacha-panel {
+  display: none;
+  margin-top: 14px;
+}
+
+.gacha-panel.active {
+  display: block;
+}
+
+.home-buttons {
+  margin-top: 18px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.home-extra,
+.home-debug {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ボタン */
+.main-btn,
+.secondary-btn {
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+}
+
+.main-btn {
+  background: linear-gradient(90deg, #ffcc00, #ff9800);
+  color: #222;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  font-weight: 700;
+}
+
+.main-btn.sub {
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  color: #fff;
+}
+
+.secondary-btn {
+  background: #262b4a;
+  color: #f9f9ff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.secondary-btn.accent {
+  background: #124e96;
+}
+
+.secondary-btn.ghost {
+  background: transparent;
+  border: 1px solid #555b80;
+}
+
+/* メッセージバー */
+.message-bar {
+  min-height: 28px;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: #c5d1ff;
+  opacity: 0.9;
+}
+
+/* ========== ガチャ演出 ========== */
+/* 演出画面がアクティブの時だけフル画面 */
+/* =========================================================
+   ガチャ演出：フルスクリーン化 & 中央揃え
+   ========================================================= */
+#animation-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: radial-gradient(circle at center, #0b0b15, #020202 80%);
+  display: none;   /* ← これに変更！！ */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* アクティブのときだけ表示される */
+#animation-screen.active {
+  display: flex;
+}
+
+
+/* 内部のコンテナを中央に固定 */
+.animation-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 光の柱（太く・伸ばす） */
+.beam {
+  width: 70px;                  /* ← 太くした */
+  height: 0;
+  background: linear-gradient(to bottom,
+      transparent,
+      rgba(255,255,180,1),
+      transparent
+  );
+  filter: blur(1px);
+  animation: beamGrow 3.2s forwards;  /* ← 長くした */
+}
+
+@keyframes beamGrow {
+  0%   { height: 0; opacity: 0; }
+  15%  { opacity: 1; }
+  100% { height: 65vh; opacity: 1; }  /* ← 画面の65%まで伸びる */
+}
+
+/* 上の光球（旨味の爆発） */
+#beam-glow {
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255,255,200,0.9),
+    rgba(255,180,0,0.4),
+    transparent
+  );
+  filter: blur(60px);
+  margin-bottom: -40px;
+  animation: glowPulse 4s infinite ease-in-out alternate;
+}
+
+@keyframes glowPulse {
+  0% { opacity: 0.2; transform: scale(0.9); }
+  100% { opacity: 0.9; transform: scale(1.4); }
+}
+
+/* 天地に散る旨味エフェクト（和風 / 紋様） */
+@keyframes umamiParticle {
+  0% { opacity: 0; transform: translateY(10vh) scale(0.5); }
+  40% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-35vh) scale(1); }
+}
+
+/* テキスト（中央下） */
+#hint-silhouette {
+  margin-top: 40px;
+  font-size: 2.0rem;
+  opacity: 0;
+  animation: fadeTextIn 2s 1.2s forwards;
+}
+
+#animation-text {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  opacity: 0;
+  animation: fadeTextIn 2s 2s forwards;
+}
+
+@keyframes fadeTextIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== 結果（めくり） ========== */
+#result-screen {
+  text-align: center;
+}
+
+.reveal-area {
+  margin-top: 12px;
+}
+
+.reveal-grid {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* カード1枚 */
+.reveal-card {
+  width: 100px;
+  height: 140px;
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+@media (min-width: 600px) {
+  .reveal-card {
+    width: 120px;
+    height: 160px;
+  }
+}
+
+.reveal-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.4s;
+}
+
+.reveal-card.flipped .reveal-inner {
+  transform: rotateY(180deg);
+}
+
+.reveal-front,
+.reveal-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* 裏面（？の代わりに gtyataik.png） */
+.reveal-front {
+  background: #11152a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reveal-front img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 表面（結果） */
+.reveal-back {
+  background: #181b32;
+  transform: rotateY(180deg);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+}
+
+.reveal-name {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.reveal-sub {
+  font-size: 0.7rem;
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
+
+.reveal-text {
+  font-size: 0.7rem;
+  opacity: 0.9;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+}
+
+/* レアリティ色 */
+.rarity-1 .reveal-name,
+.rarity-1 .detail-rarity {
+  color: #cfd8dc;
+}
+
+.rarity-2 .reveal-name,
+.rarity-2 .detail-rarity {
+  color: #4fc3f7;
+}
+
+.rarity-3 .reveal-name,
+.rarity-3 .detail-rarity {
+  color: #29b6f6;
+}
+
+.rarity-4 .reveal-name,
+.rarity-4 .detail-rarity {
+  color: #ffca28;
+}
+
+.rarity-5 .reveal-name,
+.rarity-5 .detail-rarity {
+  background: linear-gradient(90deg, #ff4081, #7c4dff, #40c4ff);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.result-buttons {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ========== BOX画面 ========== */
+#box-screen {
+  font-size: 0.9rem;
+}
+
+.box-title {
+  margin-top: 16px;
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+.box-list {
+  margin-top: 8px;
+  max-height: 170px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.box-card,
+.char-box-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #181b32;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.box-card-left,
+.char-box-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.box-card-name,
+.char-box-name {
+  font-weight: 600;
+}
+
+.box-card-meta,
+.char-box-meta {
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
+
+/* 詳細画面共通 */
+.detail-card {
+  margin-top: 16px;
+  background: linear-gradient(135deg, #20233f, #101325);
+  border-radius: 16px;
+  padding: 16px;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
+.detail-rarity {
+  font-size: 1.3rem;
+  margin-bottom: 4px;
+}
+
+.detail-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.detail-line,
+.detail-expiry,
+.detail-owned {
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+.detail-desc {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  opacity: 0.95;
+}
+
+.detail-buttons {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* スクロールバー */
+.box-list::-webkit-scrollbar {
+  width: 4px;
+}
+.box-list::-webkit-scrollbar-thumb {
+  background: #444a7a;
+  border-radius: 4px;
+}
+
+/* オーバーレイ（長押し拡大表示） */
+.reveal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.reveal-overlay.hidden {
+  display: none;
+}
+
+.reveal-overlay-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.reveal-overlay-content {
+  position: relative;
+  max-width: 420px;
+  max-height: 70vh;
+  background: #15182c;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+  overflow-y: auto;
+}
+
+.overlay-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.overlay-sub {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  margin-bottom: 6px;
+  white-space: pre-line;
+}
+
+.overlay-text {
+  font-size: 0.85rem;
+  white-space: pre-line;
+}
+
+/* スマホ対応 */
+@media (max-width: 600px) {
+  .top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .status {
+    font-size: 0.8rem;
+  }
+
+  .nav {
+    align-self: stretch;
+    justify-content: flex-end;
+  }
+
+  .main {
+    padding: 12px 10px 10px;
+  }
+
+  .detail-card {
+    width: 100%;
+  }
+}
+/* ★4 金フレーム */
+.rarity-4 .reveal-back {
+  border: 3px solid #ffd700;
+  box-shadow: 0 0 10px #ffd700aa inset, 0 0 10px #ffd70088;
+}
+
+/* ★5 虹フレーム */
+.rarity-5 .reveal-back {
+  border: 3px solid transparent;
+  background-origin: border-box;
+  border-image: linear-gradient(90deg, #ff4081, #7c4dff, #40c4ff) 1;
+  box-shadow: 0 0 10px #ff66ffaa inset, 0 0 10px #7c4dff88;
+}
+
+/* 星の表示（★★★★★） */
+.reveal-stars {
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+}
+
+.rarity-5 .reveal-stars {
+  background: linear-gradient(90deg, #ff4081, #7c4dff, #40c4ff);
+  -webkit-background-clip: text;
+  color: transparent;
+  font-weight: 700;
+}
+
+.rarity-4 .reveal-stars {
+  color: #ffd700;
+  font-weight: 700;
+}
+
+.rarity-3 .reveal-stars {
+  color: #29b6f6;
+}
+
+.rarity-2 .reveal-stars {
+  color: #4fc3f7;
+}
+
+.rarity-1 .reveal-stars {
+  color: #cfd8dc;
+}
+/* 詳細画面の星表示 */
+.detail-stars {
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.detail-stars.rarity-5 {
+  background: linear-gradient(90deg, #ff4081, #7c4dff, #40c4ff);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.detail-stars.rarity-4 {
+  color: #ffd700;
+}
+
+.detail-stars.rarity-3 {
+  color: #29b6f6;
+}
+
+.detail-stars.rarity-2 {
+  color: #4fc3f7;
+}
+
+.detail-stars.rarity-1 {
+  color: #cfd8dc;
+}
+
+/* 長押しオーバーレイ用の星 */
+.overlay-stars {
+  font-size: 1rem;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+/* ★4＝金フレーム、★5＝虹フレーム */
+.rarity-4 .reveal-back {
+  border: 3px solid #ffd700;
+  box-shadow: 0 0 10px #ffd700aa inset, 0 0 10px #ffd70088;
+}
+
+.rarity-5 .reveal-back {
+  border: 3px solid transparent;
+  border-image: linear-gradient(90deg, #ff4081, #7c4dff, #40c4ff) 1;
+  box-shadow: 0 0 10px #ff66ffaa inset, 0 0 10px #7c4dff88;
+}
+
+/* どの画面でも使う星表示 */
+.star-line {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.star-line.rarity-5 {
+  background: linear-gradient(90deg, #ff4081, #7c4dff, #40c4ff);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.star-line.rarity-4 { color: #ffd700; }
+.star-line.rarity-3 { color: #29b6f6; }
+.star-line.rarity-2 { color: #4fc3f7; }
+.star-line.rarity-1 { color: #cfd8dc; }
+
+/* ★5 のキラキラ演出 */
+.reveal-card.flipped.rarity-5 .reveal-inner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  animation: sparkleRainbow 1.2s ease-out forwards;
+  background: radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,0,255,0.4), transparent);
+  opacity: 0;
+}
+
+@keyframes sparkleRainbow {
+  0% { opacity: 0; transform: scale(0.6); }
+  40% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+
+/* ★4 の金キラ */
+.reveal-card.flipped.rarity-4 .reveal-inner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  animation: sparkleGold 1.0s ease-out forwards;
+  background: radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,215,0,0.6), transparent);
+  opacity: 0;
+}
+
+@keyframes sparkleGold {
+  0% { opacity: 0; transform: scale(0.6); }
+  40% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+/* =========================================================
+   モンスト型 BOX グリッド
+   ========================================================= */
+
+.box-header {
+  display: flex;
+  gap: 6px;
+  padding: 10px;
+  background: #222;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.box-tab {
+  padding: 6px 14px;
+  background: #444;
+  color: #fff;
+  border-radius: 6px;
+  border: none;
+}
+
+.box-tab.active {
+  background: #2e77ff;
+}
+
+#box-sort, #box-filter {
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #333;
+  color: #fff;
+  border: 1px solid #555;
+}
+
+.box-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* ★ 5列 */
+  padding: 10px;
+  gap: 10px;
+}
+
+/* タイル本体 */
+.box-item {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #111;
+  border: 2px solid #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 画像 */
+.box-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* レアリティ（右上） */
+.box-rarity {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.5);
+}
+
+/* 虹・金・その他の色 */
+.rarity-5 { color: #ff66ff; }
+.rarity-4 { color: #ffd700; }
+.rarity-3 { color: #4fc3f7; }
+.rarity-2 { color: #cfe2e8; }
+.rarity-1 { color: #888; }
+
+/* ★5は枠も虹色 */
+.box-item.rarity-5 {
+  border: 2px solid transparent;
+  border-image: linear-gradient(90deg, #ff4081, #7c4dff, #40c4ff) 1;
+}
+
+/* ★4は金枠 */
+.box-item.rarity-4 {
+  border-color: #ffd700;
+}
+
+/* 期限（左下） */
+.box-expiry {
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: rgba(0,0,0,0.6);
+  padding: 0px 5px;
+  border-radius: 4px;
+  color: #fff;
+}
+
+/* ロックアイコン（お気に入り） */
+.box-lock {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  font-size: 0.7rem;
+  background: rgba(0,0,0,0.6);
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: #56b8ff;
+}
+/* ======== NEW 豪華ガチャ演出（和風 × 食 × 神格） ======== */
+
+
+/* --- ★ 紙吹雪（和紙） --- */
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 14px;
+  background: rgba(255, 230, 150, 0.9);
+  opacity: 0.9;
+  animation: fallConfetti 4s linear infinite;
+  transform: rotate(25deg);
+  border-radius: 2px;
+}
+
+@keyframes fallConfetti {
+  0%   { transform: translateY(-10vh) rotate(0deg);   }
+  100% { transform: translateY(110vh) rotate(360deg); }
+}
+
+/* --- ★ 旨味の太柱 --- */
+.beam {
+  position: relative;
+  width: 220px;                /* ← 太くした */
+  height: 0;
+  background: linear-gradient(
+    to top,
+    transparent,
+    rgba(255,255,255,0.9),
+    rgba(255,200,0,0.9),
+    transparent
+  );
+  filter: blur(6px);
+  transform: scaleY(0);
+  animation: beamGrow 1.6s ease-out forwards;
+  border-radius: 40px;
+}
+
+@keyframes beamGrow {
+  0%   { transform: scaleY(0); opacity: 0; }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+
+/* ★5専用 虹旨味の柱 */
+.anim-rare5 .beam {
+  background: linear-gradient(
+    to top,
+    transparent,
+    red,
+    orange,
+    yellow,
+    green,
+    cyan,
+    blue,
+    violet,
+    transparent
+  );
+  filter: blur(10px) brightness(1.4);
+}
+
+/* ★5専用 虹の後光 */
+.rainbow-glow {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: conic-gradient(
+    red, orange, yellow, green, cyan, blue, violet, red
+  );
+  filter: blur(90px);
+  opacity: 0.3;
+  animation: rotateGlow 6s linear infinite;
+}
+
+@keyframes rotateGlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ---- ★ 和紋の回転 ---- */
+.wamon {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  background: url("wamon.png") center/contain no-repeat;
+  opacity: 0.2;
+  animation: rotateWamon 10s linear infinite;
+}
+
+.anim-rare4 .wamon {
+  opacity: 0.15;
+}
+
+@keyframes rotateWamon {
+  from { transform: rotate(0deg) scale(1); }
+  to   { transform: rotate(360deg) scale(1.2); }
+}
+
+/* --- 旨味パーティクル --- */
+.particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: rgba(255,180,80,0.9);
+  border-radius: 50%;
+  filter: blur(2px);
+  animation: floatParticle 2.6s linear infinite;
+}
+
+@keyframes floatParticle {
+  0%   { transform: translateY(20px) scale(0.5); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateY(-260px) scale(1.3); opacity: 0; }
+}
+
+/* --- テキスト --- */
+#hint-silhouette {
+  font-size: 32px;
+  font-weight: 700;
+  margin-top: 40px;
+  text-shadow: 0 0 20px rgba(255,255,180,0.4);
+  animation: fadeText 2s ease-out forwards;
+}
+
+@keyframes fadeText {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+#animation-text {
+  margin-top: 12px;
+  font-size: 1.1rem;
+  opacity: 0.8;
+}
