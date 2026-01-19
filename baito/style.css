@@ -1,0 +1,217 @@
+:root{
+  --bg:#0b0c10;
+  --card:#12141a;
+  --text:#e9eef7;
+  --muted:#aab3c2;
+  --line:#232838;
+  --primary:#4ea1ff;
+  --danger:#ff4e65;
+  --good:#59d39b;
+  --warn:#ffd066;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif;
+  background: radial-gradient(1200px 600px at 10% -10%, #1a2250 0%, transparent 55%),
+              radial-gradient(900px 600px at 110% 10%, #3a1530 0%, transparent 55%),
+              var(--bg);
+  color:var(--text);
+}
+
+.wrap{
+  width:min(980px, 92vw);
+  margin:0 auto;
+}
+
+header{ padding:22px 0 10px; }
+h1{ margin:0; font-size:22px; letter-spacing: .02em; }
+.sub{ margin:6px 0 0; color:var(--muted); font-size:13px; }
+
+main{ padding:10px 0 24px; display:flex; flex-direction:column; gap:12px; }
+
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 14px;
+  padding:14px;
+}
+
+.card h2{
+  margin:0 0 12px;
+  font-size:15px;
+  color:#f2f6ff;
+}
+
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+}
+.grid3{
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap:10px;
+}
+
+@media (max-width: 760px){
+  .grid2,.grid3{ grid-template-columns: 1fr; }
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  align-items:flex-end;
+  margin-top:10px;
+}
+
+.grow{ flex:1; }
+
+.field{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.field span{
+  font-size:12px;
+  color:var(--muted);
+}
+
+input, select, textarea{
+  width:100%;
+  padding:10px 12px;
+  border-radius: 10px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.25);
+  color:var(--text);
+  outline:none;
+}
+
+input:focus, select:focus, textarea:focus{
+  border-color: rgba(78,161,255,.65);
+  box-shadow: 0 0 0 3px rgba(78,161,255,.18);
+}
+
+.btn{
+  padding:10px 12px;
+  border-radius: 10px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color:var(--text);
+  cursor:pointer;
+  font-weight:600;
+}
+
+.btn:hover{ filter:brightness(1.08); }
+
+.btn.primary{
+  background: rgba(78,161,255,.20);
+  border-color: rgba(78,161,255,.45);
+}
+.btn.danger{
+  background: rgba(255,78,101,.15);
+  border-color: rgba(255,78,101,.45);
+}
+.btn.ghost{
+  background: transparent;
+}
+
+.pill{
+  padding:10px 12px;
+  border-radius: 999px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.18);
+  color: var(--muted);
+  font-size:13px;
+}
+
+.hint{
+  margin:10px 0 0;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap:10px;
+}
+@media (max-width: 760px){
+  .stats{ grid-template-columns: 1fr; }
+}
+
+.stat{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  padding:12px;
+  background: rgba(0,0,0,.14);
+}
+.stat .label{ color:var(--muted); font-size:12px; }
+.stat .value{ margin-top:6px; font-size:15px; font-weight:700; }
+
+.list{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.item{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  padding:12px;
+  background: rgba(0,0,0,.14);
+  display:flex;
+  gap:10px;
+  justify-content:space-between;
+  align-items:flex-start;
+}
+.left{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.badges{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.badge{
+  font-size:12px;
+  padding:4px 8px;
+  border-radius: 999px;
+  border:1px solid rgba(255,255,255,.12);
+  color: var(--muted);
+  background: rgba(255,255,255,.05);
+}
+.badge.good{ color:#b9ffe3; border-color: rgba(89,211,155,.45); background: rgba(89,211,155,.12); }
+.badge.warn{ color:#fff0b9; border-color: rgba(255,208,102,.45); background: rgba(255,208,102,.12); }
+
+.actions{
+  display:flex;
+  gap:8px;
+}
+.small{
+  padding:8px 10px;
+  font-size:12px;
+}
+
+.empty{
+  margin-top:10px;
+  color:var(--muted);
+  font-size:13px;
+  padding:12px;
+  border:1px dashed rgba(255,255,255,.12);
+  border-radius: 12px;
+  display:none;
+}
+
+.export{
+  margin-top:10px;
+  min-height:140px;
+  resize:vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size:12px;
+}
+
+.foot{
+  padding: 18px 0 26px;
+  color: var(--muted);
+}
