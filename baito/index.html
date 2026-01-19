@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>出勤・退勤ログ</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="wrap">
+    <h1>出勤・退勤ログ</h1>
+    <p class="sub">会社 × 時給 × 出勤/退勤を何回でも記録。端末に保存。</p>
+  </header>
+
+  <main class="wrap">
+    <!-- 会社登録 -->
+    <section class="card">
+      <h2>会社登録</h2>
+      <div class="grid2">
+        <label class="field">
+          <span>会社名</span>
+          <input id="companyName" type="text" placeholder="例：家電量販店A" />
+        </label>
+
+        <label class="field">
+          <span>時給（円）</span>
+          <input id="companyWage" type="number" inputmode="numeric" min="0" step="1" placeholder="例：1200" />
+        </label>
+      </div>
+
+      <div class="row">
+        <button id="addCompanyBtn" class="btn primary">会社を追加</button>
+        <button id="resetAllBtn" class="btn danger ghost">全データ削除</button>
+      </div>
+
+      <div class="row">
+        <label class="field grow">
+          <span>会社を選択</span>
+          <select id="companySelect"></select>
+        </label>
+        <div class="pill" id="selectedWagePill">時給：-</div>
+      </div>
+    </section>
+
+    <!-- 勤務入力 -->
+    <section class="card">
+      <h2>勤務を追加</h2>
+
+      <div class="grid3">
+        <label class="field">
+          <span>日付</span>
+          <input id="workDate" type="date" />
+        </label>
+
+        <label class="field">
+          <span>出勤</span>
+          <input id="startTime" type="time" />
+        </label>
+
+        <label class="field">
+          <span>退勤</span>
+          <input id="endTime" type="time" />
+        </label>
+      </div>
+
+      <div class="grid2">
+        <label class="field">
+          <span>休憩（分）</span>
+          <input id="breakMin" type="number" inputmode="numeric" min="0" step="1" value="0" />
+        </label>
+
+        <label class="field">
+          <span>メモ（任意）</span>
+          <input id="memo" type="text" placeholder="例：レジ/品出し/研修など" />
+        </label>
+      </div>
+
+      <div class="row">
+        <button id="addShiftBtn" class="btn primary">勤務を追加</button>
+        <button id="setTodayBtn" class="btn ghost">今日にする</button>
+      </div>
+
+      <p class="hint">
+        ※ 退勤が出勤より早い場合は「日またぎ（翌日退勤）」として計算します。
+      </p>
+    </section>
+
+    <!-- 集計 -->
+    <section class="card">
+      <h2>集計</h2>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="label">今日</div>
+          <div class="value" id="todaySummary">-</div>
+        </div>
+        <div class="stat">
+          <div class="label">今月</div>
+          <div class="value" id="monthSummary">-</div>
+        </div>
+        <div class="stat">
+          <div class="label">選択会社（今月）</div>
+          <div class="value" id="companyMonthSummary">-</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 日付別一覧 -->
+    <section class="card">
+      <h2>その日の勤務一覧</h2>
+      <div class="row">
+        <label class="field grow">
+          <span>表示する日付</span>
+          <input id="listDate" type="date" />
+        </label>
+        <button id="copyDayBtn" class="btn ghost">この日の合計をコピー</button>
+      </div>
+
+      <div id="shiftList" class="list"></div>
+      <div id="emptyState" class="empty">まだ勤務がありません。</div>
+    </section>
+
+    <!-- エクスポート -->
+    <section class="card">
+      <h2>データ</h2>
+      <div class="row">
+        <button id="exportCsvBtn" class="btn ghost">CSV出力</button>
+        <button id="exportJsonBtn" class="btn ghost">JSON出力</button>
+      </div>
+      <textarea id="exportBox" class="export" placeholder="ここに出力されます（コピーして保存できます）" readonly></textarea>
+      <p class="hint">※ iPhoneでもテキストをコピーしてメモ等に貼れます。</p>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <small>LocalStorage保存（ブラウザを消すとデータが消える場合があります）。</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
