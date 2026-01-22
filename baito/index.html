@@ -9,27 +9,28 @@
 <body>
   <header class="wrap">
     <h1>出勤・退勤ログ</h1>
-    <p class="sub">会社 × 時給 × 出勤/退勤を何回でも記録。端末に保存。</p>
+    <p class="sub">ワンタップ打刻（出勤→退勤） / 手入力 / 提出用TSV生成 / 検算 / CSV取り込み</p>
   </header>
 
   <main class="wrap">
+
     <!-- 会社登録 -->
     <section class="card">
       <h2>会社登録</h2>
       <div class="grid2">
         <label class="field">
           <span>会社名</span>
-          <input id="companyName" type="text" placeholder="例：家電量販店A" />
+          <input id="companyName" type="text" placeholder="例：sandbox" />
         </label>
 
         <label class="field">
           <span>時給（円）</span>
-          <input id="companyWage" type="number" inputmode="numeric" min="0" step="1" placeholder="例：1200" />
+          <input id="companyWage" type="number" inputmode="numeric" min="0" step="1" placeholder="例：1500" />
         </label>
       </div>
 
       <div class="row">
-        <button id="addCompanyBtn" class="btn primary">会社を追加</button>
+        <button id="addCompanyBtn" class="btn primary">会社を追加/更新</button>
         <button id="resetAllBtn" class="btn danger ghost">全データ削除</button>
       </div>
 
@@ -40,11 +41,27 @@
         </label>
         <div class="pill" id="selectedWagePill">時給：-</div>
       </div>
+      <p class="hint">※ 同名の会社は「時給を更新」扱いになります。</p>
     </section>
 
-    <!-- 勤務入力 -->
+    <!-- ワンタップ打刻 -->
     <section class="card">
-      <h2>勤務を追加</h2>
+      <h2>ワンタップ打刻</h2>
+
+      <div class="row">
+        <button id="toggleClockBtn" class="btn primary big">出勤</button>
+        <div class="pill" id="clockStatusPill">未出勤</div>
+      </div>
+
+      <p class="hint">
+        ※ 会社を選んでから押してください。<br>
+        1回目：出勤（開始時刻を自動記録） / 2回目：退勤（終了時刻を自動記録）
+      </p>
+    </section>
+
+    <!-- 手入力：勤務追加 -->
+    <section class="card">
+      <h2>勤務を手入力で追加</h2>
 
       <div class="grid3">
         <label class="field">
@@ -71,7 +88,7 @@
 
         <label class="field">
           <span>メモ（任意）</span>
-          <input id="memo" type="text" placeholder="例：レジ/品出し/研修など" />
+          <input id="memo" type="text" placeholder="例：MTG/制作/投稿/研修など" />
         </label>
       </div>
 
@@ -80,9 +97,7 @@
         <button id="setTodayBtn" class="btn ghost">今日にする</button>
       </div>
 
-      <p class="hint">
-        ※ 退勤が出勤より早い場合は「日またぎ（翌日退勤）」として計算します。
-      </p>
+      <p class="hint">※ 退勤が出勤より早い場合は「日またぎ（翌日退勤）」として計算します。</p>
     </section>
 
     <!-- 集計 -->
@@ -91,15 +106,15 @@
 
       <div class="stats">
         <div class="stat">
-          <div class="label">今日</div>
+          <div class="label">今日（確定分のみ）</div>
           <div class="value" id="todaySummary">-</div>
         </div>
         <div class="stat">
-          <div class="label">今月</div>
+          <div class="label">今月（確定分のみ）</div>
           <div class="value" id="monthSummary">-</div>
         </div>
         <div class="stat">
-          <div class="label">選択会社（今月）</div>
+          <div class="label">選択会社（今月・確定分のみ）</div>
           <div class="value" id="companyMonthSummary">-</div>
         </div>
       </div>
@@ -120,20 +135,58 @@
       <div id="emptyState" class="empty">まだ勤務がありません。</div>
     </section>
 
-    <!-- エクスポート -->
+    <!-- 提出用・検算・出力 -->
     <section class="card">
-      <h2>データ</h2>
-      <div class="row">
-        <button id="exportCsvBtn" class="btn ghost">CSV出力</button>
-        <button id="exportJsonBtn" class="btn ghost">JSON出力</button>
+      <h2>提出用（見やすいコピペ） / 検算 / 出力</h2>
+
+      <div class="grid2">
+        <label class="field">
+          <span>提出用の対象月（空なら全件）</span>
+          <input id="reportMonth" type="month" />
+        </label>
+        <label class="field">
+          <span>提出用の会社（空なら全部）</span>
+          <input id="reportCompany" type="text" placeholder="例：sandbox（空なら全会社）" />
+        </label>
       </div>
-      <textarea id="exportBox" class="export" placeholder="ここに出力されます（コピーして保存できます）" readonly></textarea>
-      <p class="hint">※ iPhoneでもテキストをコピーしてメモ等に貼れます。</p>
+
+      <div class="row wrapRow">
+        <button id="makeSubmitTsvBtn" class="btn primary">提出TSVを生成</button>
+        <button id="makeSubmitMdBtn" class="btn ghost">提出Markdownを生成</button>
+        <button id="makeAuditBtn" class="btn ghost">検算レポートを生成</button>
+        <button id="exportCsvBtn" class="btn ghost">CSV出力（アプリ用）</button>
+        <button id="exportJsonBtn" class="btn ghost">JSON出力</button>
+        <button id="copyExportBtn" class="btn ghost">出力欄をコピー</button>
+      </div>
+
+      <textarea id="exportBox" class="export" placeholder="ここに出力されます（そのままコピペ提出OK）" readonly></textarea>
+
+      <p class="hint">
+        ✅ 提出TSV：Excel/スプレッドシートに貼ると列が分かれます。<br>
+        ✅ 検算：勤務分・金額のズレがある行を検出します。
+      </p>
     </section>
+
+    <!-- CSV取り込み（貼り付け→反映） -->
+    <section class="card">
+      <h2>CSV取り込み（貼り付けて復元）</h2>
+      <p class="hint">
+        例：あなたが貼った形式（id,date,company,wage_yen,start,end,break_min,work_min,pay_yen,overnight,memo）をそのまま貼れます。
+      </p>
+
+      <textarea id="importBox" class="export" placeholder="ここにCSVを貼り付け"></textarea>
+      <div class="row wrapRow">
+        <button id="importCsvBtn" class="btn primary">取り込み（DBに反映）</button>
+        <button id="dryRunImportBtn" class="btn ghost">取り込みテスト（反映なし）</button>
+      </div>
+
+      <div id="importResult" class="hint"></div>
+    </section>
+
   </main>
 
   <footer class="wrap foot">
-    <small>LocalStorage保存（ブラウザを消すとデータが消える場合があります）。</small>
+    <small>LocalStorage保存（ブラウザ/端末を変えるとデータは共有されません）。</small>
   </footer>
 
   <script src="app.js"></script>
