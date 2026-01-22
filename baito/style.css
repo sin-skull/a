@@ -67,6 +67,8 @@ main{ padding:10px 0 24px; display:flex; flex-direction:column; gap:12px; }
   margin-top:10px;
 }
 
+.wrapRow{ flex-wrap:wrap; }
+
 .grow{ flex:1; }
 
 .field{
@@ -119,6 +121,13 @@ input:focus, select:focus, textarea:focus{
   background: transparent;
 }
 
+.btn.big{
+  padding:14px 16px;
+  font-size:16px;
+  border-radius: 14px;
+  min-width: 160px;
+}
+
 .pill{
   padding:10px 12px;
   border-radius: 999px;
@@ -132,6 +141,7 @@ input:focus, select:focus, textarea:focus{
   margin:10px 0 0;
   color:var(--muted);
   font-size:12px;
+  line-height: 1.55;
 }
 
 .stats{
@@ -205,7 +215,7 @@ input:focus, select:focus, textarea:focus{
 
 .export{
   margin-top:10px;
-  min-height:140px;
+  min-height:160px;
   resize:vertical;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   font-size:12px;
