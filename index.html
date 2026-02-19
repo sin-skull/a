@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>れんの腹筋筋トレメニュー</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main id="app" class="app">
+    <!-- =============== HOME =============== -->
+    <section id="screen-home" class="screen is-active" aria-label="home">
+      <div class="home-title">
+        <div class="home-title__big">腹筋割</div>
+        <div class="home-title__big">人形</div>
+      </div>
+
+      <nav class="home-menu" aria-label="menu">
+        <button class="home-btn" id="btn-home-start">START</button>
+        <button class="home-btn" id="btn-home-soreness">筋肉痛</button>
+        <button class="home-btn" id="btn-home-graph">グラフ</button>
+        <button class="home-btn" id="btn-home-calendar">カレンダー</button>
+        <button class="home-btn" id="btn-home-option">OPTION</button>
+      </nav>
+
+      <div class="home-foot">
+        <div class="home-foot__goal">目標（6ヶ月）: 腹筋を割る（最優先） / 腹斜筋を見せる（サブ）</div>
+        <div class="home-foot__note">※ 1日: 腹筋100（ノーマル+腹斜筋） + 追加部位（最低20）= 最低120回。達成度は超過OK。</div>
+      </div>
+    </section>
+
+    <!-- =============== CORE COUNT =============== -->
+    <section id="screen-core" class="screen" aria-label="core">
+      <header class="topbar">
+        <button class="topbar__btn" id="btn-core-back" aria-label="back">←</button>
+        <div class="topbar__title">デイリー</div>
+        <div class="topbar__spacer"></div>
+      </header>
+
+      <div class="core-instruction" id="core-instruction">
+        <div class="core-instruction__text">腹筋をしたら左をTAP<br/>腹斜筋をしたら右をTAP</div>
+        <div class="core-lines" aria-hidden="true">
+        </div>
+      </div>
+
+      <div class="core-header">
+        <div class="core-header__labels">
+          <div class="core-header__label">腹筋</div>
+          <div class="core-header__label">腹斜筋</div>
+        </div>
+      </div>
+
+      <div class="core-count">
+        <div class="core-count__num" id="core-remaining">100</div>
+        <div class="core-count__sub">残り</div>
+      </div>
+
+      <div class="tap-surface" id="core-tap-surface">
+        <div class="tap-half tap-half--left" id="tap-left">
+          <div class="tap-shade" id="shade-left"></div>
+        </div>
+        <div class="tap-divider" aria-hidden="true"></div>
+        <div class="tap-half tap-half--right" id="tap-right">
+          <div class="tap-shade" id="shade-right"></div>
+        </div>
+      </div>
+
+      <!-- PDF寄せ：Finishだけ（残り<=0で出る） -->
+      <footer class="bottombar bottombar--single">
+        <button class="bottombar__btn bottombar__btn--primary" id="btn-core-finish">Finish</button>
+      </footer>
+    </section>
+
+    <!-- =============== EXTRA PICK =============== -->
+    <section id="screen-pick" class="screen" aria-label="pick">
+      <header class="topbar">
+        <button class="topbar__btn" id="btn-pick-back" aria-label="back">←</button>
+        <div class="topbar__title">追加部位選択</div>
+        <div class="topbar__spacer"></div>
+      </header>
+
+      <div class="picker">
+        <div class="picker__hint">スワイプで選択</div>
+        <div class="picker__row">
+          <button class="picker__arrow" id="pick-prev" aria-label="prev">◀︎</button>
+          <div class="picker__value" id="pick-value">腕</div>
+          <button class="picker__arrow" id="pick-next" aria-label="next">▶︎</button>
+        </div>
+        <div class="picker__dots" id="pick-dots"></div>
+        <button class="picker__decide" id="pick-decide">決定</button>
+      </div>
+    </section>
+
+    <!-- =============== DIFFICULTY PICK =============== -->
+    <section id="screen-diff" class="screen" aria-label="difficulty">
+      <header class="topbar">
+        <button class="topbar__btn" id="btn-diff-back" aria-label="back">←</button>
+        <div class="topbar__title">難易度</div>
+        <div class="topbar__spacer"></div>
+      </header>
+
+      <div class="diff">
+        <div class="diff__bg" id="diff-bg">easy</div>
+        <div class="diff__hint">数字をTAPでrandomを切り替え</div>
+
+        <div class="diff__row" id="diff-swipe">
+          <button class="picker__arrow" id="diff-prev" aria-label="prev">◀︎</button>
+          <div class="diff__value" id="diff-value">easy</div>
+          <button class="picker__arrow" id="diff-next" aria-label="next">▶︎</button>
+        </div>
+
+        <div class="diff__numbers" id="diff-numbers" aria-label="numbers">
+          <div class="diff-num" id="num-easy"><div class="diff-num__n">20</div><div class="diff-num__t">easy</div></div>
+          <div class="diff-num" id="num-normal"><div class="diff-num__n">35</div><div class="diff-num__t">normal</div></div>
+          <div class="diff-num" id="num-hard"><div class="diff-num__n">50</div><div class="diff-num__t">hard</div></div>
+        </div>
+
+        <div class="picker__dots" id="diff-dots"></div>
+        <button class="picker__decide" id="diff-decide">決定</button>
+        <div class="diff__random">random: <span id="diff-random">off</span></div>
+      </div>
+    </section>
+
+    <!-- =============== EXTRA COUNT =============== -->
+    <section id="screen-extra" class="screen" aria-label="extra">
+      <header class="topbar">
+        <button class="topbar__btn" id="btn-extra-back" aria-label="back">←</button>
+        <div class="topbar__title">追加部位</div>
+        <div class="topbar__spacer"></div>
+      </header>
+
+      <div class="extra">
+        <div class="extra__bg" id="extra-bg">hard</div>
+        <div class="extra__part" id="extra-part">腕</div>
+        <div class="extra__count" id="extra-remaining">20</div>
+        <div class="extra__sub">残り</div>
+        <div class="extra__hint">画面をTAP</div>
+      </div>
+
+      <footer class="bottombar">
+  
+        <button class="bottombar__btn bottombar__btn--primary" id="btn-extra-finish">Finish</button>
+      </footer>
+    </section>
+
+    <!-- =============== TOTAL =============== -->
+    <section id="screen-total" class="screen" aria-label="total">
+      <header class="topbar">
+        <button class="topbar__btn" id="btn-total-back" aria-label="back">←</button>
+        <div class="topbar__title">トータル</div>
+        <div class="topbar__spacer"></div>
+      </header>
+
+      <div class="total">
+        <div class="total__rows">
+          <div class="total-row"><div class="total-row__k">腹筋</div><div class="total-row__v" id="total-core-normal">0</div></div>
+          <div class="total-row"><div class="total-row__k">腹斜筋</div><div class="total-row__v" id="total-core-oblique">0</div></div>
+          <div class="total-row"><div class="total-row__k" id="total-extra-name">追加部位</div><div class="total-row__v" id="total-extra">0</div></div>
+          <div class="total-row total-row--sum"><div class="total-row__k">合計</div><div class="total-row__v" id="total-sum">0</div></div>
+        </div>
+
+        <div class="total__big" id="total-percent">100%</div>
+        <div class="total__new" id="total-new">新記録</div>
+        <div class="total__tap">空白をTAP</div>
+      </div>
+    </section>
+
+    <!-- =============== SORENESS =============== -->
+    <section id="screen-sore" class="screen" aria-label="soreness">
+      <header class="topbar">
+        <button class="topbar__btn" id="btn-sore-back" aria-label="back">←</button>
+        <div class="topbar__title">筋肉痛</div>
+        <div class="topbar__spacer"></div>
+      </header>
+      <div class="sore">
+        <div class="sore__grid">
+          <button class="sore__btn" data-sore="sweet">厳しめ</button>
+          <button class="sore__btn" data-sore="normal">普通</button>
+          <button class="sore__btn" data-sore="hard">甘め</button>
+          <button class="sore__btn" data-sore="none">なし</button>
+        </div>
+        <div class="sore__note" id="sore-note">選択で「100回」からランダム減算</div>
+        <button class="picker__decide" id="sore-decide">戻る</button>
+      </div>
+    </section>
+
+    <!-- =============== OPTION =============== -->
+    <section id="screen-option" class="screen" aria-label="option">
+      <header class="topbar">
+        <button class="topbar__btn" id="btn-option-back" aria-label="back">←</button>
+        <div class="topbar__title">OPTION</div>
+        <div class="topbar__spacer"></div>
+      </header>
+
+      <div class="option">
+        <div class="option-card">
+          <div class="option-card__title">追加部位（必須）</div>
+          <div class="option-card__value" id="opt-part">未選択</div>
+          <button class="option-card__btn" id="opt-part-btn">選択する</button>
+        </div>
+
+        <div class="option-card">
+          <div class="option-card__title">難易度</div>
+          <div class="option-card__value" id="opt-diff">easy</div>
+          <button class="option-card__btn" id="opt-diff-btn">変更</button>
+        </div>
+
+        <div class="option-card">
+          <div class="option-card__title">random</div>
+          <div class="option-card__value" id="opt-random">off</div>
+          <button class="option-card__btn" id="opt-random-btn">切替</button>
+        </div>
+
+        <div class="option-card">
+          <div class="option-card__title">筋肉痛</div>
+          <div class="option-card__value" id="opt-sore">なし</div>
+          <button class="option-card__btn" id="opt-sore-btn">設定</button>
+        </div>
+
+        <div class="option-card">
+          <div class="option-card__title">保存</div>
+          <div class="option-card__value">localStorage（直近6ヶ月）</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============== CALENDAR =============== -->
+    <section id="screen-calendar" class="screen" aria-label="calendar">
+      <header class="topbar">
+        <button class="topbar__btn" id="btn-cal-back" aria-label="back">←</button>
+        <div class="topbar__title">カレンダー</div>
+        <div class="topbar__spacer"></div>
+      </header>
+
+      <div class="calendar">
+        <div class="cal-head">
+          <button class="cal-head__btn" id="cal-prev">◀︎</button>
+          <div class="cal-head__title" id="cal-title">2026-02</div>
+          <button class="cal-head__btn" id="cal-next">▶︎</button>
+        </div>
+        <div class="cal-week" aria-hidden="true">
+          <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+
+        <div class="cal-detail" id="cal-detail">
+          <div class="cal-detail__title" id="cal-detail-title">日付を選択</div>
+          <div class="cal-detail__body" id="cal-detail-body">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============== GRAPH =============== -->
+    <section id="screen-graph" class="screen screen--scroll" aria-label="graph">
+      <header class="topbar">
+        <button class="topbar__btn" id="btn-graph-back" aria-label="back">←</button>
+        <div class="topbar__title">グラフ</div>
+        <div class="topbar__spacer"></div>
+      </header>
+
+      <div class="graph">
+        <div class="graph-tabs">
+          <button class="graph-tab is-active" data-scope="day">1日</button>
+          <button class="graph-tab" data-scope="week">1週間</button>
+          <button class="graph-tab" data-scope="all">全体</button>
+        </div>
+
+        <div class="graph-cards">
+          <div class="graph-card">
+            <div class="graph-card__title">達成度（%）</div>
+            <canvas id="cv-ach" width="900" height="260"></canvas>
+          </div>
+          <div class="graph-card">
+            <div class="graph-card__title">トータル回数（回）</div>
+            <canvas id="cv-total" width="900" height="260"></canvas>
+          </div>
+        </div>
+
+        <div class="graph-sums">
+          <div class="graph-sum">1日トータル <span id="sum-day">0</span>回</div>
+          <div class="graph-sum">1週間トータル <span id="sum-week">0</span>回</div>
+          <div class="graph-sum">全体トータル <span id="sum-all">0</span>回</div>
+        </div>
+      </div>
+    </section>
+
+    <div id="gesture-shield" class="gesture-shield" aria-hidden="true"></div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
