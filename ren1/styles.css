@@ -34,7 +34,7 @@ body{
 
 /* ====== HOME ====== */
 .home-title{position:absolute;left:50%;top:20%;transform:translateX(-50%);text-align:center;}
-.home-title__big{font-size:90px;font-weight:900;line-height:1.05;}
+.home-title__big{font-size:66px;font-weight:900;line-height:1.05;}
 .home-menu{position:absolute;left:50%;top:48%;transform:translateX(-50%);width:min(360px,84vw);display:flex;flex-direction:column;gap:14px;}
 .home-btn{height:56px;border:0;border-radius:10px;background:var(--black);color:var(--white);font-size:26px;font-weight:800;letter-spacing:0.5px;}
 .home-btn:active{transform:translateY(1px);}
