@@ -1,13 +1,15 @@
-/*
+/* 
   れんの腹筋筋トレメニュー
   - HTML/CSS/JS 分離版
   - 6ヶ月保存（localStorage）
   - デイリー: 腹筋+腹斜筋=100（筋肉痛で減算）
   - 追加部位: 1部位必須（難易度20/35/50 + random）
-  - 達成度: (デイリー+追加部位) を 100% 基準にして超過も表示
+  - 達成度: 120回=100%（固定）で超過も表示
   - カレンダー: 一般的な月カレンダー + 日付詳細
-  - グラフ: 1日/1週/全体 を「臨機応変」に棒グラフ
+  - グラフ: 1日/1週/全体 を棒グラフ + 体重推移
 */
+
+const BASELINE_100 = 120;
 
 // ============ Utilities ============
 const $ = (id) => document.getElementById(id);
@@ -36,18 +38,6 @@ function onAll(sel, ev, fn, opt) {
 // ============ Data Model ============
 const STORAGE_KEY = 'ren_abs_app_v3';
 
-/**
- * db schema
- * {
- *   days: {
- *     'YYYY-MM-DD': {
- *        sessions:[{ at, plannedTotal, planned:{core,extra}, done:{coreN, coreO, extra}, soreness:{mode,subtract}, extraPart, diff, random }],
- *        totals:{ doneTotal, plannedTotal },
- *        bestDoneTotal:number
- *     }
- *   }
- * }
- */
 function loadDB() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -76,6 +66,7 @@ function pruneDB() {
 
 // ============ App State ============
 const PARTS = [
+  { key: 'random', name: 'ランダム' },
   { key: 'thigh', name: 'もも' },
   { key: 'calf', name: 'ふくらはぎ' },
   { key: 'waist', name: '腰' },
@@ -117,16 +108,16 @@ const state = {
   session: null,
 
   // UI
-  pickIndex: 4, // default: 腕
+  pickIndex: 0, // default: ランダム
   diffIndex: 0,
-  graphScope: 'day',
+  graphScope: 'day', // 'day' | 'week' | 'all'
   calCursor: new Date(),
   calSelected: ymd(new Date()),
 };
 
 // ============ Screen Router ============
 const screens = [
-  'home','core','pick','diff','extra','total','sore','option','calendar','graph'
+  'home','core','pick','diff','extra','total','sore','option','calendar','graph','weight'
 ];
 
 function showScreen(name) {
@@ -139,6 +130,108 @@ function showScreen(name) {
   if (name === 'option') renderOption();
   if (name === 'calendar') renderCalendar();
   if (name === 'graph') renderGraph();
+  if (name === 'weight') {
+    ensureWeightScreen();
+    hydrateWeightScreen();
+  }
+}
+
+// ============ Weight Screen (ページ切替) ============
+function ensureWeightScreen() {
+  if (document.getElementById('screen-weight')) return;
+
+  const app = document.getElementById('app') || document.body;
+  const sec = document.createElement('section');
+  sec.id = 'screen-weight';
+  sec.className = 'screen';
+
+  // CSSは触らない前提。クラスは「存在してるなら」効く、無ければ最小表示。
+  sec.innerHTML = `
+    <div class="topbar">
+      <button id="btn-weight-back" class="topbar__btn">←</button>
+      <div class="topbar__title">体重計</div>
+      <div class="topbar__spacer"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__title">今日の体重（kg）</div>
+      <input id="weight-input" class="input" inputmode="decimal" placeholder="例: 77.0" />
+      <div id="weight-note" class="muted" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="bottombar">
+      <button id="btn-weight-save" class="bottombar__btn is-primary">保存</button>
+      <button id="btn-weight-delete" class="bottombar__btn">削除</button>
+    </div>
+  `;
+
+  app.appendChild(sec);
+}
+
+function hydrateWeightScreen() {
+  const key = ymd(new Date());
+  const day = ensureDay(key);
+  const input = $('weight-input');
+  const note = $('weight-note');
+  if (input) input.value = (day.weightKg == null) ? '' : String(day.weightKg);
+  if (note) note.textContent = '';
+}
+
+function openWeightScreen() {
+  ensureWeightScreen();
+  hydrateWeightScreen();
+  showScreen('weight');
+}
+
+// ============ Day helpers ============
+function ensureDay(key) {
+  if (!state.db.days[key]) {
+    state.db.days[key] = {
+      sessions: [],
+      totals: { doneTotal: 0, plannedTotal: 0 },
+      bestDoneTotal: 0,
+      weightKg: null,
+      weightAt: null,
+    };
+  } else {
+    // 互換
+    if (!state.db.days[key].sessions) state.db.days[key].sessions = [];
+    if (!state.db.days[key].totals) state.db.days[key].totals = { doneTotal: 0, plannedTotal: 0 };
+    if (state.db.days[key].bestDoneTotal == null) state.db.days[key].bestDoneTotal = 0;
+    if (!('weightKg' in state.db.days[key])) state.db.days[key].weightKg = null;
+    if (!('weightAt' in state.db.days[key])) state.db.days[key].weightAt = null;
+  }
+  return state.db.days[key];
+}
+
+function setTodayWeightFromInput(raw) {
+  const key = ymd(new Date());
+  const day = ensureDay(key);
+  const note = $('weight-note');
+
+  const t = String(raw ?? '').trim();
+  if (!t) {
+    day.weightKg = null;
+    day.weightAt = null;
+    if (note) note.textContent = '削除しました。';
+    saveDB();
+    renderCalendar();
+    renderGraph();
+    return;
+  }
+
+  const v = Number(t);
+  if (!Number.isFinite(v) || v <= 0 || v >= 500) {
+    if (note) note.textContent = '数値が不正です（例: 77.0）';
+    return;
+  }
+
+  day.weightKg = Math.round(v * 10) / 10;
+  day.weightAt = nowTs();
+  if (note) note.textContent = '保存しました。';
+  saveDB();
+  renderCalendar();
+  renderGraph();
 }
 
 // ============ Session Logic ============
@@ -153,6 +246,30 @@ function computeExtraTarget() {
   return randInt(diff.rmin, diff.rmax);
 }
 
+function currentExtraPlannedSum(s) {
+  const segs = s?.extraSegments || [];
+  return segs.reduce((a, seg) => a + (seg.planned || 0), 0);
+}
+
+function currentExtraDoneSum(s) {
+  const segs = s?.extraSegments || [];
+  return segs.reduce((a, seg) => a + (seg.done || 0), 0);
+}
+
+function syncSessionTotalsFromSegments() {
+  const s = state.session;
+  if (!s) return;
+  s.plannedTotal = s.planned.coreTotal + currentExtraPlannedSum(s);
+}
+
+function resolvePartName(partKey) {
+  if (partKey === 'random') {
+    const pool = PARTS.filter(p => p.key !== 'random');
+    return pool[randInt(0, pool.length - 1)].name;
+  }
+  return (PARTS.find(p => p.key === partKey)?.name) || '腕';
+}
+
 function startSession() {
   if (!state.settings.extraPartKey) {
     alert('追加部位は必須です。OPTION → 追加部位を選択してください。');
@@ -165,20 +282,40 @@ function startSession() {
   const extraTarget = computeExtraTarget();
 
   const plannedTotal = coreTotal + extraTarget;
-  const extraPart = PARTS.find(p => p.key === state.settings.extraPartKey);
+  const extraPartName = resolvePartName(state.settings.extraPartKey);
 
   state.session = {
     at: nowTs(),
+    pickReturn: 'core',
+    addingExtra: false,
+    pendingPart: null,
+    pendingPickRandom: false,
+    extraSegments: [],
+    currentExtraIdx: 0,
+
     planned: { coreTotal, coreN, coreO, extra: extraTarget },
     done: { coreN: 0, coreO: 0, extra: 0 },
+
     activeCore: 'coreN',
     firstTapDone: false,
-    extraPart: extraPart ? extraPart.name : '追加部位',
+
+    extraPart: extraPartName,
     diff: state.settings.diffKey,
     random: state.settings.random,
     soreness: { mode: state.settings.sorenessMode, subtract: state.settings.sorenessSubtract },
     plannedTotal,
   };
+
+  // init first extra segment
+  state.session.extraSegments.push({
+    part: state.session.extraPart,
+    diff: state.session.diff,
+    randomCount: state.session.random,
+    pickRandom: false,
+    planned: state.session.planned.extra,
+    done: 0,
+  });
+  syncSessionTotalsFromSegments();
 
   // init UI
   const inst = $('core-instruction');
@@ -192,9 +329,115 @@ function startSession() {
 }
 
 function finishCoreToNext() {
-  // Finish押下後 → 追加部位選択へ（要件）
+  if (state.session) {
+    state.session.pickReturn = 'core';
+    state.session.addingExtra = false;
+  }
+  // ここを有効にすると「開いた瞬間ランダムに合わせる」
+  // state.pickIndex = 0;
   syncPickFromSettings();
   showScreen('pick');
+}
+
+function ensureExtraAddButton() {
+  const footer = document.querySelector('#screen-extra .bottombar');
+  if (!footer) return;
+  if ($('btn-extra-add')) return;
+
+  footer.style.position = 'relative';
+
+  const btn = document.createElement('button');
+  btn.className = 'bottombar__btn';
+  btn.id = 'btn-extra-add';
+  btn.textContent = '＋';
+  btn.style.display = 'none';
+
+  // ★ Finishを潰さない
+  btn.style.position = 'absolute';
+  btn.style.right = '12px';
+  btn.style.bottom = '10px';
+
+  footer.appendChild(btn);
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    startAddExtraLoop();
+  });
+}
+
+function updateExtraFooterButtons() {
+  const s = state.session;
+  const btnAdd = $('btn-extra-add');
+  const btnFinish = $('btn-extra-finish');
+  if (!s) return;
+
+  const remaining = s.planned.extra - s.done.extra;
+  const show = (remaining <= 0);
+
+  if (btnFinish) btnFinish.style.display = show ? 'inline-flex' : 'none';
+  if (btnAdd) btnAdd.style.display = show ? 'inline-flex' : 'none';
+
+  // ★ Finish と + を分ける（両方出る時だけ Finish を少し細くする）
+  if (btnFinish) {
+    if (show) {
+      btnFinish.style.width = 'calc(100% - 72px)';
+      btnFinish.style.marginRight = '72px';
+    } else {
+      btnFinish.style.width = '';
+      btnFinish.style.marginRight = '';
+    }
+  }
+}
+
+function startAddExtraLoop() {
+  const s = state.session;
+  if (!s) return;
+  s.pickReturn = 'extra';
+  s.addingExtra = true;
+
+  // ★ ループ時は必ずランダムに合わせる
+  state.pickIndex = 0;
+  renderPick();
+  showScreen('pick');
+}
+
+function applyPickedPartToSession(partKey) {
+  const s = state.session;
+  if (!s) return;
+
+  const partName = resolvePartName(partKey);
+  s.pendingPart = partName;
+  s.pendingPickRandom = (partKey === 'random');
+}
+
+function commitPendingPartAsNewSegment() {
+  const s = state.session;
+  if (!s) return;
+
+  if (s.addingExtra) {
+    s.extraSegments.push({
+      part: s.pendingPart || resolvePartName(state.settings.extraPartKey),
+      diff: s.diff,
+      randomCount: s.random,
+      pickRandom: !!s.pendingPickRandom,
+      planned: computeExtraTarget(),
+      done: 0,
+    });
+
+    s.currentExtraIdx = s.extraSegments.length - 1;
+    const cur = s.extraSegments[s.currentExtraIdx];
+    s.extraPart = cur.part;
+    s.planned.extra = cur.planned;
+    s.done.extra = cur.done;
+    syncSessionTotalsFromSegments();
+  } else {
+    s.extraPart = s.pendingPart || s.extraPart;
+    s.extraSegments[0].part = s.extraPart;
+    s.extraSegments[0].pickRandom = !!s.pendingPickRandom;
+  }
+
+  s.pendingPart = null;
+  s.pendingPickRandom = false;
 }
 
 function finishExtraToTotal() {
@@ -206,32 +449,39 @@ function finishExtraToTotal() {
 function saveSession() {
   if (!state.session) return;
   const key = ymd(new Date());
-  if (!state.db.days[key]) {
-    state.db.days[key] = { sessions: [], totals: { doneTotal: 0, plannedTotal: 0 }, bestDoneTotal: 0 };
-  }
+  const day = ensureDay(key);
   const s = state.session;
 
-  state.db.days[key].sessions.push({
+  if (s.extraSegments && s.extraSegments.length) {
+    const cur = s.extraSegments[s.currentExtraIdx];
+    if (cur) cur.done = s.done.extra;
+  }
+
+  day.sessions.push({
     at: s.at,
     plannedTotal: s.plannedTotal,
-    planned: { core: s.planned.coreTotal, extra: s.planned.extra },
-    done: { coreN: s.done.coreN, coreO: s.done.coreO, extra: s.done.extra },
+    planned: { core: s.planned.coreTotal, extra: currentExtraPlannedSum(s) },
+    done: { coreN: s.done.coreN, coreO: s.done.coreO, extra: currentExtraDoneSum(s) },
     soreness: s.soreness,
     extraPart: s.extraPart,
     diff: s.diff,
     random: s.random,
+    extras: (s.extraSegments && s.extraSegments.length) ? s.extraSegments.map(seg => ({
+      part: seg.part, diff: seg.diff, randomCount: seg.randomCount, pickRandom: !!seg.pickRandom,
+      planned: seg.planned, done: seg.done
+    })) : undefined,
   });
 
   // recompute day totals
   let dayDone = 0;
   let dayPlanned = 0;
-  for (const sess of state.db.days[key].sessions) {
+  for (const sess of day.sessions) {
     dayDone += (sess.done.coreN + sess.done.coreO + sess.done.extra);
     dayPlanned += sess.plannedTotal;
   }
-  state.db.days[key].totals.doneTotal = dayDone;
-  state.db.days[key].totals.plannedTotal = dayPlanned;
-  state.db.days[key].bestDoneTotal = Math.max(state.db.days[key].bestDoneTotal || 0, dayDone);
+  day.totals.doneTotal = dayDone;
+  day.totals.plannedTotal = dayPlanned;
+  day.bestDoneTotal = Math.max(day.bestDoneTotal || 0, dayDone);
 
   saveDB();
 }
@@ -241,16 +491,12 @@ function updateCoreUI() {
   const s = state.session;
   if (!s) return;
 
-  // PDF仕様：左右どっちを叩いても「100から減る」総残り
   const done = s.done.coreN + s.done.coreO;
-
-  // 0で止めない（マイナス表示も出す）
   const remaining = s.planned.coreTotal - done;
 
   const remainEl = $('core-remaining');
   if (remainEl) remainEl.textContent = String(remaining);
 
-  // Finishは残り<=0で表示
   const finishBtn = $('btn-core-finish');
   if (finishBtn) finishBtn.style.display = (remaining <= 0) ? 'block' : 'none';
 }
@@ -259,7 +505,6 @@ function coreTap(side) {
   const s = state.session;
   if (!s) return;
 
-  // first tap: hide instruction + lines
   if (!s.firstTapDone) {
     s.firstTapDone = true;
     const inst = $('core-instruction');
@@ -279,7 +524,6 @@ function coreTap(side) {
 }
 
 function darken(side) {
-  // 濃さ蓄積（CSSでopacityを殺してない前提）
   const step = 0.02;
   const max = 0.55;
   const el = side === 'left' ? $('shade-left') : $('shade-right');
@@ -298,12 +542,12 @@ function toggleCoreSide() {
 // ============ Pick UI (extra part) ============
 function syncPickFromSettings() {
   const idx = PARTS.findIndex(p => p.key === state.settings.extraPartKey);
-  state.pickIndex = idx >= 0 ? idx : 4;
+  state.pickIndex = idx >= 0 ? idx : 0;
   renderPick();
 }
 
 function renderPick() {
-  const value = PARTS[state.pickIndex]?.name || '腕';
+  const value = PARTS[state.pickIndex]?.name || 'ランダム';
   const v = $('pick-value');
   if (v) v.textContent = value;
 
@@ -326,7 +570,19 @@ function movePick(delta) {
 function decidePick() {
   const part = PARTS[state.pickIndex];
   state.settings.extraPartKey = part.key;
-  if (state.session) state.session.extraPart = part.name;
+
+  if (state.session) {
+    applyPickedPartToSession(part.key);
+    commitPendingPartAsNewSegment();
+    renderOption();
+    syncDiffFromSettings();
+
+    if (state.session.pickReturn === 'extra') {
+      startExtra();
+      return;
+    }
+  }
+
   renderOption();
   syncDiffFromSettings();
   showScreen('diff');
@@ -382,9 +638,16 @@ function decideDiff() {
   if (state.session) {
     state.session.diff = diff.key;
     state.session.random = state.settings.random;
+
     const extraT = computeExtraTarget();
     state.session.planned.extra = extraT;
-    state.session.plannedTotal = state.session.planned.coreTotal + extraT;
+    const cur = state.session.extraSegments?.[state.session.currentExtraIdx];
+    if (cur) {
+      cur.diff = diff.key;
+      cur.randomCount = state.settings.random;
+      cur.planned = extraT;
+    }
+    syncSessionTotalsFromSegments();
   }
   startExtra();
 }
@@ -400,17 +663,33 @@ function startExtra() {
 
   if (p) p.textContent = s.extraPart;
   if (bg) bg.textContent = s.diff;
-  if (r) r.textContent = String(Math.max(0, s.planned.extra - s.done.extra));
+  if (r) r.textContent = String(s.planned.extra - s.done.extra);
+
+  ensureExtraAddButton();
+
+  // ★ 初期表示は必ず隠す
+  const btnFinish = $('btn-extra-finish');
+  const btnAdd = $('btn-extra-add');
+  if (btnFinish) btnFinish.style.display = 'none';
+  if (btnAdd) btnAdd.style.display = 'none';
 
   showScreen('extra');
+  updateExtraFooterButtons();
 }
 
 function extraTap(delta) {
   const s = state.session;
   if (!s) return;
+
   s.done.extra = Math.max(0, s.done.extra + delta);
+
+  const cur = s.extraSegments?.[s.currentExtraIdx];
+  if (cur) cur.done = s.done.extra;
+
   const r = $('extra-remaining');
-  if (r) r.textContent = String(Math.max(0, s.planned.extra - s.done.extra));
+  if (r) r.textContent = String(s.planned.extra - s.done.extra);
+
+  updateExtraFooterButtons();
 }
 
 // ============ Total UI ============
@@ -422,13 +701,20 @@ function renderTotal() {
 
   $('total-core-normal') && ($('total-core-normal').textContent = String(s.done.coreN));
   $('total-core-oblique') && ($('total-core-oblique').textContent = String(s.done.coreO));
-  $('total-extra-name') && ($('total-extra-name').textContent = `追加部位[${s.extraPart}]`);
-  $('total-extra') && ($('total-extra').textContent = String(s.done.extra));
 
-  const sum = s.done.coreN + s.done.coreO + s.done.extra;
+  const extraDone = currentExtraDoneSum(s);
+  const extraName = (s.extraSegments && s.extraSegments.length > 1)
+    ? `追加部位（${s.extraSegments.length}部位）`
+    : `追加部位[${s.extraPart}]`;
+
+  $('total-extra-name') && ($('total-extra-name').textContent = extraName);
+  $('total-extra') && ($('total-extra').textContent = String(extraDone));
+
+  const sum = s.done.coreN + s.done.coreO + extraDone;
   $('total-sum') && ($('total-sum').textContent = String(sum));
 
-  const pct = Math.round((sum / Math.max(1, s.plannedTotal)) * 100);
+  // ★ %は120固定
+  const pct = Math.round((sum / BASELINE_100) * 100);
   $('total-percent') && ($('total-percent').textContent = `${pct}%`);
 
   const isNew = sum >= (day.bestDoneTotal || 0);
@@ -507,8 +793,7 @@ function renderCalendar() {
     if (hasData) cell.classList.add('has-data');
 
     const done = state.db.days[k]?.totals?.doneTotal ?? 0;
-    const planned = state.db.days[k]?.totals?.plannedTotal ?? 0;
-    const pct = planned > 0 ? Math.round((done / planned) * 100) : 0;
+    const pct = Math.round((done / BASELINE_100) * 100);
 
     cell.innerHTML = `
       <div class="cal-cell__d">${d.getDate()}</div>
@@ -518,125 +803,79 @@ function renderCalendar() {
     cell.addEventListener('click', () => {
       state.calSelected = k;
       renderCalendar();
-      renderCalendarDetail(k);
+      renderCalendarDetail();
     });
     grid.appendChild(cell);
   }
-
-  renderCalendarDetail(state.calSelected);
+  renderCalendarDetail();
 }
 
-function renderCalendarDetail(k) {
-  const d = new Date(k);
-  const ttl = $('cal-detail-title');
-  if (ttl) ttl.textContent = `${d.getMonth()+1}/${d.getDate()} の記録`;
+function renderCalendarDetail() {
+  const key = state.calSelected;
+  const day = state.db.days[key];
 
+  const title = $('cal-detail-title');
   const body = $('cal-detail-body');
+  if (title) title.textContent = `${key} の記録`;
   if (!body) return;
 
-  const day = state.db.days[k];
   if (!day) {
-    body.innerHTML = '記録がありません。';
+    body.innerHTML = '<div class="muted">記録なし</div>';
     return;
   }
 
   const lines = [];
-  const doneTotal = day.totals.doneTotal;
-  const plannedTotal = day.totals.plannedTotal;
-  const pct = plannedTotal > 0 ? Math.round((doneTotal / plannedTotal) * 100) : 0;
-  lines.push(`<div class="cal-line"><strong>達成度</strong> ${pct}%（合計 ${doneTotal}回 / 基準 ${plannedTotal}回）</div>`);
+  if (day.weightKg != null) {
+    lines.push(`<div class="cal-line"><strong>体重</strong> ${day.weightKg} kg</div>`);
+  }
 
-  for (const sess of day.sessions.slice().reverse()) {
+  const done = day.totals?.doneTotal ?? 0;
+  const pct = Math.round((done / BASELINE_100) * 100);
+  lines.push(`<div class="cal-line"><strong>合計</strong> ${done}回（${pct}%）</div>`);
+
+  const sessions = day.sessions || [];
+  sessions.slice().reverse().forEach(sess => {
     const dt = new Date(sess.at);
     const t = `${pad2(dt.getHours())}:${pad2(dt.getMinutes())}`;
-    const sore = sess.soreness?.mode && sess.soreness.mode !== 'none'
-      ? `筋肉痛（-${sess.soreness.subtract}）`
-      : '筋肉痛（無）';
+    const sum = (sess.done.coreN + sess.done.coreO + sess.done.extra);
+    const p = Math.round((sum / BASELINE_100) * 100);
 
-    const sum = sess.done.coreN + sess.done.coreO + sess.done.extra;
-    const p = Math.round((sum / Math.max(1, sess.plannedTotal)) * 100);
+    const extras = sess.extras || null;
+    let extraHtml = '';
+    if (Array.isArray(extras) && extras.length) {
+      extraHtml = extras.map(ex =>
+        `<div>追加部位[${ex.part}] ${ex.done}/${ex.planned}（${ex.diff}${ex.randomCount ? ' random' : ''}）</div>`
+      ).join('');
+    } else {
+      extraHtml = `<div>追加部位[${sess.extraPart}] ${sess.done.extra}/${sess.planned.extra}（${sess.diff}${sess.random ? ' random' : ''}）</div>`;
+    }
 
     lines.push(`
       <div class="cal-line">
         <div><strong>${t}</strong> <span class="badge">${p}%</span></div>
-        <div>デイリー ${sore}：${sess.done.coreN + sess.done.coreO}回（基準 ${sess.planned.core}回）</div>
-        <div>追加部位 [${sess.extraPart}]：${sess.done.extra}回（基準 ${sess.planned.extra}回 / ${sess.diff}${sess.random ? ' random' : ''}）</div>
-        <div><strong>合計</strong> ${sum}回</div>
+        <div>腹筋 ${sess.done.coreN + sess.done.coreO}/${sess.planned.core}</div>
+        ${extraHtml}
+        <div><strong>合計</strong> ${sum}</div>
       </div>
     `);
-  }
+  });
+
   body.innerHTML = lines.join('');
 }
 
 // ============ Graph ============
-function renderGraph() {
-  const allDays = Object.keys(state.db.days).sort();
-  let sumAll = 0;
-  for (const k of allDays) sumAll += state.db.days[k].totals.doneTotal;
+function ensureWeightGraphCard() {
+  const cards = document.querySelector('#screen-graph .graph-cards');
+  if (!cards) return;
+  if ($('cv-weight')) return;
 
-  $('sum-all') && ($('sum-all').textContent = String(sumAll));
-
-  const today = ymd(new Date());
-  const dayDone = state.db.days[today]?.totals?.doneTotal ?? 0;
-  $('sum-day') && ($('sum-day').textContent = String(dayDone));
-
-  const weekKeys = getWeekKeys(new Date());
-  let sumWeek = 0;
-  for (const k of weekKeys) sumWeek += state.db.days[k]?.totals?.doneTotal ?? 0;
-  $('sum-week') && ($('sum-week').textContent = String(sumWeek));
-
-  let labels = [];
-  let doneVals = [];
-  let pctVals = [];
-
-  if (state.graphScope === 'day') {
-    labels = ['今日'];
-    doneVals = [dayDone];
-    const planned = state.db.days[today]?.totals?.plannedTotal ?? 120;
-    pctVals = [Math.round((dayDone / Math.max(1, planned)) * 100)];
-  } else if (state.graphScope === 'week') {
-    labels = weekKeys.map(k => {
-      const d = new Date(k);
-      return `${d.getMonth()+1}/${d.getDate()}`;
-    });
-    doneVals = weekKeys.map(k => state.db.days[k]?.totals?.doneTotal ?? 0);
-    pctVals = weekKeys.map(k => {
-      const done = state.db.days[k]?.totals?.doneTotal ?? 0;
-      const planned = state.db.days[k]?.totals?.plannedTotal ?? 120;
-      return planned > 0 ? Math.round((done / planned) * 100) : 0;
-    });
-  } else {
-    const keys = lastNDaysKeys(30);
-    labels = keys.map(k => {
-      const d = new Date(k);
-      return `${d.getMonth()+1}/${d.getDate()}`;
-    });
-    doneVals = keys.map(k => state.db.days[k]?.totals?.doneTotal ?? 0);
-    pctVals = keys.map(k => {
-      const done = state.db.days[k]?.totals?.doneTotal ?? 0;
-      const planned = state.db.days[k]?.totals?.plannedTotal ?? 120;
-      return planned > 0 ? Math.round((done / planned) * 100) : 0;
-    });
-  }
-
-  const ach = $('cv-ach');
-  const tot = $('cv-total');
-  if (ach) drawBars(ach, labels, pctVals, { suffix: '%', minMax: true });
-  if (tot) drawBars(tot, labels, doneVals, { suffix: '', minMax: false });
-}
-
-function getWeekKeys(date) {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = (day === 0 ? 6 : day - 1);
-  d.setDate(d.getDate() - diff);
-  const keys = [];
-  for (let i = 0; i < 7; i++) {
-    const x = new Date(d);
-    x.setDate(d.getDate() + i);
-    keys.push(ymd(x));
-  }
-  return keys;
+  const card = document.createElement('div');
+  card.className = 'graph-card';
+  card.innerHTML = `
+    <div class="graph-card__title">体重推移（kg）</div>
+    <canvas id="cv-weight" width="900" height="260"></canvas>
+  `;
+  cards.appendChild(card);
 }
 
 function lastNDaysKeys(n) {
@@ -645,6 +884,20 @@ function lastNDaysKeys(n) {
   for (let i = n - 1; i >= 0; i--) {
     const x = new Date(d);
     x.setDate(d.getDate() - i);
+    keys.push(ymd(x));
+  }
+  return keys;
+}
+
+function getWeekKeys(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = (day === 0 ? 6 : day - 1); // 月曜始まり
+  d.setDate(d.getDate() - diff);
+  const keys = [];
+  for (let i = 0; i < 7; i++) {
+    const x = new Date(d);
+    x.setDate(d.getDate() + i);
     keys.push(ymd(x));
   }
   return keys;
@@ -695,30 +948,144 @@ function drawBars(canvas, labels, values, opt) {
   }
 }
 
-// ============ Swipe Helper ============
-function bindSwipe(el, onLeft, onRight) {
-  if (!el) return;
-  let sx = 0, sy = 0, active = false;
-  el.addEventListener('pointerdown', (e) => {
-    active = true;
-    sx = e.clientX;
-    sy = e.clientY;
-  });
-  el.addEventListener('pointerup', (e) => {
-    if (!active) return;
-    active = false;
-    const dx = e.clientX - sx;
-    const dy = e.clientY - sy;
-    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
-    if (dx < 0) onLeft(); else onRight();
-  });
+function drawLine(canvas, labels, values, opt) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,w,h);
+
+  const padX = 34;
+  const padY = 26;
+  const innerW = w - padX*2;
+  const innerH = h - padY*2;
+  const n = Math.max(1, values.length);
+
+  const nums = values.filter(v => typeof v === 'number');
+  const minV = nums.length ? Math.min(...nums) : 0;
+  const maxV = nums.length ? Math.max(...nums) : 1;
+  const span = Math.max(0.1, maxV - minV);
+
+  const step = innerW / Math.max(1, n - 1);
+
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(padX, padY + innerH);
+  ctx.lineTo(padX + innerW, padY + innerH);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+
+  let started = false;
+  for (let i = 0; i < n; i++) {
+    const v = values[i];
+    if (typeof v !== 'number') { started = false; continue; }
+    const x = padX + i * step;
+    const y = padY + innerH - ((v - minV) / span) * innerH;
+    if (!started) { ctx.moveTo(x, y); started = true; }
+    else { ctx.lineTo(x, y); }
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = '#000000';
+  for (let i = 0; i < n; i++) {
+    const v = values[i];
+    const x = padX + i * step;
+
+    if (typeof v === 'number') {
+      const y = padY + innerH - ((v - minV) / span) * innerH;
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = 'bold 16px system-ui';
+      ctx.fillText(`${v}${opt.suffix}`, x + 6, Math.max(18, y - 8));
+    }
+
+    ctx.font = 'bold 12px system-ui';
+    ctx.fillText(labels[i] ?? '', x, padY + innerH + 18);
+  }
 }
 
+function renderGraph() {
+  ensureWeightGraphCard();
+
+  const today = ymd(new Date());
+  const dayDone = state.db.days[today]?.totals?.doneTotal ?? 0;
+
+  let labels = [];
+  let doneVals = [];
+  let pctVals = [];
+  let weightVals = [];
+
+  if (state.graphScope === 'day') {
+    labels = ['今日'];
+    doneVals = [dayDone];
+    pctVals = [Math.round((dayDone / BASELINE_100) * 100)];
+    const w = state.db.days[today]?.weightKg;
+    weightVals = [typeof w === 'number' ? w : null];
+
+  } else if (state.graphScope === 'week') {
+    const weekKeys = getWeekKeys(new Date());
+    labels = weekKeys.map(k => {
+      const d = new Date(k);
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    });
+    doneVals = weekKeys.map(k => state.db.days[k]?.totals?.doneTotal ?? 0);
+    pctVals = weekKeys.map(k => {
+      const done = state.db.days[k]?.totals?.doneTotal ?? 0;
+      return Math.round((done / BASELINE_100) * 100);
+    });
+    weightVals = weekKeys.map(k => {
+      const w = state.db.days[k]?.weightKg;
+      return typeof w === 'number' ? w : null;
+    });
+
+  } else { // 'all'
+    const keys = lastNDaysKeys(30);
+    labels = keys.map(k => {
+      const d = new Date(k);
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    });
+    doneVals = keys.map(k => state.db.days[k]?.totals?.doneTotal ?? 0);
+    pctVals = keys.map(k => {
+      const done = state.db.days[k]?.totals?.doneTotal ?? 0;
+      return Math.round((done / BASELINE_100) * 100);
+    });
+    weightVals = keys.map(k => {
+      const w = state.db.days[k]?.weightKg;
+      return typeof w === 'number' ? w : null;
+    });
+  }
+
+  const ach = $('cv-ach');
+  const tot = $('cv-total');
+  const wcv = $('cv-weight');
+  if (ach) drawBars(ach, labels, pctVals, { suffix: '%', minMax: true });
+  if (tot) drawBars(tot, labels, doneVals, { suffix: '', minMax: false });
+  if (wcv) drawLine(wcv, labels, weightVals, { suffix: 'kg' });
+
+  // ===== 下の合計表示（HTMLに存在するIDへ） =====
+  const elDay = $('sum-day');
+  const elWeek = $('sum-week');
+  const elAll = $('sum-all');
+
+  if (elDay) elDay.textContent = String(dayDone);
+
+  const weekKeys2 = getWeekKeys(new Date());
+  const weekSum = weekKeys2.reduce((acc, k) => acc + (state.db.days[k]?.totals?.doneTotal ?? 0), 0);
+  if (elWeek) elWeek.textContent = String(weekSum);
+
+  const allSum = Object.values(state.db.days).reduce((acc, day) => acc + (day?.totals?.doneTotal ?? 0), 0);
+  if (elAll) elAll.textContent = String(allSum);
+}
 // ============ Event Wiring ============
 function init() {
-  // グラフ画面だけスクロール許可（CSS: .screen--scroll）
-  $('screen-graph')?.classList.add('screen--scroll');
-
   // HOME
   on('btn-home-start', 'click', (e) => { e.stopPropagation(); startSession(); });
   on('btn-home-soreness', 'click', (e) => { e.stopPropagation(); showScreen('sore'); });
@@ -726,25 +1093,43 @@ function init() {
   on('btn-home-calendar', 'click', (e) => { e.stopPropagation(); showScreen('calendar'); });
   on('btn-home-option', 'click', (e) => { e.stopPropagation(); showScreen('option'); });
 
+  // 体重計：ページ切替
+  on('btn-home-weight', 'click', (e) => { e.stopPropagation(); openWeightScreen(); });
+
+  // Weight page buttons（ensureWeightScreen後に生成されるのでデリゲーション）
+  document.addEventListener('click', (e) => {
+    const id = e.target?.id;
+    if (id === 'btn-weight-back') { e.stopPropagation(); showScreen('home'); }
+    if (id === 'btn-weight-save') {
+      e.stopPropagation();
+      const v = $('weight-input')?.value ?? '';
+      setTodayWeightFromInput(v);
+    }
+    if (id === 'btn-weight-delete') {
+      e.stopPropagation();
+      setTodayWeightFromInput('');
+      const input = $('weight-input');
+      if (input) input.value = '';
+    }
+  }, true);
+
   // CORE
   on('btn-core-back', 'click', (e) => { e.stopPropagation(); showScreen('home'); });
-
-  // Finish → 追加部位選択へ
   on('btn-core-finish', 'click', (e) => { e.stopPropagation(); finishCoreToNext(); });
-
-  // もし残ってるなら（消してても落ちない）
   on('btn-core-toggle', 'click', (e) => { e.stopPropagation(); toggleCoreSide(); });
-  on('btn-core-add', 'click', (e) => { e.stopPropagation(); finishCoreToNext(); });
 
   on('tap-left', 'click', (e) => { e.stopPropagation(); coreTap('left'); });
   on('tap-right', 'click', (e) => { e.stopPropagation(); coreTap('right'); });
 
   // PICK
-  on('btn-pick-back', 'click', (e) => { e.stopPropagation(); showScreen('core'); });
+  on('btn-pick-back', 'click', (e) => {
+    e.stopPropagation();
+    const ret = state.session?.pickReturn || 'core';
+    showScreen(ret);
+  });
   on('pick-prev', 'click', (e) => { e.stopPropagation(); movePick(-1); });
   on('pick-next', 'click', (e) => { e.stopPropagation(); movePick(+1); });
   on('pick-decide', 'click', (e) => { e.stopPropagation(); decidePick(); });
-  bindSwipe($('screen-pick'), () => movePick(+1), () => movePick(-1));
 
   // DIFF
   on('btn-diff-back', 'click', (e) => { e.stopPropagation(); showScreen('pick'); });
@@ -752,18 +1137,13 @@ function init() {
   on('diff-next', 'click', (e) => { e.stopPropagation(); moveDiff(+1); });
   on('diff-decide', 'click', (e) => { e.stopPropagation(); decideDiff(); });
 
-  on('num-easy', 'click', (e) => { e.stopPropagation(); state.diffIndex = 0; toggleRandom(); renderDiff(); });
-  on('num-normal', 'click', (e) => { e.stopPropagation(); state.diffIndex = 1; toggleRandom(); renderDiff(); });
-  on('num-hard', 'click', (e) => { e.stopPropagation(); state.diffIndex = 2; toggleRandom(); renderDiff(); });
+  on('num-easy', 'click', (e) => { e.stopPropagation(); state.diffIndex = 0; renderDiff(); });
+  on('num-normal', 'click', (e) => { e.stopPropagation(); state.diffIndex = 1; renderDiff(); });
+  on('num-hard', 'click', (e) => { e.stopPropagation(); state.diffIndex = 2; renderDiff(); });
 
-  bindSwipe($('diff-swipe'), () => moveDiff(+1), () => moveDiff(-1));
+  on('diff-random-toggle', 'click', (e) => { e.stopPropagation(); toggleRandom(); });
 
   // EXTRA
-  on('btn-extra-back', 'click', (e) => { e.stopPropagation(); showScreen('diff'); });
-  on('btn-extra-minus', 'click', (e) => { e.stopPropagation(); extraTap(-1); });
-  on('btn-extra-plus', 'click', (e) => { e.stopPropagation(); extraTap(+1); });
-  on('btn-extra-finish', 'click', (e) => { e.stopPropagation(); finishExtraToTotal(); });
-
   const extraScreen = $('screen-extra');
   if (extraScreen) {
     extraScreen.addEventListener('click', (e) => {
@@ -771,6 +1151,8 @@ function init() {
       extraTap(+1);
     });
   }
+  on('btn-extra-back', 'click', (e) => { e.stopPropagation(); showScreen('diff'); });
+  on('btn-extra-finish', 'click', (e) => { e.stopPropagation(); finishExtraToTotal(); });
 
   // TOTAL
   on('btn-total-back', 'click', (e) => { e.stopPropagation(); showScreen('home'); });
@@ -778,44 +1160,42 @@ function init() {
   if (totalScreen) totalScreen.addEventListener('click', totalTapToHome);
 
   // SORENESS
-  on('btn-sore-back', 'click', (e) => { e.stopPropagation(); showScreen('home'); });
+  onAll('.sore__btn', 'click', (e) => { e.stopPropagation(); setSoreness(e.currentTarget.dataset.sore); });
   on('sore-decide', 'click', (e) => { e.stopPropagation(); showScreen('home'); });
-  onAll('.sore__btn', 'click', (e) => {
-    e.stopPropagation();
-    const mode = e.currentTarget?.dataset?.sore;
-    if (mode) setSoreness(mode);
-  });
+  on('btn-sore-back', 'click', (e) => { e.stopPropagation(); showScreen('home'); });
 
   // OPTION
   on('btn-option-back', 'click', (e) => { e.stopPropagation(); showScreen('home'); });
-  on('opt-part-btn', 'click', (e) => { e.stopPropagation(); syncPickFromSettings(); showScreen('pick'); });
+  on('opt-part-btn', 'click', (e) => { e.stopPropagation(); state.pickIndex = 0; renderPick(); showScreen('pick'); });
   on('opt-diff-btn', 'click', (e) => { e.stopPropagation(); syncDiffFromSettings(); showScreen('diff'); });
-  on('opt-random-btn', 'click', (e) => { e.stopPropagation(); toggleRandom(); renderOption(); });
+  on('opt-random-btn', 'click', (e) => { e.stopPropagation(); toggleRandom(); });
   on('opt-sore-btn', 'click', (e) => { e.stopPropagation(); showScreen('sore'); });
 
-  // CAL
+  // CALENDAR
   on('btn-cal-back', 'click', (e) => { e.stopPropagation(); showScreen('home'); });
-  on('cal-prev', 'click', (e) => {
-    e.stopPropagation();
-    state.calCursor = new Date(state.calCursor.getFullYear(), state.calCursor.getMonth()-1, 1);
-    renderCalendar();
-  });
-  on('cal-next', 'click', (e) => {
-    e.stopPropagation();
-    state.calCursor = new Date(state.calCursor.getFullYear(), state.calCursor.getMonth()+1, 1);
-    renderCalendar();
-  });
+  on('cal-prev', 'click', (e) => { e.stopPropagation(); state.calCursor.setMonth(state.calCursor.getMonth() - 1); renderCalendar(); });
+  on('cal-next', 'click', (e) => { e.stopPropagation(); state.calCursor.setMonth(state.calCursor.getMonth() + 1); renderCalendar(); });
 
-  // GRAPH
+  // GRAPH（タブが後から生成/内側クリックでも確実に拾う）
   on('btn-graph-back', 'click', (e) => { e.stopPropagation(); showScreen('home'); });
-  onAll('.graph-tab', 'click', (e) => {
-    e.stopPropagation();
-    const scope = e.currentTarget?.dataset?.scope;
-    if (!scope) return;
-    state.graphScope = scope;
-    document.querySelectorAll('.graph-tab').forEach(x => x.classList.toggle('is-active', x.dataset.scope === state.graphScope));
-    renderGraph();
-  });
+  const graphScreen = $('screen-graph');
+  if (graphScreen) {
+    graphScreen.addEventListener('click', (e) => {
+      const tab = e.target.closest?.('.graph-tab');
+      if (!tab) return;
+
+      const scope = tab.getAttribute('data-scope'); // 'day' | 'week' | 'all'
+      if (!scope) return;
+
+      state.graphScope = scope;
+
+      graphScreen.querySelectorAll('.graph-tab').forEach(x => {
+        x.classList.toggle('is-active', x.getAttribute('data-scope') === state.graphScope);
+      });
+
+      renderGraph();
+    });
+  }
 
   // init defaults
   if (!state.settings.extraPartKey) state.settings.extraPartKey = 'arm';
