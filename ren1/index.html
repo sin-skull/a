@@ -19,6 +19,7 @@
 
       <nav class="home-menu" aria-label="menu">
         <button class="home-btn" id="btn-home-start">START</button>
+        <button class="home-btn" id="btn-home-weight">体重計</button>
         <button class="home-btn" id="btn-home-soreness">筋肉痛</button>
         <button class="home-btn" id="btn-home-graph">グラフ</button>
         <button class="home-btn" id="btn-home-calendar">カレンダー</button>
@@ -164,6 +165,24 @@
         <div class="total__big" id="total-percent">100%</div>
         <div class="total__new" id="total-new">新記録</div>
         <div class="total__tap">空白をTAP</div>
+      </div>
+    </section>
+
+    <!-- =============== WEIGHT =============== -->
+    <section id="screen-weight" class="screen" aria-label="weight">
+      <header class="topbar">
+        <button class="topbar__btn" id="btn-weight-back" aria-label="back">←</button>
+        <div class="topbar__title">体重</div>
+        <div class="topbar__spacer"></div>
+      </header>
+
+      <div class="weight">
+        <div class="weight__label">今日の体重（kg）</div>
+        <input class="weight__input" id="weight-input" type="number" inputmode="decimal" step="0.1" placeholder="例：77.0" />
+        <div class="weight__row">
+          <button class="weight__btn" id="btn-weight-save">保存</button>
+        </div>
+        <div class="weight__note" id="weight-note"></div>
       </div>
     </section>
 
