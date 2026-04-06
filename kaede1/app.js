@@ -51,7 +51,7 @@ function loadDB() {
 }
 
 function saveDB() {
-  pruneDB();
+ // pruneDB();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.db));
 }
 
