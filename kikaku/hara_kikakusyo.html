@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>腹筋割人形 企画書</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --main: #111111;
+    --sub: #444444;
+    --pale: #F2F2F2;
+    --light: #DDDDDD;
+    --accent: #D40000;
+    --yellow: #FFD400;
+    --gray-text: #222222;
+    --gray-light: #888888;
+    --border: #CCCCCC;
+    --white: #FFFFFF;
+    --page-width: 794px;
+    --page-height: 1123px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #909090;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--gray-text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 32px 16px;
+  }
+
+  .page {
+    width: var(--page-width);
+    min-height: var(--page-height);
+    background: var(--white);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 16px 32px 12px;
+    border-bottom: 2px solid var(--main);
+    font-size: 10px;
+    color: var(--gray-light);
+    flex-shrink: 0;
+  }
+  .page-header .left { line-height: 1.7; }
+  .page-header .right { text-align: right; line-height: 1.7; }
+
+  .page-footer {
+    margin-top: auto;
+    padding: 12px 32px;
+    border-top: 1px solid var(--border);
+    font-size: 9px;
+    color: var(--gray-light);
+    flex-shrink: 0;
+  }
+
+  .page-body {
+    flex: 1;
+    padding: 40px 48px 32px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-badge {
+    display: inline-block;
+    background: var(--main);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 5px 14px;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    margin-bottom: 28px;
+    color: var(--gray-text);
+  }
+
+  .body-text {
+    font-size: 12.5px;
+    line-height: 2;
+    color: var(--gray-text);
+    margin-bottom: 16px;
+  }
+
+  /* COVER */
+  .cover-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    text-align: center;
+    width: 80%;
+  }
+  .cover-box {
+    border: 3px solid var(--main);
+    padding: 52px 44px;
+  }
+  .cover-title-jp {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    line-height: 1.4;
+    color: var(--main);
+  }
+  .cover-subtitle {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    color: var(--sub);
+    margin-top: 16px;
+  }
+  .cover-rule-line {
+    width: 60px; height: 3px;
+    background: var(--main);
+    margin: 20px auto;
+  }
+  .cover-meta {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    font-size: 12px;
+    line-height: 2;
+    color: var(--gray-text);
+    white-space: nowrap;
+  }
+  .cover-notice {
+    position: absolute;
+    bottom: 40px;
+    left: 48px;
+    font-size: 9px;
+    color: var(--gray-light);
+    line-height: 1.8;
+  }
+
+  /* CONCEPT */
+  .concept-lead {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.8;
+    margin-bottom: 32px;
+    color: var(--gray-text);
+  }
+  .concept-block {
+    background: var(--pale);
+    border-left: 4px solid var(--main);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    line-height: 2;
+    color: var(--gray-text);
+  }
+  .concept-manifesto {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 28px;
+  }
+  .concept-manifesto-item {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--main);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+
+  /* DETAIL */
+  .detail-section { margin-bottom: 26px; }
+  .detail-num { font-size: 11px; font-weight: 700; color: var(--sub); letter-spacing: 0.08em; margin-bottom: 5px; }
+  .detail-title { font-weight: 700; font-size: 14.5px; margin-bottom: 9px; padding-bottom: 5px; border-bottom: 2px solid var(--main); }
+  .detail-section p { font-size: 12.5px; line-height: 2; color: var(--gray-text); }
+
+  /* TAG */
+  .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .tag { background: var(--pale); border: 1.5px solid var(--main); padding: 4px 12px; font-size: 11px; color: var(--main); font-weight: 700; }
+
+  /* PHASE */
+  .phase-timeline { display: flex; align-items: center; gap: 0; margin: 20px 0 32px; }
+  .phase-box {
+    background: var(--main); color: white; font-weight: 700; font-size: 12.5px;
+    padding: 12px 18px; text-align: center; letter-spacing: 0.05em; flex: 1; position: relative;
+  }
+  .phase-box:not(:last-child)::after {
+    content: '';
+    position: absolute; right: -14px; top: 50%; transform: translateY(-50%);
+    border-left: 14px solid var(--main);
+    border-top: 22px solid transparent; border-bottom: 22px solid transparent; z-index: 1;
+  }
+  .phase-box .phase-sub { font-size: 10px; font-weight: 400; opacity: 0.85; margin-top: 4px; }
+  .phase-detail { margin-bottom: 20px; }
+  .phase-detail-title { font-weight: 700; font-size: 13px; margin-bottom: 8px; color: var(--sub); }
+  .phase-detail ul { padding-left: 18px; font-size: 12px; line-height: 2; color: var(--gray-text); }
+
+  /* SCOPE */
+  .scope-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
+  .scope-card { border: 1.5px solid var(--main); padding: 18px 18px 14px; }
+  .scope-card-title { font-weight: 700; font-size: 12px; letter-spacing: 0.05em; margin-bottom: 12px; color: var(--main); border-bottom: 2px solid var(--main); padding-bottom: 6px; }
+  .scope-card ul { padding-left: 16px; font-size: 11.5px; line-height: 2; color: var(--gray-text); }
+  .scope-card-later { grid-column: 1 / -1; border-color: var(--light); background: var(--pale); }
+
+  /* FLOW */
+  .flow-steps { display: flex; align-items: center; gap: 0; margin: 20px 0; flex-wrap: wrap; }
+  .flow-step { background: var(--pale); border: 1.5px solid var(--main); padding: 10px 16px; font-size: 11.5px; font-weight: 500; text-align: center; min-width: 100px; line-height: 1.5; color: var(--gray-text); }
+  .flow-step .step-sub { font-size: 9.5px; color: var(--gray-light); font-weight: 400; margin-top: 2px; }
+  .flow-arrow { font-size: 16px; color: var(--main); padding: 0 8px; flex-shrink: 0; }
+  .flow-result { background: var(--main); color: white; border: none; font-weight: 700; }
+
+  /* CONCLUSION */
+  .concl-item { margin-bottom: 26px; }
+  .concl-head { font-weight: 700; font-size: 12.5px; color: var(--main); border-bottom: 2px solid var(--main); padding-bottom: 6px; margin-bottom: 12px; letter-spacing: 0.05em; }
+
+  /* USER LIST */
+  .user-list { padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .user-list li { font-size: 12px; line-height: 1.7; padding-left: 16px; position: relative; color: var(--gray-text); }
+  .user-list li::before { content: '▸'; position: absolute; left: 0; color: var(--main); font-size: 10px; top: 3px; }
+
+  /* SCREEN FLOW TABLE */
+  .screen-table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-top: 12px; }
+  .screen-table th { background: var(--main); color: white; padding: 8px 12px; text-align: left; font-weight: 700; }
+  .screen-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); line-height: 1.7; vertical-align: top; }
+  .screen-table tr:nth-child(even) td { background: var(--pale); }
+
+  /* ACCENT BADGE */
+  .accent-badge { display: inline-block; background: var(--accent); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; margin-left: 6px; vertical-align: middle; }
+
+  /* STRIP */
+  .strip-bar { height: 4px; background: var(--main); margin-bottom: 24px; }
+
+  @page { size: A4; margin: 0; }
+  @media print {
+    body { background: white; padding: 0; gap: 0; }
+    .page { box-shadow: none; page-break-after: always; break-after: page; width: 210mm; min-height: 297mm; }
+    .page-body { overflow: visible; }
+    .detail-section, .phase-detail, .concl-item, .scope-grid, .flow-steps { break-inside: avoid; page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== PAGE 1: COVER ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">腹筋割人形　企画書<br>スマートフォン向け腹筋・筋トレ記録アプリ</div>
+    <div class="right">2026/02/18<br>企画書</div>
+  </div>
+
+  <div class="cover-center">
+    <div class="cover-box">
+      <div class="cover-title-jp">腹筋割人形</div>
+      <div class="cover-rule-line"></div>
+      <div class="cover-subtitle">スマートフォン向け腹筋・筋トレ記録アプリ</div>
+    </div>
+  </div>
+
+  <div class="cover-meta">
+    作成日：2026/02/18<br>
+    作成者：桝田 心護<br>
+    実行場所：GitHub Pages<br>
+    制作形式：HTML / CSS / JavaScript<br>
+    動作環境：スマートフォン（iOS / Android）ブラウザ
+  </div>
+
+  <div class="cover-notice">
+    こちらの資料は個人情報も含まれます。<br>
+    情報の口外、または取り扱いは控えてください。
+  </div>
+</div>
+
+<!-- ========== PAGE 2: CONCEPT ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">腹筋割人形　企画書　／　スマートフォン向け腹筋・筋トレ記録アプリ</div>
+    <div class="right">企画書</div>
+  </div>
+  <div class="page-body">
+    <div class="section-badge">コンセプト</div>
+    <div class="concept-lead">
+      「何回やるか」より、<br>「今日どう動くか」を決める。
+    </div>
+    <div class="body-text">
+      一般的な筋トレアプリは、メニューを管理し、回数を記録し、達成率を表示することを主目的にしている。アプリがルールを決め、ユーザーはそれに従う構造である。
+    </div>
+    <div class="body-text">
+      しかし本アプリは、それとは異なる。
+    </div>
+    <div class="concept-block">
+      本アプリの目的は、ユーザーに「今日の自分の状態」を起点として行動を設計させることである。腹筋100回という基本量は固定されているが、筋肉痛の度合いによって自動的に減算され、追加部位・難易度・randomの組み合わせによって毎日異なるセッションが生まれる。
+    </div>
+    <div class="body-text">
+      タイトル「腹筋割人形」は、くるみ割り人形からのオマージュである。毎日の腹筋が、少しずつ腹筋を「割っていく」ための道具という意味を持つ。
+    </div>
+    <div class="concept-manifesto">
+      <div class="concept-manifesto-item">管理しない。記録する。</div>
+      <div class="concept-manifesto-item">今日の状態を起点にする。</div>
+      <div class="concept-manifesto-item">余計なUIを置かない。</div>
+      <div class="concept-manifesto-item">毎日開くものを作る。</div>
+    </div>
+  </div>
+  <div class="page-footer">こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。</div>
+</div>
+
+<!-- ========== PAGE 3: TARGET / CORE / DIFF / MONETIZE ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">腹筋割人形　企画書　／　スマートフォン向け腹筋・筋トレ記録アプリ</div>
+    <div class="right">企画書</div>
+  </div>
+  <div class="page-body">
+    <div class="section-badge">ターゲット・コア体験・差別化・マネタイズ</div>
+    <div style="display:flex;flex-direction:column;gap:26px;">
+
+      <div>
+        <div class="concl-head">ターゲット</div>
+        <ul class="user-list">
+          <li>毎日腹筋を続けたいが、管理アプリが続かなかった人</li>
+          <li>その日の体調や筋肉痛によって無理をしてしまう人</li>
+          <li>シンプルな操作で記録だけしたい人</li>
+          <li>腹筋以外の部位も合わせてトレーニングしている人</li>
+          <li>スマートフォン1台でトレーニング中に操作したい人</li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="concl-head">コア体験</div>
+        <div class="concept-block" style="margin-bottom:0;">
+          画面を左右にタップするだけで腹筋・腹斜筋をカウントする、余計なUIのないシンプルな操作感。今日の筋肉痛・追加部位・難易度を設定することで、毎日違うセッションが自動で生成される。
+        </div>
+      </div>
+
+      <div>
+        <div class="concl-head">差別化</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="background:#F5F5F5;padding:14px 16px;">
+            <div style="font-weight:700;font-size:11px;color:var(--gray-light);margin-bottom:6px;">一般的な筋トレアプリ</div>
+            <div style="font-size:11.5px;line-height:1.9;">メニューを事前に設定し、こなすことを管理する。アプリが主体でユーザーが従う。</div>
+          </div>
+          <div style="background:var(--pale);padding:14px 16px;border:1.5px solid var(--main);">
+            <div style="font-weight:700;font-size:11px;color:var(--main);margin-bottom:6px;">腹筋割人形 ← 本作</div>
+            <div style="font-size:11.5px;line-height:1.9;">今日の状態を入力すると回数が決まる。ユーザーが主体でアプリが従う。</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="concl-head">マネタイズ</div>
+        <div class="body-text" style="margin-bottom:0;">無料公開。ブラウザで動作し、インストール不要。非商業作品。</div>
+      </div>
+
+    </div>
+  </div>
+  <div class="page-footer">こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。</div>
+</div>
+
+<!-- ========== PAGE 4: SCREENSHOTS ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">腹筋割人形　企画書　／　スマートフォン向け腹筋・筋トレ記録アプリ</div>
+    <div class="right">企画書</div>
+  </div>
+  <div class="page-body">
+    <div class="section-badge">画面イメージ</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:8px;">01　ホーム画面</div>
+        <img src="hara_1.png" alt="ホーム画面" style="width:100%;border:1.5px solid var(--border);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:8px;">02　デイリー（カウント画面）</div>
+        <img src="hara_2.png" alt="デイリーカウント" style="width:100%;border:1.5px solid var(--border);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:8px;">03　トータル（結果画面）</div>
+        <img src="hara_3.png" alt="トータル画面" style="width:100%;border:1.5px solid var(--border);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:8px;">04　カレンダー</div>
+        <img src="hara_4.png" alt="カレンダー" style="width:100%;border:1.5px solid var(--border);">
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。</div>
+</div>
+
+<!-- ========== PAGE 5: GAME SYSTEM ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">腹筋割人形　企画書　／　スマートフォン向け腹筋・筋トレ記録アプリ</div>
+    <div class="right">企画書</div>
+  </div>
+  <div class="page-body">
+    <div class="section-badge">アプリシステム</div>
+    <div class="section-title">セッションの設計と画面構成</div>
+    <div class="strip-bar"></div>
+
+    <div class="detail-section">
+      <div class="detail-num">セッションの基本構造</div>
+      <div class="detail-title">今日の設定 → デイリー → 追加部位 → トータル</div>
+      <div class="flow-steps" style="margin-bottom:12px;">
+        <div class="flow-step">筋肉痛設定<div class="step-sub">100回から減算</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">デイリー<div class="step-sub">腹筋＋腹斜筋</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">部位・難易度<div class="step-sub">追加部位を選択</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">追加部位<div class="step-sub">TAP でカウント</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-result flow-step">トータル</div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">デイリー設計</div>
+      <div class="detail-title">腹筋＋腹斜筋＝100回（筋肉痛で減算）</div>
+      <p>基本は腹筋50回・腹斜筋50回の合計100回。筋肉痛の設定（厳しめ・普通・甘め・なし）によりランダム減算が発生し、今日の実施回数が決まる。画面左タップで腹筋、右タップで腹斜筋をカウントし、残り0になるとFinishボタンが出現する。</p>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">追加部位・難易度設計</div>
+      <div class="detail-title">10部位 × 3難易度 × random切替</div>
+      <p>追加部位は「もも・ふくらはぎ・腰・握力・腕・肩・背筋・広背筋・首・ランダム」の10種から選択。難易度はeasy（20回）・normal（35回）・hard（50回）。randomをonにすると難易度帯内でランダム回数が決定される。</p>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">継続性</div>
+      <div class="detail-title">カレンダードットが積み上がることが動機になる</div>
+      <p>トレーニングを記録した日はカレンダーにドットが表示される。達成率（%）も合わせて表示されるため、続けるほど視覚的な記録が積み上がる。新記録を出した日には黄色バッジが表示される。ゲーム的な報酬ではなく、自分の軌跡が見えることが次の日の動機になる設計である。</p>
+    </div>
+
+    <div class="detail-section" style="margin-bottom:0;">
+      <div class="detail-num">全画面一覧</div>
+      <div class="detail-title">11画面構成</div>
+      <table class="screen-table">
+        <tr><th>画面</th><th>役割</th></tr>
+        <tr><td>HOME</td><td>START・各機能へのナビゲーション。筋肉痛設定・グラフ・カレンダー・オプション・体重計へのアクセス。</td></tr>
+        <tr><td>デイリー（core）</td><td>左右タップで腹筋・腹斜筋をカウント。残り表示。</td></tr>
+        <tr><td>追加部位選択（pick）</td><td>スワイプ式で部位を選ぶ。</td></tr>
+        <tr><td>難易度（diff）</td><td>easy / normal / hard + random切替。</td></tr>
+        <tr><td>追加部位カウント（extra）</td><td>画面TAP でカウント。Finish後に次部位追加も可能。</td></tr>
+        <tr><td>トータル（total）</td><td>今日の合計・達成率（120回=100%）・新記録表示。</td></tr>
+        <tr><td>筋肉痛（sore）</td><td>厳しめ・普通・甘め・なしの4段階から選択。100回からランダム減算。</td></tr>
+        <tr><td>オプション（option）</td><td>追加部位・難易度・random・筋肉痛の設定を一覧確認・変更。</td></tr>
+        <tr><td>体重計（weight）</td><td>今日の体重を記録（kg）。グラフと連動。</td></tr>
+        <tr><td>カレンダー</td><td>月別カレンダー＋日付詳細。記録のある日はドット表示。</td></tr>
+        <tr><td>グラフ</td><td>達成度・トータル回数・体重推移を棒グラフ/折れ線で表示。1日/1週間/全体切替。</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="page-footer">こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。</div>
+</div>
+
+<!-- ========== PAGE 6: UI DESIGN ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">腹筋割人形　企画書　／　スマートフォン向け腹筋・筋トレ記録アプリ</div>
+    <div class="right">企画書</div>
+  </div>
+  <div class="page-body">
+    <div class="section-badge">UI思想</div>
+    <div class="section-title">モノクロ・フラット・直感操作</div>
+    <div class="strip-bar"></div>
+
+    <div class="detail-section">
+      <div class="detail-num">01　カラーテーマ</div>
+      <div class="detail-title">黒・白・グレーのみ＋アクセント2色</div>
+      <p>基本カラーは黒（#000）・白（#FFF）・グレー（#B9B9B9 / #E9E9E9）のみ。アクセントとして赤（#D40000）と黄（#FFD400）を最小限使用する。赤はドット・ランダム選択状態、黄は新記録バッジにのみ使用し、それ以外はすべてモノクロで構成する。</p>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">02　タップUI設計</div>
+      <div class="detail-title">画面を「左半分・右半分」として使う</div>
+      <p>デイリー画面は画面全体をタップエリアとして使用する。左半分タップで腹筋、右半分タップで腹斜筋をカウントする。タップのたびに画面が少し暗くなるフィードバックを持ち、視覚的に「押せた」感を伝える。ボタンを配置しないことで、運動中の誤操作を防ぐ。</p>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">03　フォント・タイポグラフィ</div>
+      <div class="detail-title">システムフォントのみ・weight900で力強さを出す</div>
+      <p>外部フォントを読み込まず、system-uiを使用する。font-weight: 900（Black）を主要な数値・ラベルに使用し、シンプルな画面に力強さを加える。ホームのタイトルは66px / font-weight: 900で大きく表示し、アプリ起動時に目的を即座に伝える。</p>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">04　safe-area対応</div>
+      <div class="detail-title">iPhone ノッチ・ホームバー対応</div>
+      <p>topbar・bottombarにenv(safe-area-inset-top)・env(safe-area-inset-bottom)を適用し、iPhoneのノッチ・Dynamic Island・ホームバーにUIが被らないよう対応する。</p>
+    </div>
+
+    <div class="detail-section" style="margin-bottom:0;">
+      <div class="detail-num">05　背景テキスト演出</div>
+      <div class="detail-title">難易度・部位名を薄く背景に表示</div>
+      <p>難易度選択画面・追加部位カウント画面では、現在の状態（"easy" / "hard" / 部位名）を大きなテキスト（opacity: 0.10〜0.12）で背景に表示する。余計なラベルを置かずに状態を伝えるデザインとして機能する。</p>
+    </div>
+  </div>
+  <div class="page-footer">こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。</div>
+</div>
+
+<!-- ========== PAGE 7: TECH SPEC ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">腹筋割人形　企画書　／　スマートフォン向け腹筋・筋トレ記録アプリ</div>
+    <div class="right">企画書</div>
+  </div>
+  <div class="page-body">
+    <div class="section-badge">技術仕様</div>
+    <div class="section-title">実装の全体像</div>
+
+    <div class="detail-section">
+      <div class="detail-num">技術スタック</div>
+      <div class="detail-title">HTML / CSS / JavaScript によるブラウザアプリ</div>
+      <p>外部ライブラリを使わず、HTML / CSS / JavaScript のみで実装する。ファイルはHTML・CSS・JSを分割した構成とし、GitHub Pagesで公開する。データはlocalStorageに保存し、直近6ヶ月分を保持する。</p>
+      <div class="tag-list">
+        <span class="tag">HTML5</span>
+        <span class="tag">CSS3（CSS変数）</span>
+        <span class="tag">Vanilla JavaScript</span>
+        <span class="tag">localStorage（6ヶ月保存）</span>
+        <span class="tag">Canvas API（グラフ）</span>
+        <span class="tag">safe-area対応</span>
+        <span class="tag">GitHub Pages</span>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">ファイル構成</div>
+      <div class="detail-title">3ファイル分割構成</div>
+      <div style="background:var(--pale);padding:12px 16px;font-family:monospace;font-size:11.5px;line-height:2;color:var(--gray-text);">
+        index.html：画面構造（全11画面をsectionで管理）<br>
+        styles.css：全画面のデザイン・レスポンシブ・safe-area対応<br>
+        app.js：状態管理・画面遷移・セッションロジック・グラフ描画
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">データ設計</div>
+      <div class="detail-title">localStorage キー設計</div>
+      <p style="margin-bottom:8px;">全データは <code style="background:var(--pale);padding:1px 6px;">ren_abs_app_v3</code> キーにJSON形式で保存する。日付（YYYY-MM-DD）をキーとして各日のセッションデータを管理する。</p>
+      <div style="background:var(--pale);padding:12px 16px;font-family:monospace;font-size:11.5px;line-height:2;color:var(--gray-text);">
+        days[YYYY-MM-DD].sessions[]：セッション配列<br>
+        days[YYYY-MM-DD].totals.doneTotal：その日の合計回数<br>
+        days[YYYY-MM-DD].bestDoneTotal：ベスト記録<br>
+        days[YYYY-MM-DD].weightKg：体重（kg）<br>
+        days[YYYY-MM-DD].weightAt：体重記録タイムスタンプ
+      </div>
+    </div>
+
+    <div class="detail-section" style="margin-bottom:0;">
+      <div class="detail-num">グラフ設計</div>
+      <div class="detail-title">Canvas APIによる自前描画</div>
+      <p>外部グラフライブラリを使わず、Canvas APIで棒グラフ（達成度・トータル回数）と折れ線グラフ（体重推移）を描画する。1日・1週間・全体（直近30日）の3スコープを切り替えて表示する。</p>
+    </div>
+  </div>
+  <div class="page-footer">こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。</div>
+</div>
+
+<!-- ========== PAGE 8: PHASE ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">腹筋割人形　企画書　／　スマートフォン向け腹筋・筋トレ記録アプリ</div>
+    <div class="right">企画書</div>
+  </div>
+  <div class="page-body">
+    <div class="section-badge">開発フェーズ</div>
+    <div class="section-title">原型から現在版への流れ</div>
+
+    <div class="phase-timeline">
+      <div class="phase-box">原型<br><span class="phase-sub">2025/10</span></div>
+      <div class="phase-box">整理<br><span class="phase-sub">2026/02/16</span></div>
+      <div class="phase-box">実装<br><span class="phase-sub">2026/02/17</span></div>
+      <div class="phase-box">完成<br><span class="phase-sub">2026/02/18</span></div>
+    </div>
+
+    <div class="phase-detail">
+      <div class="phase-detail-title">原型（2025/10）：Python / Flask 版</div>
+      <ul>
+        <li>デイリー・週ローテ・ランダム生成・ダイス式回数決定</li>
+        <li>カレンダー・消費カロリー計算を実装した筋トレ管理システム</li>
+        <li>サーバーサイド中心の構成で、スマホ向けUIではなかった</li>
+      </ul>
+    </div>
+
+    <div class="phase-detail">
+      <div class="phase-detail-title">仕様整理（2026/02/16）：今の核仕様を定義</div>
+      <ul>
+        <li>「デイリー: 腹筋＋腹斜筋＝100」「追加部位必須」「筋肉痛減算」を確定</li>
+        <li>カレンダー・グラフ・localStorageの方針を決定</li>
+        <li>Python版からHTML/CSS/JS版への移行を決定</li>
+      </ul>
+    </div>
+
+    <div class="phase-detail">
+      <div class="phase-detail-title">実装（2026/02/17）：HTML/JS/CSS版が動き始める</div>
+      <ul>
+        <li>home / core / pick / diff / extra / graph / calendar の画面構成が確定</li>
+        <li>localStorageによる6ヶ月保存を実装</li>
+        <li>Finishボタン・グラフ・追加部位・randomを実装</li>
+      </ul>
+    </div>
+
+    <div class="phase-detail" style="margin-bottom:0;">
+      <div class="phase-detail-title">完成版（2026/02/18〜19）：現在の構造に整理</div>
+      <ul>
+        <li>0以下対応・体重記録・体重グラフ（折れ線）を追加</li>
+        <li>safe-area対応・スマホ専用UIに最適化</li>
+        <li>GitHub Pages での公開・日常使用を開始</li>
+      </ul>
+    </div>
+  </div>
+  <div class="page-footer">こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。</div>
+</div>
+
+<!-- ========== PAGE 9: SCOPE ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">腹筋割人形　企画書　／　スマートフォン向け腹筋・筋トレ記録アプリ</div>
+    <div class="right">企画書</div>
+  </div>
+  <div class="page-body">
+    <div class="section-badge">スコープ</div>
+    <div class="section-title">現在版の範囲</div>
+    <div class="body-text">本アプリは機能が広がりすぎないよう、現在版のスコープを明確にする。</div>
+
+    <div class="scope-grid">
+      <div class="scope-card">
+        <div class="scope-card-title">✅ 現在版で実装済み</div>
+        <ul>
+          <li>デイリー腹筋カウント（左右タップ）</li>
+          <li>筋肉痛による回数減算（ランダム）</li>
+          <li>追加部位選択（10種）</li>
+          <li>難易度設定（easy / normal / hard）</li>
+          <li>random回数モード</li>
+          <li>複数部位の追加ループ</li>
+          <li>トータル・達成率表示（120回=100%）</li>
+          <li>新記録バッジ</li>
+          <li>カレンダー（月別・日付詳細）</li>
+          <li>グラフ（1日/1週間/全体）</li>
+          <li>体重記録・体重推移グラフ</li>
+          <li>localStorageに6ヶ月保存</li>
+          <li>safe-area対応（iOS）</li>
+          <li>GitHub Pagesで公開</li>
+        </ul>
+      </div>
+      <div class="scope-card">
+        <div class="scope-card-title">🚫 現在版ではやらないこと</div>
+        <ul>
+          <li>ログイン・アカウント機能</li>
+          <li>クラウド同期・複数端末共有</li>
+          <li>通知・リマインダー機能</li>
+          <li>消費カロリー計算</li>
+          <li>週ローテーションメニュー</li>
+          <li>ネイティブアプリ（App Store / Google Play）</li>
+          <li>他ユーザーとの比較・ランキング</li>
+          <li>AI によるメニュー自動生成</li>
+          <li>BGM・SE</li>
+        </ul>
+      </div>
+      <div class="scope-card scope-card-later">
+        <div class="scope-card-title">🔜 後回しにしてよいもの</div>
+        <ul>
+          <li>ドラッグ操作によるカレンダー移動　／　週単位の統計グラフ強化　／　データエクスポート（CSV）</li>
+          <li>Lv別平均時間の自動補正（YTPとの連携構想）　／　目標設定・マイルストーン機能</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。</div>
+</div>
+
+<!-- ========== PAGE 10: CONCLUSION ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">腹筋割人形　企画書　／　スマートフォン向け腹筋・筋トレ記録アプリ</div>
+    <div class="right">企画書</div>
+  </div>
+  <div class="page-body">
+    <div class="section-badge">企画の結論</div>
+    <div class="concept-lead">
+      必需品として毎日開かれる<br>アプリを作る。
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:26px;margin-top:8px;">
+
+      <div class="concl-item">
+        <div class="concl-head">01　なぜこの設計思想か</div>
+        <div class="body-text" style="margin-bottom:0;">
+          管理アプリが続かない理由のひとつは、アプリがルールを決め、ユーザーがそれに従う構造にある。本アプリは逆で、今日の筋肉痛・体調・やる気を起点として回数が決まる。「今日は少なくていい」という判断をアプリが肯定することで、続けることへの心理的障壁を下げる。
+        </div>
+      </div>
+
+      <div class="concl-item">
+        <div class="concl-head">02　なぜ続けてもらえるか</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div style="background:#F5F5F5;padding:14px 16px;">
+            <div style="font-weight:700;font-size:11px;color:var(--gray-light);margin-bottom:6px;">黒物アプリ（嗜好品）</div>
+            <div style="font-size:11.5px;line-height:1.9;">ゲーム・SNSなど。なくても何とかなる。依存性で継続を促す。</div>
+          </div>
+          <div style="background:var(--pale);padding:14px 16px;border:1.5px solid var(--main);">
+            <div style="font-weight:700;font-size:11px;color:var(--main);margin-bottom:6px;">白物アプリ（生活必需品）← 本作</div>
+            <div style="font-size:11.5px;line-height:1.9;">毎日腹筋をする日には必ず開く。ないと記録できない。</div>
+          </div>
+        </div>
+        <div class="body-text" style="margin-bottom:0;">
+          本アプリの継続動機は依存性ではなく、「今日の記録をつけたい」という習慣である。カレンダーにドットが積み上がることが、次の日も開く動機になる。
+        </div>
+      </div>
+
+      <div class="concl-item" style="margin-bottom:0;">
+        <div class="concl-head">03　発展構想</div>
+        <div class="body-text" style="margin-bottom:0;">
+          同じポートフォリオ内に制作したYTP行動予定設計アプリと、設計思想の親和性が高い。YTPが「予定前の余裕を設計する」ツールであるのに対し、本アプリは「今日の体調を起点に行動量を決める」ツールである。将来的には両アプリのデータを連携し、体調・行動量・予定管理を統合する構想を持つ。
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="page-footer">こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。</div>
+</div>
+
+<script>
+(function() {
+  const PAGE_H = 1123;
+  const HEADER_H = 63;
+  const FOOTER_H = 34;
+  const BODY_PADDING_V = 72;
+  const DRAWABLE_H = PAGE_H - HEADER_H - FOOTER_H - BODY_PADDING_V;
+
+  function splitPage(page) {
+    const body = page.querySelector('.page-body');
+    if (!body) return;
+    const children = Array.from(body.children);
+    if (children.length === 0) return;
+
+    const headerHTML = page.querySelector('.page-header')?.outerHTML || '';
+    const footerHTML = page.querySelector('.page-footer')?.outerHTML || '';
+
+    let currentH = 0;
+    let pageGroups = [[]];
+
+    for (const child of children) {
+      const h = child.getBoundingClientRect().height;
+      if (currentH + h > DRAWABLE_H && pageGroups[pageGroups.length - 1].length > 0) {
+        pageGroups.push([]);
+        currentH = 0;
+      }
+      pageGroups[pageGroups.length - 1].push(child);
+      currentH += h;
+    }
+
+    if (pageGroups.length <= 1) return;
+
+    const fragment = document.createDocumentFragment();
+    pageGroups.forEach((group) => {
+      const newPage = document.createElement('div');
+      newPage.className = page.className;
+      const newBody = document.createElement('div');
+      newBody.className = 'page-body';
+      group.forEach(el => newBody.appendChild(el.cloneNode(true)));
+      newPage.innerHTML = headerHTML + footerHTML;
+      newPage.insertBefore(newBody, newPage.querySelector('.page-footer'));
+      fragment.appendChild(newPage);
+    });
+
+    page.parentNode.replaceChild(fragment, page);
+  }
+
+  window.addEventListener('load', function() {
+    Array.from(document.querySelectorAll('.page')).forEach((page, i) => {
+      if (i === 0) return;
+      splitPage(page);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

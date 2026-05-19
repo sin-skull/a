@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YTP行動予定設計アプリ 企画書</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-main: #7EC8A8;
+    --green-light: #B8DFD0;
+    --green-pale: #E8F5EF;
+    --green-dark: #4A9A78;
+    --gray-text: #4A4A4A;
+    --gray-light: #888;
+    --border: #D0E8DC;
+    --white: #fff;
+    --page-width: 794px;
+    --page-height: 1123px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #D8D8D8;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--gray-text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 32px 16px;
+  }
+
+  /* ======= PAGE ======= */
+  .page {
+    width: var(--page-width);
+    min-height: var(--page-height);
+    background: var(--white);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  }
+
+  /* ======= HEADER BAR ======= */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 16px 32px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--gray-light);
+    flex-shrink: 0;
+  }
+  .page-header .left { line-height: 1.7; }
+  .page-header .right { text-align: right; line-height: 1.7; }
+
+  /* ======= FOOTER BAR ======= */
+  .page-footer {
+    margin-top: auto;
+    padding: 12px 32px;
+    border-top: 1px solid var(--border);
+    font-size: 9px;
+    color: var(--gray-light);
+    flex-shrink: 0;
+  }
+
+  /* ======= BODY AREA ======= */
+  .page-body {
+    flex: 1;
+    padding: 40px 48px 32px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ======= SECTION BADGE ======= */
+  .section-badge {
+    display: inline-block;
+    background: var(--green-main);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 5px 14px;
+    margin-bottom: 20px;
+  }
+
+  /* ======= SECTION TITLE ======= */
+  .section-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    margin-bottom: 28px;
+    color: var(--gray-text);
+  }
+
+  /* ======= BODY TEXT ======= */
+  .body-text {
+    font-size: 12.5px;
+    line-height: 2;
+    color: var(--gray-text);
+    margin-bottom: 16px;
+  }
+
+  /* ======= DECORATIVE CIRCLES ======= */
+  .deco {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--green-pale);
+    z-index: 0;
+  }
+
+  /* ======= PAGE 1: COVER ======= */
+  .cover {
+    display: flex;
+    flex-direction: column;
+  }
+  .cover .deco-tl {
+    width: 220px; height: 220px;
+    top: -60px; left: -60px;
+    background: var(--green-light);
+    opacity: 0.5;
+  }
+  .cover .deco-tr {
+    width: 160px; height: 160px;
+    top: 40px; right: -40px;
+    background: var(--green-pale);
+  }
+  .cover .deco-br {
+    width: 300px; height: 300px;
+    bottom: -100px; right: -80px;
+    background: var(--green-light);
+    opacity: 0.3;
+  }
+  .cover .deco-bl {
+    width: 120px; height: 120px;
+    bottom: 200px; left: 40px;
+    background: var(--green-pale);
+    opacity: 0.6;
+  }
+  .cover-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    text-align: center;
+    width: 80%;
+  }
+  .cover-box {
+    border: 2px solid var(--gray-light);
+    border-radius: 16px;
+    padding: 48px 40px;
+    margin-bottom: 0;
+  }
+  .cover-title-jp {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    line-height: 1.6;
+    color: var(--gray-text);
+  }
+  .cover-subtitle {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--gray-text);
+    margin-top: 12px;
+  }
+  .cover-meta {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    font-size: 12px;
+    line-height: 2;
+    color: var(--gray-text);
+  }
+  .cover-notice {
+    position: absolute;
+    bottom: 40px;
+    left: 48px;
+    font-size: 9px;
+    color: var(--gray-light);
+    line-height: 1.8;
+  }
+
+  /* ======= PAGE 2: CONCEPT ======= */
+  .concept-lead {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    line-height: 1.7;
+    margin-bottom: 32px;
+    color: var(--gray-text);
+  }
+  .concept-block {
+    background: var(--green-pale);
+    border-left: 4px solid var(--green-main);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    line-height: 2;
+  }
+  .concept-manifesto {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 28px;
+  }
+  .concept-manifesto-item {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--green-dark);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+
+  /* ======= PAGE 3: PHASE / TIMELINE ======= */
+  .phase-header {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .phase-timeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 24px 0 36px;
+  }
+  .phase-box {
+    background: var(--green-main);
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 12px 18px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    flex: 1;
+    position: relative;
+  }
+  .phase-box:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-left: 14px solid var(--green-main);
+    border-top: 22px solid transparent;
+    border-bottom: 22px solid transparent;
+    z-index: 1;
+  }
+  .phase-box .phase-sub {
+    font-size: 10px;
+    font-weight: 400;
+    opacity: 0.85;
+    margin-top: 4px;
+  }
+  .phase-arrow {
+    width: 32px;
+    text-align: center;
+    color: #aaa;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .phase-detail {
+    margin-bottom: 20px;
+  }
+  .phase-detail-title {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 8px;
+    color: var(--green-dark);
+  }
+  .phase-detail ul {
+    padding-left: 18px;
+    font-size: 12px;
+    line-height: 2;
+    color: var(--gray-text);
+  }
+
+  /* ======= PAGE 4: SCOPE ======= */
+  .scope-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 16px;
+  }
+  .scope-card {
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    padding: 20px 20px 16px;
+  }
+  .scope-card-title {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+    color: var(--green-dark);
+    border-bottom: 2px solid var(--green-main);
+    padding-bottom: 6px;
+  }
+  .scope-card ul {
+    padding-left: 16px;
+    font-size: 11.5px;
+    line-height: 2;
+  }
+  .scope-card-later {
+    grid-column: 1 / -1;
+    border-color: var(--green-light);
+    background: var(--green-pale);
+  }
+
+  /* ======= PAGE 5: FLOW ======= */
+  .flow-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 16px;
+  }
+  .flow-route {
+    margin-bottom: 32px;
+  }
+  .flow-route-label {
+    display: inline-block;
+    background: var(--green-main);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 14px;
+    margin-bottom: 14px;
+    letter-spacing: 0.08em;
+  }
+  .flow-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    background: var(--green-pale);
+    border: 1.5px solid var(--green-light);
+    border-radius: 4px;
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    min-width: 120px;
+    line-height: 1.5;
+  }
+  .flow-step .step-sub {
+    font-size: 10px;
+    color: var(--gray-light);
+    font-weight: 400;
+    margin-top: 2px;
+  }
+  .flow-arrow {
+    font-size: 16px;
+    color: var(--green-main);
+    padding: 0 8px;
+    flex-shrink: 0;
+  }
+  .flow-result {
+    background: var(--green-main);
+    color: white;
+    border: none;
+    font-weight: 700;
+  }
+
+  /* ======= PAGE 6: COMMON ======= */
+  .common-section {
+    margin-bottom: 28px;
+  }
+  .common-section-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green-dark);
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .common-section-title {
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .common-section p {
+    font-size: 12.5px;
+    line-height: 2;
+    color: var(--gray-text);
+  }
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .tag {
+    background: var(--green-pale);
+    border: 1px solid var(--green-light);
+    border-radius: 2px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: var(--green-dark);
+    font-weight: 500;
+  }
+  .user-list {
+    padding-left: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .user-list li {
+    font-size: 12px;
+    line-height: 1.7;
+    padding-left: 16px;
+    position: relative;
+    color: var(--gray-text);
+  }
+  .user-list li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--green-main);
+    font-size: 10px;
+    top: 3px;
+  }
+
+  /* ======= PRINT ======= */
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  @media print {
+    body { background: white; padding: 0; gap: 0; }
+    .page {
+      box-shadow: none;
+      page-break-after: always;
+      break-after: page;
+      width: 210mm;
+      min-height: 297mm;
+    }
+    .page-body { overflow: visible; }
+    .detail-section, .phase-detail, .concl-item, .scope-grid, .flow-route, .common-section {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== PAGE 1: COVER ========== -->
+<div class="page cover">
+
+  <div class="page-header">
+    <div class="left">
+      YTP行動予定設計 アプリ 企画書・完成版<br>
+      余裕適正度に基づく行動開始支援アプリ
+    </div>
+    <div class="right">
+      2026/05/18<br>
+      企画書
+    </div>
+  </div>
+
+  <div class="cover-center">
+    <div class="cover-box">
+      <div class="cover-title-jp">
+        Ｙ Ｔ Ｐ 行 動 設 計 アプリ
+      </div>
+      <div class="cover-subtitle">企　画　書</div>
+    </div>
+  </div>
+
+  <div class="cover-meta">
+    作成日：2026/05/18<br>
+    作成者：桝田 心護<br>
+    実行場所：GitHub<br>
+    制作形式：HTML / CSS / JavaScript
+  </div>
+
+  <div class="cover-notice">
+    こちらの資料は個人情報も含まれます。<br>
+    情報の口外、または取り扱いは控えてください。
+  </div>
+</div>
+
+<!-- ========== PAGE 2: CONCEPT ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">
+      YTP行動予定設計アプリ 企画書・完成版<br>
+      余裕適正度に基づく行動開始支援アプリ
+    </div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">コンセプト</div>
+
+    <div class="concept-lead">
+      その人には、その人の<br>動ける余裕がある。
+    </div>
+
+    <div class="body-text">
+      一般的な予定管理アプリやチェックリストアプリは、予定を並べたり、やることを管理したり、通知で行動を促したりすることを主目的にしている。
+    </div>
+    <div class="body-text">
+      しかし本アプリは、それとは異なる。
+    </div>
+
+    <div class="concept-block">
+      本アプリの目的は、ユーザーに行動を命令することではなく、予定前に必要な行動をユーザー自身がどの程度重く認識しているかを固定し、その日の状態に応じて「何分前から動くとよいか」を算出することである。
+    </div>
+
+    <div class="body-text">
+      その中心指標として、YTP（余裕適正度ポイント）を用いる。余裕は多ければよいわけではない。少なすぎると焦って崩れ、多すぎるとスマホ・二度寝・別行動に流れる。本アプリは、その人にとっての「適正な余裕」を算出する。
+    </div>
+
+    <div class="concept-manifesto">
+      <div class="concept-manifesto-item">入力を強制しない。</div>
+      <div class="concept-manifesto-item">行動を命令しない。</div>
+      <div class="concept-manifesto-item">人格を評価しない。</div>
+      <div class="concept-manifesto-item">今日の行動認識を固定し、その日のYTPに合わせて予定を組む。</div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。
+  </div>
+</div>
+
+<!-- ========== PAGE 2.5: YTP概念説明 ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">
+      YTP行動予定設計アプリ 企画書・完成版<br>
+      余裕適正度に基づく行動開始支援アプリ
+    </div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">YTPとは</div>
+    <div class="section-title">余裕適正度ポイント</div>
+
+    <div class="body-text">
+      YTPは「高い方が良い・低い方が悪い」という指標ではない。その人が、その日に、最も行動開始しやすい余裕幅を数値化したものである。
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:16px; margin-top:8px;">
+
+      <div style="display:flex; gap:16px; align-items:stretch;">
+        <div style="width:6px; background:var(--green-light); border-radius:3px; flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:13px; color:var(--green-dark); margin-bottom:4px;">基礎YTP</div>
+          <div style="font-size:12.5px; line-height:1.9; color:var(--gray-text);">初回20問から算出される、その人の基本的な余裕適正。「出発の○分前から動くと安定しやすい」という基準値。</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:16px; align-items:stretch;">
+        <div style="width:6px; background:var(--green-light); border-radius:3px; flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:13px; color:var(--green-dark); margin-bottom:4px;">最低YTP</div>
+          <div style="font-size:12.5px; line-height:1.9; color:var(--gray-text);">最低限、動ける可能性がある時間。ただし安定ラインではなく、準備漏れや焦りが起きやすい。</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:16px; align-items:stretch;">
+        <div style="width:6px; background:var(--green-main); border-radius:3px; flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:13px; color:var(--green-dark); margin-bottom:4px;">適正YTP　※推奨値</div>
+          <div style="font-size:12.5px; line-height:1.9; color:var(--gray-text);">最低YTPと上限YTPの中間にある実用上の推奨値。この時間帯が最も安定して行動開始できる。</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:16px; align-items:stretch;">
+        <div style="width:6px; background:var(--green-light); border-radius:3px; flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:13px; color:var(--green-dark); margin-bottom:4px;">上限YTP</div>
+          <div style="font-size:12.5px; line-height:1.9; color:var(--gray-text);">これ以上余裕を作ると逆に崩れやすい時間。上限を超えた場合、アプリは「もっと早く起きる」ことを勧めない。代わりに行動の組み替えを提示する。</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:16px; align-items:stretch;">
+        <div style="width:6px; background:var(--green-dark); border-radius:3px; flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:13px; color:var(--green-dark); margin-bottom:4px;">今日のYTP</div>
+          <div style="font-size:12.5px; line-height:1.9; color:var(--gray-text);">毎日の状態によって変動するYTP。基礎YTPに眠気・体調・スマホ逸脱リスク・準備の重さ・予定の重要度を加味して算出する。YTPは固定診断ではなく、今日の行動設計値として扱う。</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:24px; background:var(--green-pale); padding:16px 20px; border-radius:2px;">
+      <div style="font-size:12px; line-height:2; color:var(--gray-text);">
+        例）最低YTP：20分　／　適正YTP：35分　／　上限YTP：55分<br>
+        20分前では動けるが不安定。35分前が最も安定しやすい。55分を超えると余裕過多でスマホ・二度寝に流れやすくなる。
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。
+  </div>
+</div>
+
+<!-- ========== PAGE: SCREENSHOTS ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">YTP行動予定設計アプリ 企画書・完成版<br>余裕適正度に基づく行動開始支援アプリ</div>
+    <div class="right">企画書</div>
+  </div>
+  <div class="page-body">
+    <div class="section-badge">画面イメージ</div>
+    <div style="display:flex;flex-direction:column;gap:32px;margin-top:8px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;margin-bottom:8px;">01　初回診断の質問画面</div>
+        <img src="ytp_1.png" alt="初回診断質問画面" style="width:100%;border:1px solid #DDD;">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;margin-bottom:8px;">02　推奨開始時刻の結果画面</div>
+        <img src="ytp_2.png" alt="推奨開始時刻結果" style="width:100%;border:1px solid #DDD;">
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。</div>
+</div>
+
+<!-- ========== PAGE: TECH SPEC ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">YTP行動予定設計アプリ 企画書・完成版<br>余裕適正度に基づく行動開始支援アプリ</div>
+    <div class="right">企画書</div>
+  </div>
+  <div class="page-body">
+    <div class="section-badge">技術仕様</div>
+    <div class="section-title">実装予定の全体像</div>
+
+    <div class="detail-section">
+      <div class="detail-num">技術スタック</div>
+      <div class="detail-title">HTML / CSS / JavaScript によるブラウザアプリ（実装予定）</div>
+      <p>外部ライブラリを使わず、HTML / CSS / JavaScript のみで実装する予定。データはlocalStorageに保存し、GitHub Pagesで公開する。スマホ操作前提の設計で、タップ・スクロール操作に最適化する。</p>
+      <div class="tag-list">
+        <span class="tag">HTML5</span>
+        <span class="tag">CSS3（CSS変数）</span>
+        <span class="tag">Vanilla JavaScript</span>
+        <span class="tag">localStorage</span>
+        <span class="tag">GitHub Pages</span>
+        <span class="tag">スマホ操作前提</span>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">ファイル構成</div>
+      <div class="detail-title">6ファイル分割構成（予定）</div>
+      <div style="background:var(--pale);padding:12px 16px;font-family:monospace;font-size:11.5px;line-height:2;color:var(--gray-text);">
+        index.html：画面構造・UI全体<br>
+        style.css：全画面のデザイン・レスポンシブ<br>
+        app.js：状態管理・画面遷移・入力処理<br>
+        questions.js：初回20問・日次5問のデータ管理<br>
+        ytp.js：YTP算出ロジック・補正計算<br>
+        storage.js：localStorageへの保存・読み込み
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">データ設計</div>
+      <div class="detail-title">localStorage による永続化（予定）</div>
+      <p style="margin-bottom:8px;">基礎YTP・日次YTP・行動Lv別平均時間・セッション履歴をlocalStorageに保存する予定。初回診断結果は基礎YTPとして保持し、日次補正と組み合わせて今日のYTPを算出する。</p>
+      <div style="background:var(--pale);padding:12px 16px;font-family:monospace;font-size:11.5px;line-height:2;color:var(--gray-text);">
+        baseYtp：基礎YTP（初回20問から算出）<br>
+        actions[]：登録済み行動とLv別平均時間<br>
+        history[]：過去セッションの出発時刻・開始時刻・実測値<br>
+        todayYtp：本日のYTP（日次5問で補正）
+      </div>
+    </div>
+
+    <div class="detail-section" style="margin-bottom:0;">
+      <div class="detail-num">YTP算出ロジック</div>
+      <div class="detail-title">2段階の算出式</div>
+      <div style="background:var(--pale);border-left:4px solid var(--main);padding:14px 18px;font-size:12px;line-height:2.2;font-family:monospace;color:var(--gray-text);">
+        基礎YTP = 初回20問のスコア合計 → 分に換算<br>
+        今日のYTP = 基礎YTP + 眠気補正 + 体調補正<br>
+        　　　　　+ スマホ逸脱補正 + 準備重さ補正 − 予定圧補正<br>
+        推奨開始時刻 = 出発時刻 − 必要時間<br>
+        必要時間 = Σ(行動Lv平均) + 切替回数×3分 + バッファ
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。</div>
+</div>
+
+<!-- ========== PAGE 3: PHASE / TIMELINE ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">
+      YTP行動予定設計アプリ 企画書・完成版<br>
+      余裕適正度に基づく行動開始支援アプリ
+    </div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">開発フェーズについて</div>
+
+    <div class="phase-header">本企画の制作手順</div>
+
+    <div class="phase-timeline">
+      <div class="phase-box">
+        Phase 1<br>
+        <span class="phase-sub">設計固定</span>
+      </div>
+      <div class="phase-box">
+        Phase 2<br>
+        <span class="phase-sub">実装</span>
+      </div>
+      <div class="phase-box">
+        Phase 3<br>
+        <span class="phase-sub">GitHub公開</span>
+      </div>
+      <div class="phase-box">
+        Phase 4<br>
+        <span class="phase-sub">実測補正</span>
+      </div>
+    </div>
+
+    <div class="phase-detail">
+      <div class="phase-detail-title">1. Phase 1：設計固定</div>
+      <ul>
+        <li>YTPの式を仮固定</li>
+        <li>初回20問をquestions.js化</li>
+        <li>回答スコアの対応表を作る</li>
+        <li>Lv平均の初期値を決める</li>
+        <li>localStorage保存形式を決める</li>
+      </ul>
+    </div>
+
+    <div class="phase-detail">
+      <div class="phase-detail-title">2. Phase 2：HTML / CSS / JavaScript制作</div>
+      <ul>
+        <li>index.html / style.css / app.js / questions.js / ytp.js / storage.js を制作</li>
+      </ul>
+    </div>
+
+    <div class="phase-detail">
+      <div class="phase-detail-title">3. Phase 3：GitHub公開</div>
+      <ul>
+        <li>GitHubリポジトリ作成・ファイルアップロード</li>
+        <li>GitHub Pages有効化・スマホで動作確認・README作成</li>
+      </ul>
+    </div>
+
+    <div class="phase-detail">
+      <div class="phase-detail-title">4. Phase 4：実測補正</div>
+      <ul>
+        <li>実際の開始時刻・出発時刻・行動ごとの所要時間を記録</li>
+        <li>Lv平均を更新し、日次YTP補正を改善</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。
+  </div>
+</div>
+
+<!-- ========== PAGE 4: SCOPE ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">
+      YTP行動予定設計アプリ 企画書・完成版<br>
+      余裕適正度に基づく行動開始支援アプリ
+    </div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">大まかな流れ</div>
+    <div class="section-title">スコープ</div>
+
+    <div class="body-text">
+      本企画は、実装時に機能が広がりすぎる可能性があるため、初期版のスコープを明確にする。
+    </div>
+
+    <div class="scope-grid">
+      <div class="scope-card">
+        <div class="scope-card-title">✅ 初期版でやること</div>
+        <ul>
+          <li>初回20問・基礎YTP算出</li>
+          <li>日次5問・今日のYTP算出</li>
+          <li>出発時刻入力</li>
+          <li>推奨開始時刻表示</li>
+          <li>行動追加・Lv1〜Lv4ボタン選択</li>
+          <li>登録済み行動の再利用</li>
+          <li>行動未入力でも使える簡易計算</li>
+          <li>行動入力時の詳細計算</li>
+          <li>localStorageに保存</li>
+          <li>GitHub Pagesでの公開</li>
+        </ul>
+      </div>
+      <div class="scope-card">
+        <div class="scope-card-title">🚫 初期版でやらないこと</div>
+        <ul>
+          <li>ログイン機能</li>
+          <li>クラウド同期・複数端末共有</li>
+          <li>通知機能</li>
+          <li>AIによる質問自動生成</li>
+          <li>医学的診断・治療効果の主張</li>
+          <li>App Store / Google Play 公開</li>
+          <li>複雑な統計グラフ</li>
+          <li>他ユーザーとの比較・ランキング</li>
+          <li>streak機能・無限報酬型ゲーム要素</li>
+        </ul>
+      </div>
+      <div class="scope-card scope-card-later">
+        <div class="scope-card-title">🔜 後回しにしてよいもの</div>
+        <ul>
+          <li>ドラッグアンドドロップ操作　／　実測値による自動補正　／　Lv別平均時間の自動更新</li>
+          <li>質問文バリエーションの大量追加　／　物語演出　／　低刺激待機モード</li>
+          <li>履歴グラフ　／　データエクスポート</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。
+  </div>
+</div>
+
+<!-- ========== PAGE 5: FLOW ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">
+      YTP行動予定設計アプリ 企画書・完成版<br>
+      余裕適正度に基づく行動開始支援アプリ
+    </div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">具体的な流れ</div>
+    <div class="section-title">【出発時刻入力 → YTP算出 → 推奨開始時刻】</div>
+
+    <div class="body-text">
+      ユーザーは2つのルートでアプリを使うことができる。行動を登録しなくても使えるのが本アプリの設計思想である。
+    </div>
+
+    <div class="flow-route">
+      <div class="flow-route-label">簡易ルート</div>
+      <div class="flow-steps">
+        <div class="flow-step">出発時刻を入力</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">今日のYTP算出<div class="step-sub">日次5問で補正</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step flow-result">推奨開始時刻を表示</div>
+      </div>
+      <div style="font-size:11px; color:var(--gray-light); margin-top:10px; padding-left:4px;">
+        例）出発 10:45 ／ 基礎YTP 30分 → 推奨開始 10:15
+      </div>
+    </div>
+
+    <div class="flow-route">
+      <div class="flow-route-label">詳細ルート</div>
+      <div class="flow-steps">
+        <div class="flow-step">出発時刻を入力</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">今日の行動を<br>Lv分類</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Lv平均から<br>必要時間を算出</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">今日のYTPと照合</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step flow-result">推奨開始時刻を表示</div>
+      </div>
+      <div style="font-size:11px; color:var(--gray-light); margin-top:10px; padding-left:4px;">
+        例）Lv1×3、Lv2×1 → 推定必要時間 46分 → 推奨開始 9:59
+      </div>
+    </div>
+
+    <div style="margin-top: 16px; background: var(--green-pale); border-left: 3px solid var(--green-main); padding: 14px 18px;">
+      <div style="font-weight:700; font-size:12px; margin-bottom:8px; color:var(--green-dark);">計算の基本式</div>
+      <div style="font-size:12px; line-height:2.2; font-family:monospace; color:var(--gray-text);">
+        必要時間 = Σ(行動Lv平均時間) + 切り替え回数×3分 + 玄関バッファ + 高Lv補正<br>
+        今日のYTP = 基礎YTP + 眠気補正 + 体調補正 + スマホ逸脱補正 + 準備重さ補正 − 予定圧補正<br>
+        推奨開始時刻 = 出発時刻 − 必要時間
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。
+  </div>
+</div>
+
+<!-- ========== PAGE 6: COMMON ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">
+      YTP行動予定設計アプリ 企画書・完成版<br>
+      余裕適正度に基づく行動開始支援アプリ
+    </div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">共通</div>
+    <div class="section-title">【アプリ全体の設計方針】</div>
+
+    <div class="common-section">
+      <div class="common-section-num">1. 対象ユーザー</div>
+      <div class="common-section-title">予定前の行動開始に困難を感じる人</div>
+      <ul class="user-list">
+        <li>早めに起きてもスマホや別行動に流れてしまう人</li>
+        <li>予定直前にならないと動けない人</li>
+        <li>準備行動の重さが日によって変わる人</li>
+        <li>チェックリストや通知型アプリに圧迫感を覚える人</li>
+        <li>「余裕を持てば解決する」と言われても、実際には余裕があるほど崩れる人</li>
+        <li>予定前の準備時間を自分でうまく見積もれない人</li>
+      </ul>
+      <p style="font-size:11.5px; color:var(--gray-light); margin-top:10px;">
+        ※ 本アプリはADHD診断を目的としない。診断の有無に限定せず、予定前行動の見積もりと余裕適正の可視化を目的とする。
+      </p>
+    </div>
+
+    <div class="common-section">
+      <div class="common-section-num">2. 開発体制</div>
+      <div class="common-section-title">個人開発（初期版）</div>
+      <p>HTML / CSS / JavaScript と localStorage を用いたブラウザアプリとして制作し、GitHub Pagesで公開する。MVPの範囲であればひとりで実装可能。将来的に外部公開・検証する場合は、専門家監修やユーザーテストを検討する。</p>
+      <div class="tag-list">
+        <span class="tag">HTML</span>
+        <span class="tag">CSS</span>
+        <span class="tag">JavaScript</span>
+        <span class="tag">localStorage</span>
+        <span class="tag">GitHub Pages</span>
+        <span class="tag">スマホ操作前提</span>
+      </div>
+    </div>
+
+    <div class="common-section">
+      <div class="common-section-num">3. UIの基本方針</div>
+      <div class="common-section-title">命令しない・管理しない・評価しない</div>
+      <p>アプリはユーザーを動かす命令UIではなく、判断材料を提示するUIにする。チェックリストを主機能にしない理由は3つある。</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:12px;">
+        <div style="background:var(--green-pale); padding:12px 14px; border-radius:2px;">
+          <div style="font-weight:700; font-size:11px; color:var(--green-dark); margin-bottom:6px;">命令感が出る</div>
+          <div style="font-size:11px; line-height:1.8; color:var(--gray-text);">「これをやれ・終わったら押せ」という印象になりやすく、本アプリの思想と相反する。</div>
+        </div>
+        <div style="background:var(--green-pale); padding:12px 14px; border-radius:2px;">
+          <div style="font-weight:700; font-size:11px; color:var(--green-dark); margin-bottom:6px;">管理されている感が出る</div>
+          <div style="font-size:11px; line-height:1.8; color:var(--gray-text);">本アプリの目的は行動を完了させることではなく、予定前の行動認識を固定して開始時刻を出すことである。</div>
+        </div>
+        <div style="background:var(--green-pale); padding:12px 14px; border-radius:2px;">
+          <div style="font-weight:700; font-size:11px; color:var(--green-dark); margin-bottom:6px;">自己嫌悪につながる</div>
+          <div style="font-size:11px; line-height:1.8; color:var(--gray-text);">未チェックが残ると「できなかった・また残った」という感覚につながる。完了管理を主目的にしない。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。
+  </div>
+</div>
+
+<!-- ========== PAGE 7: 結論 ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">
+      YTP行動予定設計アプリ 企画書・完成版<br>
+      余裕適正度に基づく行動開始支援アプリ
+    </div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">企画の結論</div>
+
+    <div class="concept-lead">
+      必需品としての<br>アプリを作る。
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:28px; margin-top:8px;">
+
+      <div>
+        <div style="font-weight:700; font-size:13px; color:var(--green-dark); border-bottom:2px solid var(--green-main); padding-bottom:6px; margin-bottom:12px; letter-spacing:0.05em;">
+          01　なぜこの設計思想か
+        </div>
+        <div class="body-text" style="margin-bottom:0;">
+          現在、人口の2人に1人がADHD症状を持つと言われている。本アプリはADHD傾向のある人だけを対象にしない。ターゲットを絞らず、なおかつ深く刺さる人をより多くすることが目的である。予定前の行動開始に困難を感じる人は、診断の有無に関わらず広く存在する。その全員に届き得る設計として、YTPという指標にたどり着いた。
+        </div>
+      </div>
+
+      <div>
+        <div style="font-weight:700; font-size:13px; color:var(--green-dark); border-bottom:2px solid var(--green-main); padding-bottom:6px; margin-bottom:12px; letter-spacing:0.05em;">
+          02　なぜ続けてもらえるか
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div style="background:#F5F5F5; padding:14px 16px; border-radius:2px;">
+            <div style="font-weight:700; font-size:11px; color:var(--gray-light); margin-bottom:6px;">黒物アプリ（嗜好品）</div>
+            <div style="font-size:11.5px; line-height:1.9; color:var(--gray-text);">ゲーム・YouTube・SNSなど。依存性で継続を促す。なくても何とかなる。</div>
+          </div>
+          <div style="background:var(--green-pale); padding:14px 16px; border-radius:2px; border:1.5px solid var(--green-light);">
+            <div style="font-weight:700; font-size:11px; color:var(--green-dark); margin-bottom:6px;">白物アプリ（生活必需品）← YTP</div>
+            <div style="font-size:11.5px; line-height:1.9; color:var(--gray-text);">カレンダー・LINE・ブラウザなど。予定がある日には必ず開く。ないと困る。</div>
+          </div>
+        </div>
+        <div class="body-text" style="margin-bottom:0;">
+          既存アプリの多くは依存性によって継続を促す。しかし人間はそこまで暇ではない。YTPは予定がある日に必ず開かれる白物として設計されており、習慣ではなく必要性によって使われ続ける。
+        </div>
+      </div>
+
+      <div>
+        <div style="font-weight:700; font-size:13px; color:var(--green-dark); border-bottom:2px solid var(--green-main); padding-bottom:6px; margin-bottom:12px; letter-spacing:0.05em;">
+          03　発展構想
+        </div>
+        <div class="body-text" style="margin-bottom:0;">
+          将来的には、YTPが同値のユーザー同士がランダムに投稿を見られるプラットフォームへの発展を構想している。同じ余裕適正を持つ人——同じ世界線で生きている人——の生活が見えることで、他者の生活を参照する新しい形が生まれる。既存のSNSとは異なる、行動適正という軸での緩やかなつながりであり、画期的な生活参照の土台になり得ると考えている。
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="page-footer">
+    こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。
+  </div>
+</div>
+
+
+<script>
+(function() {
+  // A4ページの描画可能高さを計算
+  // ヘッダー: padding 16+12=28px + font 10px*1.7*2行 ≈ 62px + border 1px = ~63px
+  // フッター: padding 12+12=24px + font 9px*1行 ≈ 9px + border 1px = ~34px
+  // page-body: padding-top 40px + padding-bottom 32px = 72px overhead
+  const PAGE_H = 1123;
+  const HEADER_H = 63;
+  const FOOTER_H = 34;
+  const BODY_PADDING_V = 72;
+  const DRAWABLE_H = PAGE_H - HEADER_H - FOOTER_H - BODY_PADDING_V; // ~954px
+
+  function getHeaderHTML(page) {
+    const h = page.querySelector('.page-header');
+    return h ? h.outerHTML : '';
+  }
+  function getFooterHTML(page) {
+    const f = page.querySelector('.page-footer');
+    return f ? f.outerHTML : '';
+  }
+
+  function splitPage(page) {
+    const body = page.querySelector('.page-body');
+    if (!body) return;
+
+    // グループ対象: 直接の子要素
+    const children = Array.from(body.children);
+    if (children.length === 0) return;
+
+    const headerHTML = getHeaderHTML(page);
+    const footerHTML = getFooterHTML(page);
+
+    // 各子要素の高さを計測
+    let currentH = 0;
+    let pageGroups = [[]]; // グループ配列
+
+    for (const child of children) {
+      const h = child.getBoundingClientRect().height;
+      if (currentH + h > DRAWABLE_H && pageGroups[pageGroups.length - 1].length > 0) {
+        // 次ページへ
+        pageGroups.push([]);
+        currentH = 0;
+      }
+      pageGroups[pageGroups.length - 1].push(child);
+      currentH += h;
+    }
+
+    // 1ページに収まるなら何もしない
+    if (pageGroups.length <= 1) return;
+
+    // 元のページを最初のグループで更新
+    const fragment = document.createDocumentFragment();
+
+    pageGroups.forEach((group, i) => {
+      const newPage = document.createElement('div');
+      newPage.className = page.className;
+
+      const newBody = document.createElement('div');
+      newBody.className = 'page-body';
+      group.forEach(el => newBody.appendChild(el.cloneNode(true)));
+
+      newPage.innerHTML = headerHTML + footerHTML;
+      newPage.insertBefore(newBody, newPage.querySelector('.page-footer'));
+      fragment.appendChild(newPage);
+    });
+
+    page.parentNode.replaceChild(fragment, page);
+  }
+
+  window.addEventListener('load', function() {
+    // 全ページを処理（カバーページは除く）
+    const pages = Array.from(document.querySelectorAll('.page'));
+    pages.forEach((page, i) => {
+      if (i === 0) return; // カバーはスキップ
+      splitPage(page);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

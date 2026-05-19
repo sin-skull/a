@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BAR 氷解 ― 十問の夜 企画書</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --amber-main: #B8860B;
+    --amber-light: #D4A843;
+    --amber-pale: #F8F2E4;
+    --amber-dark: #7A5800;
+    --brown-deep: #2C1A08;
+    --gray-text: #3A3228;
+    --gray-light: #8A7A68;
+    --border: #E0D0B0;
+    --white: #FFFEF9;
+    --page-width: 794px;
+    --page-height: 1123px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #B8B0A0;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--gray-text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 32px 16px;
+  }
+
+  /* ======= PAGE ======= */
+  .page {
+    width: var(--page-width);
+    min-height: var(--page-height);
+    background: var(--white);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.22);
+  }
+
+  /* ======= HEADER BAR ======= */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 16px 32px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--gray-light);
+    flex-shrink: 0;
+  }
+  .page-header .left { line-height: 1.7; }
+  .page-header .right { text-align: right; line-height: 1.7; }
+
+  /* ======= FOOTER BAR ======= */
+  .page-footer {
+    margin-top: auto;
+    padding: 12px 32px;
+    border-top: 1px solid var(--border);
+    font-size: 9px;
+    color: var(--gray-light);
+    flex-shrink: 0;
+  }
+
+  /* ======= BODY AREA ======= */
+  .page-body {
+    flex: 1;
+    padding: 40px 48px 32px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ======= SECTION BADGE ======= */
+  .section-badge {
+    display: inline-block;
+    background: var(--amber-main);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 5px 14px;
+    margin-bottom: 20px;
+  }
+
+  /* ======= SECTION TITLE ======= */
+  .section-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    margin-bottom: 28px;
+    color: var(--gray-text);
+  }
+
+  /* ======= BODY TEXT ======= */
+  .body-text {
+    font-size: 12.5px;
+    line-height: 2;
+    color: var(--gray-text);
+    margin-bottom: 16px;
+  }
+
+    .cover-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    text-align: center;
+    width: 80%;
+  }
+  .cover-box {
+    border: 2px solid var(--gray-light);
+    border-radius: 0;
+    padding: 52px 44px;
+  }
+  .cover-title-jp {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    line-height: 1.7;
+    color: var(--gray-text);
+  }
+  .cover-en {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--gray-light);
+    margin-top: 10px;
+  }
+  .cover-subtitle {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    color: var(--amber-dark);
+    margin-top: 16px;
+  }
+  .cover-rule-line {
+    width: 60px; height: 1px;
+    background: var(--amber-main);
+    margin: 20px auto;
+  }
+  .cover-meta {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    font-size: 12px;
+    line-height: 2;
+    color: var(--gray-text);
+    white-space: nowrap;
+  }
+  .cover-notice {
+    position: absolute;
+    bottom: 40px;
+    left: 48px;
+    font-size: 9px;
+    color: var(--gray-light);
+    line-height: 1.8;
+  }
+
+  /* ======= CONCEPT LEAD ======= */
+  .concept-lead {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.8;
+    margin-bottom: 32px;
+    color: var(--gray-text);
+  }
+  .concept-block {
+    background: var(--amber-pale);
+    border-left: 4px solid var(--amber-main);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    line-height: 2;
+    color: var(--gray-text);
+  }
+  .concept-manifesto {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 28px;
+  }
+  .concept-manifesto-item {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--amber-dark);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+
+  /* ======= SYSTEM: QUESTION CARDS ======= */
+  .q-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    margin-top: 12px;
+  }
+  .q-table th {
+    background: var(--amber-main);
+    color: white;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    border: none;
+  }
+  .q-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.7;
+    color: var(--gray-text);
+    vertical-align: top;
+  }
+  .q-table tr:nth-child(even) td {
+    background: var(--amber-pale);
+  }
+
+  /* ======= SYSTEM: FLOW ======= */
+  .flow-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 20px 0;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    background: var(--amber-pale);
+    border: 1.5px solid #E0C878;
+    padding: 10px 16px;
+    font-size: 11.5px;
+    font-weight: 500;
+    text-align: center;
+    min-width: 100px;
+    line-height: 1.5;
+    color: var(--gray-text);
+  }
+  .flow-step .step-sub {
+    font-size: 9.5px;
+    color: var(--gray-light);
+    font-weight: 400;
+    margin-top: 2px;
+  }
+  .flow-arrow {
+    font-size: 16px;
+    color: var(--amber-main);
+    padding: 0 8px;
+    flex-shrink: 0;
+  }
+  .flow-result {
+    background: var(--amber-main);
+    color: white;
+    border: none;
+    font-weight: 700;
+  }
+
+  /* ======= PHASE TIMELINE ======= */
+  .phase-timeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 20px 0 32px;
+  }
+  .phase-box {
+    background: var(--amber-main);
+    color: white;
+    font-weight: 700;
+    font-size: 12.5px;
+    padding: 12px 18px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    flex: 1;
+    position: relative;
+  }
+  .phase-box:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-left: 14px solid var(--amber-main);
+    border-top: 22px solid transparent;
+    border-bottom: 22px solid transparent;
+    z-index: 1;
+  }
+  .phase-box .phase-sub {
+    font-size: 10px;
+    font-weight: 400;
+    opacity: 0.85;
+    margin-top: 4px;
+  }
+  .phase-detail {
+    margin-bottom: 20px;
+  }
+  .phase-detail-title {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 8px;
+    color: var(--amber-dark);
+  }
+  .phase-detail ul {
+    padding-left: 18px;
+    font-size: 12px;
+    line-height: 2;
+    color: var(--gray-text);
+  }
+
+  /* ======= SCOPE GRID ======= */
+  .scope-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 16px;
+  }
+  .scope-card {
+    border: 1.5px solid var(--border);
+    padding: 18px 18px 14px;
+  }
+  .scope-card-title {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+    color: var(--amber-dark);
+    border-bottom: 2px solid var(--amber-main);
+    padding-bottom: 6px;
+  }
+  .scope-card ul {
+    padding-left: 16px;
+    font-size: 11.5px;
+    line-height: 2;
+    color: var(--gray-text);
+  }
+  .scope-card-later {
+    grid-column: 1 / -1;
+    border-color: #E0C878;
+    background: var(--amber-pale);
+  }
+
+  /* ======= TAG ======= */
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .tag {
+    background: var(--amber-pale);
+    border: 1px solid #E0C878;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: var(--amber-dark);
+    font-weight: 500;
+  }
+
+  /* ======= DETAIL SECTION ======= */
+  .detail-section {
+    margin-bottom: 26px;
+  }
+  .detail-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--amber-dark);
+    letter-spacing: 0.08em;
+    margin-bottom: 5px;
+  }
+  .detail-title {
+    font-weight: 700;
+    font-size: 14.5px;
+    margin-bottom: 9px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-section p {
+    font-size: 12.5px;
+    line-height: 2;
+    color: var(--gray-text);
+  }
+
+  /* ======= CONCLUSION ======= */
+  .concl-item {
+    margin-bottom: 26px;
+  }
+  .concl-head {
+    font-weight: 700;
+    font-size: 12.5px;
+    color: var(--amber-dark);
+    border-bottom: 2px solid var(--amber-main);
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ======= STRIP BAR (decorative) ======= */
+  .strip-bar {
+    height: 4px;
+    background: linear-gradient(90deg, var(--amber-main) 0%, var(--amber-light) 60%, transparent 100%);
+    margin-bottom: 24px;
+  }
+
+  /* ======= PRINT ======= */
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  @media print {
+    body { background: white; padding: 0; gap: 0; }
+    .page {
+      box-shadow: none;
+      page-break-after: always;
+      break-after: page;
+      width: 210mm;
+      min-height: 297mm;
+    }
+    .page-body { overflow: visible; }
+    .detail-section, .phase-detail, .concl-item, .scope-grid, .flow-route, .common-section {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== PAGE 1: COVER ========== -->
+<div class="page">
+
+  <div class="page-header">
+    <div class="left">
+      BAR 氷解 ― 十問の夜　企画書<br>
+      バーテンダー型テキストミステリーゲーム
+    </div>
+    <div class="right">
+      2026/04/27<br>
+      企画書
+    </div>
+  </div>
+
+  <div class="cover-center">
+    <div class="cover-box">
+      <div class="cover-title-jp">B A R　氷 解</div>
+      <div class="cover-en">BAR HYOKAI</div>
+      <div class="cover-rule-line"></div>
+      <div class="cover-subtitle">― 十 問 の 夜 ―</div>
+    </div>
+  </div>
+
+  <div class="cover-meta">
+    作成日：2026/04/27<br>
+    ジャンル：推理型ノベルゲーム / バーテンダー型テキストミステリー<br>
+    制作形式：HTML / CSS / JavaScript（分割ファイル構成）<br>
+    実行環境：ブラウザ（PC・スマートフォン横画面対応）<br>
+    制作後の発展：本作制作後に『お前は誰だ？』の制作へ着手
+  </div>
+
+  <div class="cover-notice">
+    本企画書はゲーム設計・ストーリー構成を含む制作資料です。<br>
+    無断転載・内容の口外はご遠慮ください。
+  </div>
+</div>
+
+<!-- ========== PAGE 2: CONCEPT ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">BAR 氷解 企画書　／　バーテンダー型テキストミステリーゲーム</div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">コンセプト</div>
+
+    <div class="concept-lead">
+      問いに答えることが、<br>記憶を取り戻すことになる。
+    </div>
+
+    <div class="body-text">
+      一般的なミステリーゲームは、事件の真相を「外側から」解き明かしていく構造を持つ。プレイヤーは探偵として、他者の謎を追う。
+    </div>
+    <div class="body-text">
+      本作はその逆を行く。
+    </div>
+
+    <div class="concept-block">
+      プレイヤーが解くのは、自分自身の謎である。謎のバーで謎のマスターに問われる十の問いは、実はプレイヤー自身が封印してきた記憶への問いかけである。問いに答えるたびに、自分が何者であるかが少しずつ明らかになる。
+    </div>
+
+    <div class="body-text">
+      舞台は、仕事帰りの路地裏に一夜だけ現れる不思議なバー。マスターは主人公に十の問いを出す案内人であり、救済者にも、残酷なゲームマスターにも見える存在である。バーは「自分を許せない者が、悩みを解くまで足止めされる場所」として機能し、十問を通じて封じられていた記憶が少しずつ言葉になる。
+    </div>
+
+    <div class="concept-manifesto">
+      <div class="concept-manifesto-item">答えるほど、自分が怖くなる。</div>
+      <div class="concept-manifesto-item">解けば解くほど、目が覚める。</div>
+      <div class="concept-manifesto-item">そしてすべてが解けた時、過去と向き合うための出口が見える。</div>
+      <div class="concept-manifesto-item">問いに答えることは、生きていることを確かめることだ。</div>
+    </div>
+  </div>
+
+  <div class="page-footer">本企画書はゲーム設計・ストーリー構成を含む制作資料です。無断転載・内容の口外はご遠慮ください。</div>
+</div>
+
+<!-- ========== PAGE 2.5: TARGET / CORE / DIFF / MONETIZE / SCREENSHOTS ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">BAR 氷解 企画書　／　バーテンダー型テキストミステリーゲーム</div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">ターゲット・差別化・マネタイズ</div>
+
+    <div style="display:flex;flex-direction:column;gap:28px;">
+
+      <div>
+        <div style="font-weight:700;font-size:13px;color:var(--amber-dark);border-bottom:2px solid var(--amber-main);padding-bottom:6px;margin-bottom:12px;letter-spacing:0.05em;">ターゲット</div>
+        <div class="body-text" style="margin-bottom:0;">短編ノベルゲームや謎解きが好きで、ノベルゲームの文法に理解がある人。ひとりで静かに、30分前後で遊べる作品を探しているプレイヤーを想定する。実況・配信で考察しながら進めるスタイルにも向いている。</div>
+      </div>
+
+      <div>
+        <div style="font-weight:700;font-size:13px;color:var(--amber-dark);border-bottom:2px solid var(--amber-main);padding-bottom:6px;margin-bottom:12px;letter-spacing:0.05em;">コア体験</div>
+        <div style="background:var(--amber-pale);border-left:4px solid var(--amber-main);padding:16px 20px;font-size:13px;line-height:2;">
+          問いに答えるたびに、自分が何者か分かっていく感覚。正解数によって選択肢が絞られ、自分の記憶が少しずつ言葉になる。
+        </div>
+      </div>
+
+      <div>
+        <div style="font-weight:700;font-size:13px;color:var(--amber-dark);border-bottom:2px solid var(--amber-main);padding-bottom:6px;margin-bottom:12px;letter-spacing:0.05em;">差別化</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div style="background:#F5F2EC;padding:14px 16px;">
+            <div style="font-weight:700;font-size:11px;color:var(--gray-light);margin-bottom:6px;">一般的なミステリーADV</div>
+            <div style="font-size:11.5px;line-height:1.9;color:var(--gray-text);">他者の謎を「外側から」解く。プレイヤーは探偵として事件を追う。</div>
+          </div>
+          <div style="background:var(--amber-pale);padding:14px 16px;border:1.5px solid #E0C878;">
+            <div style="font-weight:700;font-size:11px;color:var(--amber-dark);margin-bottom:6px;">BAR 氷解 ← 本作</div>
+            <div style="font-size:11.5px;line-height:1.9;color:var(--gray-text);">プレイヤーが解くのは自分自身の謎。理解度がそのまま選択肢数に直結する。</div>
+          </div>
+        </div>
+        <div class="body-text" style="margin-bottom:0;">選択肢の数がターン正解数によって変動する仕組みにより、理解度がそのまま難易度に直結する点も既存作にない設計である。</div>
+      </div>
+
+      <div>
+        <div style="font-weight:700;font-size:13px;color:var(--amber-dark);border-bottom:2px solid var(--amber-main);padding-bottom:6px;margin-bottom:12px;letter-spacing:0.05em;">継続性</div>
+        <div class="body-text" style="margin-bottom:0;">エンディングカードは6種類あり、1回のプレイで到達できるのは1種類のみ。正解数・選択傾向によって到達できるカードが変わるため、すべてのカードを開放するには複数回のプレイが必要になる。未開放カードは黒塗り表示でギャラリーに残り、周回動機を自然に作る。</div>
+      </div>
+
+      <div>
+        <div style="font-weight:700;font-size:13px;color:var(--amber-dark);border-bottom:2px solid var(--amber-main);padding-bottom:6px;margin-bottom:12px;letter-spacing:0.05em;">マネタイズ</div>
+        <div class="body-text" style="margin-bottom:0;">無料公開。ブラウザで動作し、インストール不要。非商業作品。</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="page-footer">本企画書はゲーム設計・ストーリー構成を含む制作資料です。無断転載・内容の口外はご遠慮ください。</div>
+</div>
+
+<!-- ========== PAGE SCREENSHOTS ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">BAR 氷解 企画書　／　バーテンダー型テキストミステリーゲーム</div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">画面イメージ</div>
+    <div style="display:flex;flex-direction:column;gap:20px;margin-top:8px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--amber-dark);margin-bottom:8px;">01　タイトル画面</div>
+        <img src="ber_1.png" alt="タイトル画面" style="width:100%;border:1px solid var(--border);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--amber-dark);margin-bottom:8px;">02　ゲームプレイ中（マスターが問いを語る場面）</div>
+        <img src="ber_2.png" alt="ゲームプレイ画面" style="width:100%;border:1px solid var(--border);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--amber-dark);margin-bottom:8px;">03　エンディングカード</div>
+        <img src="ber_3.png" alt="エンディングカード" style="width:100%;border:1px solid var(--border);">
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">本企画書はゲーム設計・ストーリー構成を含む制作資料です。無断転載・内容の口外はご遠慮ください。</div>
+</div>
+
+<!-- ========== PAGE 3: WORLD / STORY ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">BAR 氷解 企画書　／　バーテンダー型テキストミステリーゲーム</div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">世界観・ストーリー</div>
+    <div class="section-title">仕事帰りに見つけた、見慣れないバー</div>
+
+    <div class="strip-bar"></div>
+
+    <div class="detail-section">
+      <div class="detail-num">01　導入</div>
+      <div class="detail-title">「お悩みもお酒も、氷を入れて……」</div>
+      <p>主人公は仕事帰り、いつも通る路地裏で見慣れない看板を見つける。看板には「お悩みもお酒も、氷を入れて……」と書かれている。ほんの一杯だけのつもりで扉を開けると、カウンターにはマスターと常連らしき人物がいた。常連は主人公が座ると静かに席を立ち、マスターは十問のゲームを提案する。</p>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">02　ゲームの構造</div>
+      <div class="detail-title">問いを解くごとに、自分が見えてくる</div>
+      <p>全十問。各問はマスターが語る「情景」の謎を解く形を取るが、その答えはすべて、主人公自身の記憶・心理・過去に直結している。問1から問10へと進むにつれ、家庭、失敗への恐れ、幼馴染、死、事故、葬式、生存罪悪感、忘却、常連、そして店の正体が順に浮かび上がる。</p>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">03　真相（ネタバレ含む）</div>
+      <div class="detail-title">事故で失った幼馴染と、閉じた記憶</div>
+      <p>主人公は過去に交通事故を起こし、同乗していた幼馴染を亡くしている。主人公自身は入院し、葬式にも行けなかった。自分だけが生き残った罪悪感と、別れを果たせなかった未完了の痛みに耐えられず、心は記憶を閉ざした。このバーは、主人公が自分を許せないまま立ち止まっていた内面の場所である。</p>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">04　エンディング分岐</div>
+      <div class="detail-title">結果によって後味が変わるエンディングカード</div>
+      <p>エンディングでは、正解数や選択傾向によってカードが分岐する。全A・全B・全Cの特殊エンド、10問正解、6〜9問正解、0〜5問正解の6種類を用意し、到達したカードは実績として開放される。開放済みだが未確認のカードは黒塗り表示とし、後からギャラリーで確認できる。</p>
+    </div>
+
+    <div class="detail-section" style="margin-bottom:0;">
+      <div class="detail-num">05　ループの余韻</div>
+      <div class="detail-title">常連だった幼馴染の視点</div>
+      <p>主人公が自分の記憶にたどり着いた後、マスターは笑いながら店の奥へ消える。静かになったカウンターに、最初にいた常連──亡くなった幼馴染──が戻ってくる。彼女もまた「あの日」に帰るための問いを求める。救済とも、繰り返しとも取れる余韻を残して幕を閉じる。</p>
+      <div style="background:var(--amber-pale);border-left:3px solid var(--amber-main);padding:14px 18px;margin-top:12px;font-size:12px;line-height:2;font-style:italic;color:var(--gray-text);">
+        「……マスター。私、どうしても思い出せないんです。あの日、車を運転していた彼が、どうなったのか。パズルを出してください。私が『あの日』に帰るためのパズルを」
+      </div>
+    </div>
+
+  </div>
+
+  <div class="page-footer">本企画書はゲーム設計・ストーリー構成を含む制作資料です。無断転載・内容の口外はご遠慮ください。</div>
+</div>
+
+
+<!-- ========== PAGE 4: GAME SYSTEM ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">BAR 氷解 企画書　／　バーテンダー型テキストミステリーゲーム</div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">ゲームシステム</div>
+    <div class="section-title">問い・ターン・選択の構造</div>
+
+    <div class="body-text">各問は、マスターの「情景語り」→ 5ターンの質問 → 最終回答選択 という3段階で構成される。</div>
+
+    <div class="flow-steps" style="margin-bottom:28px;">
+      <div class="flow-step">マスターが<br>情景を語る<div class="step-sub">ナラティブ</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">5ターン<br>質問選択<div class="step-sub">各ターン3択</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">正解数を<br>カウント<div class="step-sub">0〜5正解</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">最終回答<br>を選ぶ<div class="step-sub">選択肢が絞られる</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-result">問クリア</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+      <div style="background:var(--amber-pale);padding:16px 18px;border-left:3px solid var(--amber-main);">
+        <div style="font-weight:700;font-size:12px;color:var(--amber-dark);margin-bottom:8px;">ターン正解数と最終選択肢数</div>
+        <table style="font-size:11.5px;width:100%;border-collapse:collapse;">
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:5px 0;color:var(--gray-light);">ターン正解</td>
+            <td style="padding:5px 0;font-weight:700;text-align:right;">最終選択肢数</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;">5問正解</td><td style="text-align:right;color:var(--amber-dark);font-weight:700;">1択（確定）</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;">4問正解</td><td style="text-align:right;">2択</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;">3問正解</td><td style="text-align:right;">3択</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;">2問正解</td><td style="text-align:right;">4択</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;">1問正解</td><td style="text-align:right;">5択</td></tr>
+          <tr><td style="padding:5px 0;">0問正解</td><td style="text-align:right;">6択</td></tr>
+        </table>
+      </div>
+      <div style="background:var(--amber-pale);padding:16px 18px;border-left:3px solid var(--amber-main);">
+        <div style="font-weight:700;font-size:12px;color:var(--amber-dark);margin-bottom:8px;">料金システム</div>
+        <div style="font-size:12px;line-height:2;color:var(--gray-text);">
+          全10問のうち<strong>6問以上正解</strong>でお代は<strong>無料</strong>。<br>
+          5問以下の正解では<strong>二倍料金</strong>。<br><br>
+          氷が溶けるビジュアルがタイマー代わりとなり、問が進むにつれてグラスの氷が小さくなっていく。
+        </div>
+      </div>
+    </div>
+
+    <div class="body-text" style="font-weight:700;font-size:12.5px;color:var(--amber-dark);margin-bottom:8px;">全10問一覧</div>
+    <table class="q-table">
+      <tr>
+        <th style="width:32px;">問</th>
+        <th style="width:120px;">タイトル</th>
+        <th style="width:140px;">舞台</th>
+        <th>答えの核心</th>
+      </tr>
+      <tr><td>1</td><td>居場所</td><td>現代・バー1杯目</td><td>仕事に追われ、家族の元に帰れていなかった</td></tr>
+      <tr><td>2</td><td>繰り返す恐れ</td><td>現代・後輩との夜</td><td>また同じ失敗を繰り返すことへの恐れ</td></tr>
+      <tr><td>3</td><td>名前の補助線</td><td>棚札・言葉遊び</td><td>幼馴染（昔から生活圏を共有した相手）</td></tr>
+      <tr><td>4</td><td>絶対的な終わり</td><td>概念・死</td><td>死という絶対的で不可逆な終わり</td></tr>
+      <tr><td>5</td><td>交差する一瞬</td><td>日常の中の断絶</td><td>不慮の事故（悪意でも天災でもない断絶）</td></tr>
+      <tr><td>6</td><td>欠けた別れ</td><td>果たせなかった儀式</td><td>葬式に行けなかったこと</td></tr>
+      <tr><td>7</td><td>残った息</td><td>生存の罪</td><td>自分だけが生き残ってしまった罪悪感</td></tr>
+      <tr><td>8</td><td>閉じた記憶</td><td>自己防衛</td><td>壊れないために心を閉ざしたこと</td></tr>
+      <tr><td>9</td><td>隅の席</td><td>バー・常連の正体</td><td>あの幼馴染</td></tr>
+      <tr><td>10</td><td>開かれる店</td><td>この場所の正体</td><td>自分を許せない者が、悩みを解くまで足止めされる場所</td></tr>
+    </table>
+  </div>
+
+  <div class="page-footer">本企画書はゲーム設計・ストーリー構成を含む制作資料です。無断転載・内容の口外はご遠慮ください。</div>
+</div>
+
+<!-- ========== PAGE 5: UI / VISUAL ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">BAR 氷解 企画書　／　バーテンダー型テキストミステリーゲーム</div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">UI・ビジュアルデザイン</div>
+    <div class="section-title">ラノベゲーム形式のバー体験</div>
+
+    <div class="body-text">
+      本ゲームの核心は「マスターと向き合い、問われている感覚」にある。現在の実装では、背景画像・キャラクター画像・テキストボックス・選択肢UIを組み合わせた横画面ノベルゲーム形式を採用している。
+    </div>
+
+    <div class="strip-bar"></div>
+
+    <div class="detail-section">
+      <div class="detail-num">01　画面構成</div>
+      <div class="detail-title">背景画像＋テキストボックスのノベルゲームUI</div>
+      <p>画面全体にバー背景画像を表示し、下部に半透明のテキストボックスを配置する。話者名はテキストボックス上部に表示し、語り・マスター・PLAYERを切り替える。文章は1クリックで2文程度進む構造とし、必要以上にクリック数が増えないよう調整している。</p>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">02　PLAYERの推察表示</div>
+      <div class="detail-title">プレイヤーが一緒に考え込むための補足</div>
+      <p>選択肢を選んだ後、マスターの返答だけで終わらせず、PLAYER側の推察・ツッコミ・動揺を挟む。序盤は「なんでこんな問題を解いているんだ」という文句や軽いツッコミを入れ、後半に進むほど拒否・不安・認めたくない理解へ変化させる。</p>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">03　問題文確認・ログ・メニュー</div>
+      <div class="detail-title">推理しながら確認できるUI</div>
+      <p>右上のメニューから、現在の問題文・ログ・メニュー・実績を確認できる。問題文を見ながら選択肢を選べるため、プレイヤーは情報を整理しながら推理できる。セーブ・ロードもメニュー内に配置する。</p>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">04　エンディングカードと実績</div>
+      <div class="detail-title">開放型の収集要素</div>
+      <p>エンディングは6種類のカード画像で表現する。到達したカードは実績として開放され、後からギャラリーで確認できる。未開放カード、または開放済みだが未確認のカードは黒塗りで表示し、プレイヤーに周回の動機を与える。</p>
+    </div>
+
+    <div class="detail-section" style="margin-bottom:0;">
+      <div class="detail-num">05　スマホ対応</div>
+      <div class="detail-title">横画面・safe-area対応</div>
+      <p>スマートフォンでは横画面を推奨する。iPhoneのノッチ・Dynamic Island・ホームバーにUIが被らないよう、CSSのsafe-area-insetに対応する。横画面で高さが低い端末では、上部ボタン、選択肢、テキストボックスを圧縮して表示する。</p>
+    </div>
+  </div>
+
+  <div class="page-footer">本企画書はゲーム設計・ストーリー構成を含む制作資料です。無断転載・内容の口外はご遠慮ください。</div>
+</div>
+
+
+<!-- ========== PAGE 6: TECH / SCOPE ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">BAR 氷解 企画書　／　バーテンダー型テキストミステリーゲーム</div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">技術仕様・スコープ</div>
+    <div class="section-title">実装の全体像と範囲</div>
+
+    <div class="detail-section">
+      <div class="detail-num">技術スタック</div>
+      <div class="detail-title">HTML / CSS / JavaScript によるブラウザゲーム</div>
+      <p>外部ライブラリを使わず、HTML / CSS / JavaScript のみで実装する。現在は保守性を優先し、HTML・CSS・JSを分割した構成とする。画像ファイルを背景・キャラクター・エンディングカードとして読み込み、ゲームデータはJavaScript内の配列で管理する。</p>
+      <div class="tag-list">
+        <span class="tag">HTML5</span>
+        <span class="tag">CSS3（CSS変数）</span>
+        <span class="tag">Vanilla JavaScript</span>
+        <span class="tag">画像背景</span>
+        <span class="tag">localStorage</span>
+        <span class="tag">セーブ / ロード</span>
+        <span class="tag">エンディングカード実績</span>
+        <span class="tag">safe-area対応</span>
+        <span class="tag">分割ファイル構成</span>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">ファイル構成</div>
+      <div class="detail-title">変更しやすさを優先した分割</div>
+      <p style="margin-bottom:8px;">企画書では詳細な仕様書までは扱わないが、現在の実装は以下のような分割構成を前提とする。</p>
+      <div style="background:var(--amber-pale);padding:12px 16px;font-family:monospace;font-size:11.5px;line-height:2;color:var(--gray-text);">
+        bar.html：画面構造<br>
+        ber.css：画面デザイン・レスポンシブ・safe-area対応<br>
+        ber.js：ゲーム進行・UI制御・セーブロード・実績処理<br>
+        intro.js：第1〜5問データ・導入データ<br>
+        q1.js：第6〜10問データ・PLAYER推察補足<br>
+        final.js：将来的なエンディング分離用
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-num">ゲームステート設計</div>
+      <div class="detail-title">Gオブジェクトによる一元管理</div>
+      <p style="margin-bottom:8px;">ゲーム中の状態はGオブジェクトで管理する。現在の問、ターン、正解数、選択履歴、ログ、セーブ対象、エンディングカードの開放状況を保持する。</p>
+      <div style="background:var(--amber-pale);padding:12px 16px;font-family:monospace;font-size:11.5px;line-height:2;color:var(--gray-text);">
+        qi: 現在の問インデックス（0〜9）<br>
+        ti: 現在のターンインデックス（0〜4）<br>
+        cTurns: 当問のターン正解数<br>
+        tRes[]: ターン正誤配列<br>
+        score: 総正解問数<br>
+        qRes[]: 各問正誤配列<br>
+        turnLabels[]: A/B/C選択履歴<br>
+        log[]: 表示ログ<br>
+        unlockedCards[] / seenCards[]: 実績カード状態
+      </div>
+    </div>
+
+    <div class="scope-grid" style="margin-top:4px;">
+      <div class="scope-card">
+        <div class="scope-card-title">✅ 現在版で実装済み・採用するもの</div>
+        <ul>
+          <li>タイトル・イントロ・問題進行</li>
+          <li>全10問データ（ターン5問・最終6択）</li>
+          <li>ターン正解数による最終選択肢絞り込み</li>
+          <li>問題文確認・ログ・メニュー</li>
+          <li>PLAYER推察文の挿入</li>
+          <li>セーブ・ロード機能</li>
+          <li>エンディングカード6種</li>
+          <li>開放型実績ギャラリー</li>
+          <li>スマホ横画面・safe-area対応</li>
+          <li>GitHub Pages等での公開</li>
+        </ul>
+      </div>
+      <div class="scope-card">
+        <div class="scope-card-title">🚫 現在版ではやらないこと</div>
+        <ul>
+          <li>BGM・SEの本格実装</li>
+          <li>マスターのボイス実装</li>
+          <li>多言語対応</li>
+          <li>ランキング・スコア共有</li>
+          <li>ネイティブスマホアプリ化</li>
+          <li>オンライン通信・サーバー保存</li>
+          <li>AIによる動的問題生成</li>
+        </ul>
+      </div>
+      <div class="scope-card scope-card-later">
+        <div class="scope-card-title">🔜 後回しにしてよいもの</div>
+        <ul>
+          <li>BGMの追加（ジャズ・環境音）　／　選択肢演出の強化　／　エンディング後の追加シナリオ拡張</li>
+          <li>問の追加（11問目以降）　／　別エンディング分岐の追加　／　カードギャラリー演出の強化</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">本企画書はゲーム設計・ストーリー構成を含む制作資料です。無断転載・内容の口外はご遠慮ください。</div>
+</div>
+
+
+<!-- ========== PAGE 7: CONCLUSION ========== -->
+<div class="page">
+  <div class="page-header">
+    <div class="left">BAR 氷解 企画書　／　バーテンダー型テキストミステリーゲーム</div>
+    <div class="right">企画書</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-badge">企画の結論</div>
+
+    <div class="concept-lead">
+      「謎を解く」のではなく、<br>「自分を解く」ゲームを作る。
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:26px;margin-top:8px;">
+
+      <div class="concl-item">
+        <div class="concl-head">01　なぜこのジャンルか</div>
+        <div class="body-text" style="margin-bottom:0;">
+          テキストミステリーというジャンルに、「自己開示」という新しい軸を持ち込む。プレイヤーが解くのは事件ではなく、自分自身の心理と記憶の地図である。プレイヤーが「答えを外側から探す」のではなく「答えが自分の内側にある」と気づいた瞬間に、このゲームの核心が伝わる。
+        </div>
+      </div>
+
+      <div class="concl-item">
+        <div class="concl-head">02　バーテンダーという形式の必然性</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div style="background:#F5F2EC;padding:14px 16px;">
+            <div style="font-weight:700;font-size:11px;color:var(--gray-light);margin-bottom:6px;">一般的なノベルゲーム</div>
+            <div style="font-size:11.5px;line-height:1.9;color:var(--gray-text);">プレイヤーは傍観者。キャラクターの物語を「読む」体験。没入するが自分事にはなりにくい。</div>
+          </div>
+          <div style="background:var(--amber-pale);padding:14px 16px;border:1.5px solid #E0C878;">
+            <div style="font-weight:700;font-size:11px;color:var(--amber-dark);margin-bottom:6px;">BAR 氷解 ← 本作</div>
+            <div style="font-size:11.5px;line-height:1.9;color:var(--gray-text);">プレイヤーは当事者。マスターに「問われる」体験。答えるたびに自分の話になる。</div>
+          </div>
+        </div>
+        <div class="body-text" style="margin-bottom:0;">
+          バーという空間は「日常と非日常の境界」であり、人が本音を話す場所でもある。マスターという存在は、問いを通じてプレイヤー自身の良心の声を体現する。この構造が「語りかけられている」感覚を生み、プレイヤーを物語の主人公にする。
+        </div>
+      </div>
+
+      <div class="concl-item">
+        <div class="concl-head">03　制作後の展開</div>
+        <div class="body-text" style="margin-bottom:0;">
+          本作の制作後、次作として検索型記憶探索アドベンチャーゲーム『お前は誰だ？』の制作に着手した。『BAR 氷解』で扱った「問いに答えることで自分を解く」という構造は、次作では「検索欄に言葉を入力し、記憶を解放していく」構造へ発展している。前作で得たHTML / CSS / JavaScriptによるブラウザゲーム制作、分岐管理、進捗保存、公開までの経験が、次作の設計土台になっている。
+        </div>
+      </div>
+
+      <div class="concl-item" style="margin-bottom:0;">
+        <div class="concl-head">04　発展構想</div>
+        <div class="body-text" style="margin-bottom:0;">
+          将来的には、別テーマの十問や追加エンディングカードを増やし、同じ「問いに答えることで自分を解く」構造を別シナリオへ展開できる。AIによる動的問題生成は発展構想として残すが、現在版では固定シナリオの完成度を優先する。
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="page-footer">本企画書はゲーム設計・ストーリー構成を含む制作資料です。無断転載・内容の口外はご遠慮ください。</div>
+</div>
+
+
+<script>
+(function() {
+  // A4ページの描画可能高さを計算
+  // ヘッダー: padding 16+12=28px + font 10px*1.7*2行 ≈ 62px + border 1px = ~63px
+  // フッター: padding 12+12=24px + font 9px*1行 ≈ 9px + border 1px = ~34px
+  // page-body: padding-top 40px + padding-bottom 32px = 72px overhead
+  const PAGE_H = 1123;
+  const HEADER_H = 63;
+  const FOOTER_H = 34;
+  const BODY_PADDING_V = 72;
+  const DRAWABLE_H = PAGE_H - HEADER_H - FOOTER_H - BODY_PADDING_V; // ~954px
+
+  function getHeaderHTML(page) {
+    const h = page.querySelector('.page-header');
+    return h ? h.outerHTML : '';
+  }
+  function getFooterHTML(page) {
+    const f = page.querySelector('.page-footer');
+    return f ? f.outerHTML : '';
+  }
+
+  function splitPage(page) {
+    const body = page.querySelector('.page-body');
+    if (!body) return;
+
+    // グループ対象: 直接の子要素
+    const children = Array.from(body.children);
+    if (children.length === 0) return;
+
+    const headerHTML = getHeaderHTML(page);
+    const footerHTML = getFooterHTML(page);
+
+    // 各子要素の高さを計測
+    let currentH = 0;
+    let pageGroups = [[]]; // グループ配列
+
+    for (const child of children) {
+      const h = child.getBoundingClientRect().height;
+      if (currentH + h > DRAWABLE_H && pageGroups[pageGroups.length - 1].length > 0) {
+        // 次ページへ
+        pageGroups.push([]);
+        currentH = 0;
+      }
+      pageGroups[pageGroups.length - 1].push(child);
+      currentH += h;
+    }
+
+    // 1ページに収まるなら何もしない
+    if (pageGroups.length <= 1) return;
+
+    // 元のページを最初のグループで更新
+    const fragment = document.createDocumentFragment();
+
+    pageGroups.forEach((group, i) => {
+      const newPage = document.createElement('div');
+      newPage.className = page.className;
+
+      const newBody = document.createElement('div');
+      newBody.className = 'page-body';
+      group.forEach(el => newBody.appendChild(el.cloneNode(true)));
+
+      newPage.innerHTML = headerHTML + footerHTML;
+      newPage.insertBefore(newBody, newPage.querySelector('.page-footer'));
+      fragment.appendChild(newPage);
+    });
+
+    page.parentNode.replaceChild(fragment, page);
+  }
+
+  window.addEventListener('load', function() {
+    // 全ページを処理（カバーページは除く）
+    const pages = Array.from(document.querySelectorAll('.page'));
+    pages.forEach((page, i) => {
+      if (i === 0) return; // カバーはスキップ
+      splitPage(page);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

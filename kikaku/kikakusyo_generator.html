@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企画書ジェネレーター</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --editor-bg: #1a1a1a;
+  --editor-panel: #242424;
+  --editor-border: #333;
+  --editor-text: #e8e8e8;
+  --editor-muted: #888;
+  --editor-accent: #ffffff;
+  --editor-btn: #2d2d2d;
+  --editor-btn-hover: #3a3a3a;
+  --editor-active: #ffffff;
+}
+
+body {
+  background: var(--editor-bg);
+  font-family: 'Noto Sans JP', sans-serif;
+  color: var(--editor-text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== TOP BAR ===== */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: var(--editor-panel);
+  border-bottom: 1px solid var(--editor-border);
+  flex-shrink: 0;
+  z-index: 100;
+}
+.topbar__title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--editor-text);
+  margin-right: 8px;
+}
+.theme-btns { display: flex; gap: 6px; margin-right: auto; }
+.theme-btn {
+  padding: 5px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--editor-border);
+  background: var(--editor-btn);
+  color: var(--editor-muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.05em;
+}
+.theme-btn.is-active { background: var(--editor-active); color: #111; border-color: var(--editor-active); }
+.action-btns { display: flex; gap: 8px; }
+.action-btn {
+  padding: 6px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--editor-border);
+  background: var(--editor-btn);
+  color: var(--editor-text);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.05em;
+}
+.action-btn:hover { background: var(--editor-btn-hover); }
+.action-btn--primary { background: #fff; color: #111; border-color: #fff; }
+.action-btn--primary:hover { background: #e0e0e0; }
+
+/* ===== MAIN LAYOUT ===== */
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ===== EDITOR PANEL ===== */
+.editor {
+  width: 380px;
+  flex-shrink: 0;
+  background: var(--editor-panel);
+  border-right: 1px solid var(--editor-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.editor-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--editor-border);
+  flex-shrink: 0;
+}
+.editor-tab {
+  flex: 1;
+  padding: 8px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  color: var(--editor-muted);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  letter-spacing: 0.05em;
+}
+.editor-tab.is-active { color: var(--editor-text); border-bottom-color: #fff; }
+.editor-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+/* ===== FORM ===== */
+.form-group { margin-bottom: 16px; }
+.form-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--editor-muted);
+  letter-spacing: 0.1em;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.form-label .toggle-btn {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--editor-border);
+  background: transparent;
+  color: var(--editor-muted);
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.form-label .toggle-btn.is-on { background: #fff; color: #111; border-color: #fff; }
+.form-input, .form-textarea {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid var(--editor-border);
+  border-radius: 4px;
+  color: var(--editor-text);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 12px;
+  padding: 8px 10px;
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color 0.15s;
+}
+.form-input:focus, .form-textarea:focus {
+  outline: none;
+  border-color: #555;
+}
+.form-textarea { min-height: 70px; }
+.form-divider {
+  height: 1px;
+  background: var(--editor-border);
+  margin: 20px 0;
+}
+.section-header {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  color: #666;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+/* list editor */
+.list-editor { display: flex; flex-direction: column; gap: 4px; }
+.list-row { display: flex; gap: 6px; align-items: center; }
+.list-row input {
+  flex: 1;
+  background: #1a1a1a;
+  border: 1px solid var(--editor-border);
+  border-radius: 3px;
+  color: var(--editor-text);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 11px;
+  padding: 5px 8px;
+}
+.list-row input:focus { outline: none; border-color: #555; }
+.list-del {
+  width: 22px; height: 22px;
+  border-radius: 3px;
+  border: 1px solid var(--editor-border);
+  background: transparent;
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.list-del:hover { background: #333; color: #fff; }
+.list-add {
+  margin-top: 4px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  border: 1px dashed #444;
+  background: transparent;
+  color: #666;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.15s;
+}
+.list-add:hover { border-color: #666; color: #999; }
+
+/* ===== PREVIEW ===== */
+.preview-wrap {
+  flex: 1;
+  background: #888;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+  gap: 20px;
+}
+
+/* ===== PROPOSAL PAGES ===== */
+.page {
+  width: 794px;
+  min-height: 1123px;
+  background: #fff;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  flex-shrink: 0;
+}
+
+/* GAME THEME (お前は誰だ purple) */
+.theme-game {
+  --main: #7D728A;
+  --light: #BDB5C9;
+  --pale: #F0EEF4;
+  --dark: #4E465A;
+  --border: #DCD7E4;
+  --gray-text: #4A4A4A;
+  --gray-light: #888;
+  --white: #fff;
+}
+
+/* APP THEME (腹筋割人形 mono) */
+.theme-app {
+  --main: #111111;
+  --light: #DDDDDD;
+  --pale: #F2F2F2;
+  --dark: #444444;
+  --border: #CCCCCC;
+  --gray-text: #222222;
+  --gray-light: #888888;
+  --white: #FFFFFF;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 32px 12px;
+  border-bottom: 2px solid var(--main);
+  font-size: 10px;
+  color: var(--gray-light);
+  flex-shrink: 0;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.page-header .left { line-height: 1.7; }
+.page-header .right { text-align: right; line-height: 1.7; }
+
+.page-footer {
+  margin-top: auto;
+  padding: 12px 32px;
+  border-top: 1px solid var(--border);
+  font-size: 9px;
+  color: var(--gray-light);
+  flex-shrink: 0;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+.page-body {
+  flex: 1;
+  padding: 40px 48px 32px;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+.section-badge {
+  display: inline-block;
+  background: var(--main);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 5px 14px;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  margin-bottom: 28px;
+  color: var(--gray-text);
+}
+
+.body-text { font-size: 12.5px; line-height: 2; color: var(--gray-text); margin-bottom: 16px; }
+
+/* cover */
+.cover-center {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -60%); text-align: center; width: 80%;
+}
+.cover-box { border: 2px solid var(--gray-light); padding: 52px 44px; }
+.cover-title { font-family: 'Noto Serif JP', serif; font-size: 34px; font-weight: 700; letter-spacing: 0.18em; line-height: 1.4; color: var(--gray-text); }
+.cover-rule { width: 60px; height: 2px; background: var(--main); margin: 20px auto; }
+.cover-subtitle { font-size: 13px; font-weight: 700; letter-spacing: 0.2em; color: var(--dark); }
+.cover-meta { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); text-align: center; font-size: 12px; line-height: 2; color: var(--gray-text); white-space: nowrap; }
+.cover-notice { position: absolute; bottom: 40px; left: 48px; font-size: 9px; color: var(--gray-light); line-height: 1.8; }
+
+/* concept */
+.concept-lead { font-family: 'Noto Serif JP', serif; font-size: 22px; font-weight: 700; letter-spacing: 0.06em; line-height: 1.8; margin-bottom: 32px; color: var(--gray-text); }
+.concept-block { background: var(--pale); border-left: 4px solid var(--main); padding: 20px 24px; margin-bottom: 24px; font-size: 13px; line-height: 2; color: var(--gray-text); }
+.concept-manifesto { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.concept-manifesto-item { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: var(--dark); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+
+/* detail */
+.detail-section { margin-bottom: 24px; }
+.concl-head { font-weight: 700; font-size: 12.5px; color: var(--dark); border-bottom: 2px solid var(--main); padding-bottom: 6px; margin-bottom: 12px; letter-spacing: 0.05em; }
+.user-list { padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.user-list li { font-size: 12px; line-height: 1.7; padding-left: 16px; position: relative; color: var(--gray-text); }
+.user-list li::before { content: '▸'; position: absolute; left: 0; color: var(--main); font-size: 10px; top: 3px; }
+
+/* diff grid */
+.diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.diff-box { padding: 14px 16px; }
+.diff-box--plain { background: #F5F5F5; }
+.diff-box--main { background: var(--pale); border: 1.5px solid var(--main); }
+.diff-box__label { font-weight: 700; font-size: 11px; margin-bottom: 6px; }
+.diff-box--plain .diff-box__label { color: var(--gray-light); }
+.diff-box--main .diff-box__label { color: var(--main); }
+.diff-box__text { font-size: 11.5px; line-height: 1.9; }
+
+/* scope */
+.scope-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 12px; }
+.scope-card { border: 1.5px solid var(--main); padding: 16px 16px 12px; }
+.scope-card-title { font-weight: 700; font-size: 11px; letter-spacing: 0.05em; margin-bottom: 10px; color: var(--main); border-bottom: 2px solid var(--main); padding-bottom: 5px; }
+.scope-card ul { padding-left: 14px; font-size: 11px; line-height: 2; color: var(--gray-text); }
+.scope-card-later { grid-column: 1 / -1; border-color: var(--light); background: var(--pale); }
+
+/* phase */
+.phase-timeline { display: flex; align-items: center; gap: 0; margin: 20px 0 28px; }
+.phase-box { background: var(--main); color: white; font-weight: 700; font-size: 12px; padding: 10px 14px; text-align: center; letter-spacing: 0.05em; flex: 1; position: relative; }
+.phase-box:not(:last-child)::after { content: ''; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); border-left: 13px solid var(--main); border-top: 20px solid transparent; border-bottom: 20px solid transparent; z-index: 1; }
+.phase-box .phase-sub { font-size: 9px; font-weight: 400; opacity: 0.85; margin-top: 3px; }
+
+/* tag */
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tag { background: var(--pale); border: 1.5px solid var(--main); padding: 3px 10px; font-size: 10px; color: var(--main); font-weight: 700; }
+
+/* ===== PRINT ===== */
+@media print {
+  body { background: white; overflow: visible; }
+  .topbar, .editor, .preview-wrap > *:not(.page) { display: none !important; }
+  .main { display: block; }
+  .preview-wrap { background: white; padding: 0; gap: 0; overflow: visible; }
+  .page { box-shadow: none; page-break-after: always; break-after: page; }
+}
+@page { size: A4; margin: 0; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar__title">企画書ジェネレーター</div>
+  <div class="theme-btns">
+    <button class="theme-btn is-active" data-theme="game" onclick="setTheme('game')">🎮 GAME</button>
+    <button class="theme-btn" data-theme="app" onclick="setTheme('app')">📱 APP</button>
+  </div>
+  <div class="action-btns">
+    <button class="action-btn" onclick="downloadHTML()">HTMLダウンロード</button>
+    <button class="action-btn--primary action-btn" onclick="window.print()">PDFに保存</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- EDITOR -->
+  <div class="editor">
+    <div class="editor-tabs">
+      <div class="editor-tab is-active" onclick="switchTab('basic')">基本情報</div>
+      <div class="editor-tab" onclick="switchTab('concept')">コンセプト</div>
+      <div class="editor-tab" onclick="switchTab('sections')">セクション</div>
+    </div>
+
+    <!-- TAB: 基本情報 -->
+    <div class="editor-body" id="tab-basic">
+      <div class="section-header">基本情報</div>
+
+      <div class="form-group">
+        <div class="form-label">タイトル</div>
+        <input class="form-input" id="f-title" value="企画書タイトル" oninput="render()">
+      </div>
+      <div class="form-group">
+        <div class="form-label">サブタイトル（ジャンル・種別）</div>
+        <input class="form-input" id="f-subtitle" value="ブラウザゲーム / アドベンチャー" oninput="render()">
+      </div>
+      <div class="form-group">
+        <div class="form-label">作成日</div>
+        <input class="form-input" id="f-date" type="text" value="2026/05/19" oninput="render()">
+      </div>
+      <div class="form-group">
+        <div class="form-label">作成者</div>
+        <input class="form-input" id="f-author" value="桝田 心護" oninput="render()">
+      </div>
+      <div class="form-group">
+        <div class="form-label">実行場所</div>
+        <input class="form-input" id="f-platform" value="GitHub Pages" oninput="render()">
+      </div>
+      <div class="form-group">
+        <div class="form-label">制作形式</div>
+        <input class="form-input" id="f-tech" value="HTML / CSS / JavaScript" oninput="render()">
+      </div>
+      <div class="form-group">
+        <div class="form-label">フッター注記</div>
+        <input class="form-input" id="f-notice" value="こちらの資料は個人情報も含まれます。情報の口外、または取り扱いは控えてください。" oninput="render()">
+      </div>
+    </div>
+
+    <!-- TAB: コンセプト -->
+    <div class="editor-body" id="tab-concept" style="display:none">
+      <div class="section-header">コンセプト</div>
+      <div class="form-group">
+        <div class="form-label">キャッチコピー（大見出し）</div>
+        <textarea class="form-textarea" id="f-catch" oninput="render()">問いに答えることが、
+記憶を取り戻すことになる。</textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">概要文</div>
+        <textarea class="form-textarea" id="f-summary" style="min-height:90px" oninput="render()">一般的なゲームは、事件の真相を外側から解き明かしていく。しかし本作はその逆を行く。プレイヤーが解くのは、自分自身の謎である。</textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">ブロック引用（コンセプトボックス）</div>
+        <textarea class="form-textarea" id="f-blockquote" oninput="render()">謎のバーで謎のマスターに問われる十の問いは、実はプレイヤー自身が封印してきた記憶への問いかけである。</textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">マニフェスト（箇条書き）</div>
+        <div class="list-editor" id="list-manifesto"></div>
+        <button class="list-add" onclick="addListItem('list-manifesto','f-manifesto','render')">＋ 追加</button>
+      </div>
+
+      <div class="form-divider"></div>
+      <div class="section-header">ターゲット</div>
+      <div class="form-group">
+        <div class="form-label">ターゲット説明</div>
+        <textarea class="form-textarea" id="f-target-desc" oninput="render()">短編ノベルゲームや謎解きが好きで、ノベルゲームの文法に理解がある人。</textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">ターゲットリスト</div>
+        <div class="list-editor" id="list-target"></div>
+        <button class="list-add" onclick="addListItem('list-target','f-target','render')">＋ 追加</button>
+      </div>
+
+      <div class="form-divider"></div>
+      <div class="section-header">コア体験</div>
+      <div class="form-group">
+        <div class="form-label">コア体験の説明</div>
+        <textarea class="form-textarea" id="f-core" oninput="render()">問いに答えるたびに、自分が何者か分かっていく感覚。正解数によって選択肢が絞られ、自分の記憶が少しずつ言葉になる。</textarea>
+      </div>
+
+      <div class="form-divider"></div>
+      <div class="section-header">差別化</div>
+      <div class="form-group">
+        <div class="form-label">既存作のラベル</div>
+        <input class="form-input" id="f-diff-old-label" value="一般的なミステリーADV" oninput="render()">
+      </div>
+      <div class="form-group">
+        <div class="form-label">既存作の説明</div>
+        <textarea class="form-textarea" id="f-diff-old" oninput="render()">他者の謎を「外側から」解く。プレイヤーは探偵として事件を追う。</textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">本作の説明</div>
+        <textarea class="form-textarea" id="f-diff-new" oninput="render()">プレイヤーが解くのは自分自身の謎。理解度がそのまま選択肢数に直結する。</textarea>
+      </div>
+    </div>
+
+    <!-- TAB: セクション -->
+    <div class="editor-body" id="tab-sections" style="display:none">
+      <div class="section-header">表示セクション</div>
+
+      <div class="form-group">
+        <div class="form-label">
+          スコープ
+          <button class="toggle-btn is-on" id="toggle-scope" onclick="toggleSection('scope')">表示</button>
+        </div>
+        <div id="sec-scope">
+          <div class="form-label" style="margin-top:8px;">実装済み（改行区切り）</div>
+          <textarea class="form-textarea" id="f-scope-do" oninput="render()">タイトル・問題進行
+全10問データ
+エンディングカード6種
+実績ギャラリー
+セーブ・ロード機能
+GitHub Pagesで公開</textarea>
+          <div class="form-label" style="margin-top:8px;">やらないこと</div>
+          <textarea class="form-textarea" id="f-scope-dont" oninput="render()">BGM・SEの本格実装
+多言語対応
+ランキング・スコア共有
+ネイティブアプリ化</textarea>
+          <div class="form-label" style="margin-top:8px;">後回しにするもの</div>
+          <textarea class="form-textarea" id="f-scope-later" oninput="render()">BGMの追加　／　選択肢演出の強化
+問の追加（11問目以降）</textarea>
+        </div>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <div class="form-group">
+        <div class="form-label">
+          開発フェーズ
+          <button class="toggle-btn is-on" id="toggle-phase" onclick="toggleSection('phase')">表示</button>
+        </div>
+        <div id="sec-phase">
+          <div class="form-label" style="margin-top:8px;">フェーズ名（改行区切り、例: Phase1|物語設計）</div>
+          <textarea class="form-textarea" id="f-phases" oninput="render()">Phase 1|物語設計
+Phase 2|素材制作
+Phase 3|実装
+Phase 4|公開</textarea>
+        </div>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <div class="form-group">
+        <div class="form-label">
+          技術仕様
+          <button class="toggle-btn is-on" id="toggle-tech" onclick="toggleSection('tech')">表示</button>
+        </div>
+        <div id="sec-tech">
+          <div class="form-label" style="margin-top:8px;">技術タグ（改行区切り）</div>
+          <textarea class="form-textarea" id="f-tags" oninput="render()">HTML5
+CSS3
+Vanilla JavaScript
+localStorage
+GitHub Pages</textarea>
+          <div class="form-label" style="margin-top:8px;">ファイル構成（改行区切り）</div>
+          <textarea class="form-textarea" id="f-files" oninput="render()">index.html：画面構造
+style.css：デザイン
+app.js：ロジック</textarea>
+        </div>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <div class="form-group">
+        <div class="form-label">
+          発展構想・結論
+          <button class="toggle-btn is-on" id="toggle-conclusion" onclick="toggleSection('conclusion')">表示</button>
+        </div>
+        <div id="sec-conclusion">
+          <div class="form-label" style="margin-top:8px;">結論の大見出し</div>
+          <textarea class="form-textarea" id="f-concl-lead" oninput="render()">「謎を解く」のではなく、
+「自分を解く」ゲームを作る。</textarea>
+          <div class="form-label" style="margin-top:8px;">01 なぜこの設計思想か</div>
+          <textarea class="form-textarea" id="f-concl-01" oninput="render()">テキストミステリーというジャンルに、「自己開示」という新しい軸を持ち込む。プレイヤーが解くのは事件ではなく、自分自身の心理と記憶の地図である。</textarea>
+          <div class="form-label" style="margin-top:8px;">02 なぜ続けてもらえるか</div>
+          <textarea class="form-textarea" id="f-concl-02" oninput="render()">エンディングカードは6種類あり、1回のプレイで到達できるのは1種類のみ。正解数・選択傾向によって到達できるカードが変わるため、すべてのカードを開放するには複数回のプレイが必要になる。</textarea>
+          <div class="form-label" style="margin-top:8px;">03 発展構想</div>
+          <textarea class="form-textarea" id="f-concl-03" oninput="render()">将来的には、別テーマの十問や追加エンディングカードを増やし、同じ構造を別シナリオへ展開できる。</textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="preview-wrap" id="preview-wrap">
+    <!-- pages injected here -->
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let currentTheme = 'game';
+const sectionVisible = { scope: true, phase: true, tech: true, conclusion: true };
+
+// ===== INIT LISTS =====
+function initLists() {
+  const manifesto = ['答えるほど、自分が怖くなる。', '解けば解くほど、目が覚める。', '問いに答えることは、生きていることを確かめることだ。'];
+  const target = ['ストーリー重視のノベルゲームが好きな人', '考察型ゲームや隠し要素が好きな人', '実況・配信で考察しながら進めるゲームを好む人'];
+  manifesto.forEach(v => addListItem('list-manifesto', 'f-manifesto', 'render', v));
+  target.forEach(v => addListItem('list-target', 'f-target', 'render', v));
+}
+
+function addListItem(containerId, prefix, renderFn, value = '') {
+  const container = document.getElementById(containerId);
+  const idx = container.children.length;
+  const row = document.createElement('div');
+  row.className = 'list-row';
+  row.innerHTML = `<input type="text" value="${value}" oninput="render()"><button class="list-del" onclick="this.parentNode.remove();render()">×</button>`;
+  container.appendChild(row);
+  render();
+}
+
+function getList(containerId) {
+  const container = document.getElementById(containerId);
+  return Array.from(container.querySelectorAll('input')).map(i => i.value).filter(v => v.trim());
+}
+
+// ===== THEME =====
+function setTheme(theme) {
+  currentTheme = theme;
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('is-active', b.dataset.theme === theme));
+  render();
+}
+
+// ===== TOGGLE =====
+function toggleSection(key) {
+  sectionVisible[key] = !sectionVisible[key];
+  const btn = document.getElementById('toggle-' + key);
+  const sec = document.getElementById('sec-' + key);
+  if (btn) { btn.textContent = sectionVisible[key] ? '表示' : '非表示'; btn.classList.toggle('is-on', sectionVisible[key]); }
+  if (sec) sec.style.display = sectionVisible[key] ? '' : 'none';
+  render();
+}
+
+// ===== TAB =====
+function switchTab(name) {
+  ['basic','concept','sections'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === name ? '' : 'none';
+  });
+  document.querySelectorAll('.editor-tab').forEach((tab, i) => {
+    tab.classList.toggle('is-active', ['basic','concept','sections'][i] === name);
+  });
+}
+
+// ===== GET VALUES =====
+const g = id => document.getElementById(id)?.value || '';
+
+// ===== RENDER =====
+function render() {
+  const theme = 'theme-' + currentTheme;
+  const title = g('f-title');
+  const subtitle = g('f-subtitle');
+  const date = g('f-date');
+  const author = g('f-author');
+  const platform = g('f-platform');
+  const tech = g('f-tech');
+  const notice = g('f-notice');
+  const catchCopy = g('f-catch').replace(/\n/g, '<br>');
+  const summary = g('f-summary');
+  const blockquote = g('f-blockquote');
+  const manifesto = getList('list-manifesto');
+  const targetDesc = g('f-target-desc');
+  const targetList = getList('list-target');
+  const core = g('f-core');
+  const diffOldLabel = g('f-diff-old-label');
+  const diffOld = g('f-diff-old');
+  const diffNew = g('f-diff-new');
+
+  const scopeDo = g('f-scope-do').split('\n').filter(v=>v.trim());
+  const scopeDont = g('f-scope-dont').split('\n').filter(v=>v.trim());
+  const scopeLater = g('f-scope-later').split('\n').filter(v=>v.trim());
+  const phaseLines = g('f-phases').split('\n').filter(v=>v.trim());
+  const tags = g('f-tags').split('\n').filter(v=>v.trim());
+  const files = g('f-files').split('\n').filter(v=>v.trim());
+  const conclLead = g('f-concl-lead').replace(/\n/g,'<br>');
+  const concl01 = g('f-concl-01');
+  const concl02 = g('f-concl-02');
+  const concl03 = g('f-concl-03');
+
+  const hdr = `<div class="page-header"><div class="left">${title}<br>${subtitle}</div><div class="right">${date}<br>企画書</div></div>`;
+  const ftr = `<div class="page-footer">${notice}</div>`;
+
+  let pages = '';
+
+  // PAGE 1: COVER
+  pages += `<div class="page ${theme}">
+    ${hdr}
+    <div class="cover-center">
+      <div class="cover-box">
+        <div class="cover-title">${title}</div>
+        <div class="cover-rule"></div>
+        <div class="cover-subtitle">${subtitle}</div>
+      </div>
+    </div>
+    <div class="cover-meta">作成日：${date}<br>作成者：${author}<br>実行場所：${platform}<br>制作形式：${tech}</div>
+    <div class="cover-notice">${notice}</div>
+  </div>`;
+
+  // PAGE 2: CONCEPT
+  pages += `<div class="page ${theme}">
+    ${hdr}
+    <div class="page-body">
+      <div class="section-badge">コンセプト</div>
+      <div class="concept-lead">${catchCopy}</div>
+      <div class="body-text">${summary}</div>
+      <div class="concept-block">${blockquote}</div>
+      ${manifesto.length ? `<div class="concept-manifesto">${manifesto.map(m=>`<div class="concept-manifesto-item">${m}</div>`).join('')}</div>` : ''}
+    </div>
+    ${ftr}
+  </div>`;
+
+  // PAGE 3: TARGET / CORE / DIFF
+  pages += `<div class="page ${theme}">
+    ${hdr}
+    <div class="page-body">
+      <div class="section-badge">ターゲット・コア体験・差別化</div>
+      <div style="display:flex;flex-direction:column;gap:24px;">
+        <div>
+          <div class="concl-head">ターゲット</div>
+          <div class="body-text" style="margin-bottom:6px;">${targetDesc}</div>
+          ${targetList.length ? `<ul class="user-list">${targetList.map(t=>`<li>${t}</li>`).join('')}</ul>` : ''}
+        </div>
+        <div>
+          <div class="concl-head">コア体験</div>
+          <div class="concept-block" style="margin-bottom:0;">${core}</div>
+        </div>
+        <div>
+          <div class="concl-head">差別化</div>
+          <div class="diff-grid">
+            <div class="diff-box diff-box--plain"><div class="diff-box__label">${diffOldLabel}</div><div class="diff-box__text">${diffOld}</div></div>
+            <div class="diff-box diff-box--main"><div class="diff-box__label">本作 ← ${title}</div><div class="diff-box__text">${diffNew}</div></div>
+          </div>
+        </div>
+        <div>
+          <div class="concl-head">マネタイズ</div>
+          <div class="body-text" style="margin-bottom:0;">無料公開。ブラウザで動作し、インストール不要。非商業作品。</div>
+        </div>
+      </div>
+    </div>
+    ${ftr}
+  </div>`;
+
+  // PAGE 4: SCOPE (optional)
+  if (sectionVisible.scope) {
+    pages += `<div class="page ${theme}">
+      ${hdr}
+      <div class="page-body">
+        <div class="section-badge">スコープ</div>
+        <div class="scope-grid">
+          <div class="scope-card"><div class="scope-card-title">✅ 実装済み・やること</div><ul>${scopeDo.map(s=>`<li>${s}</li>`).join('')}</ul></div>
+          <div class="scope-card"><div class="scope-card-title">🚫 やらないこと</div><ul>${scopeDont.map(s=>`<li>${s}</li>`).join('')}</ul></div>
+          <div class="scope-card scope-card-later"><div class="scope-card-title">🔜 後回しにしてよいもの</div><ul>${scopeLater.map(s=>`<li>${s}</li>`).join('')}</ul></div>
+        </div>
+      </div>
+      ${ftr}
+    </div>`;
+  }
+
+  // PAGE 5: PHASE (optional)
+  if (sectionVisible.phase && phaseLines.length) {
+    const phases = phaseLines.map(l => { const p = l.split('|'); return { name: p[0]||'', sub: p[1]||'' }; });
+    pages += `<div class="page ${theme}">
+      ${hdr}
+      <div class="page-body">
+        <div class="section-badge">開発フェーズ</div>
+        <div class="phase-timeline">
+          ${phases.map(p=>`<div class="phase-box">${p.name}<br><span class="phase-sub">${p.sub}</span></div>`).join('')}
+        </div>
+      </div>
+      ${ftr}
+    </div>`;
+  }
+
+  // PAGE 6: TECH (optional)
+  if (sectionVisible.tech) {
+    pages += `<div class="page ${theme}">
+      ${hdr}
+      <div class="page-body">
+        <div class="section-badge">技術仕様</div>
+        <div class="detail-section">
+          <div class="concl-head">技術スタック</div>
+          <div class="tag-list">${tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        </div>
+        <div class="detail-section" style="margin-bottom:0;">
+          <div class="concl-head">ファイル構成</div>
+          <div style="background:var(--pale);padding:12px 16px;font-family:monospace;font-size:11.5px;line-height:2;color:var(--gray-text);">
+            ${files.join('<br>')}
+          </div>
+        </div>
+      </div>
+      ${ftr}
+    </div>`;
+  }
+
+  // PAGE 7: CONCLUSION (optional)
+  if (sectionVisible.conclusion) {
+    pages += `<div class="page ${theme}">
+      ${hdr}
+      <div class="page-body">
+        <div class="section-badge">企画の結論</div>
+        <div class="concept-lead">${conclLead}</div>
+        <div style="display:flex;flex-direction:column;gap:22px;">
+          <div><div class="concl-head">01　なぜこの設計思想か</div><div class="body-text" style="margin-bottom:0;">${concl01}</div></div>
+          <div><div class="concl-head">02　なぜ続けてもらえるか</div><div class="body-text" style="margin-bottom:0;">${concl02}</div></div>
+          <div><div class="concl-head">03　発展構想</div><div class="body-text" style="margin-bottom:0;">${concl03}</div></div>
+        </div>
+      </div>
+      ${ftr}
+    </div>`;
+  }
+
+  document.getElementById('preview-wrap').innerHTML = pages;
+}
+
+// ===== DOWNLOAD HTML =====
+function downloadHTML() {
+  const preview = document.getElementById('preview-wrap').innerHTML;
+  const title = g('f-title') || '企画書';
+  const theme = 'theme-' + currentTheme;
+
+  const html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title} 企画書</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#888;font-family:'Noto Sans JP',sans-serif;display:flex;flex-direction:column;align-items:center;gap:24px;padding:32px 16px;}
+.theme-game{--main:#7D728A;--light:#BDB5C9;--pale:#F0EEF4;--dark:#4E465A;--border:#DCD7E4;--gray-text:#4A4A4A;--gray-light:#888;--white:#fff;}
+.theme-app{--main:#111111;--light:#DDDDDD;--pale:#F2F2F2;--dark:#444444;--border:#CCCCCC;--gray-text:#222222;--gray-light:#888888;--white:#FFFFFF;}
+.page{width:794px;min-height:1123px;background:#fff;position:relative;display:flex;flex-direction:column;box-shadow:0 4px 24px rgba(0,0,0,0.3);flex-shrink:0;}
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 32px 12px;border-bottom:2px solid var(--main);font-size:10px;color:var(--gray-light);flex-shrink:0;font-family:'Noto Sans JP',sans-serif;}
+.page-header .left{line-height:1.7;}.page-header .right{text-align:right;line-height:1.7;}
+.page-footer{margin-top:auto;padding:12px 32px;border-top:1px solid var(--border);font-size:9px;color:var(--gray-light);flex-shrink:0;font-family:'Noto Sans JP',sans-serif;}
+.page-body{flex:1;padding:40px 48px 32px;display:flex;flex-direction:column;font-family:'Noto Sans JP',sans-serif;}
+.section-badge{display:inline-block;background:var(--main);color:white;font-size:11px;font-weight:700;letter-spacing:0.12em;padding:5px 14px;margin-bottom:20px;}
+.section-title{font-family:'Noto Serif JP',serif;font-size:26px;font-weight:700;letter-spacing:0.08em;line-height:1.5;margin-bottom:28px;color:var(--gray-text);}
+.body-text{font-size:12.5px;line-height:2;color:var(--gray-text);margin-bottom:16px;}
+.cover-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);text-align:center;width:80%;}
+.cover-box{border:2px solid var(--gray-light);padding:52px 44px;}
+.cover-title{font-family:'Noto Serif JP',serif;font-size:34px;font-weight:700;letter-spacing:0.18em;line-height:1.4;color:var(--gray-text);}
+.cover-rule{width:60px;height:2px;background:var(--main);margin:20px auto;}
+.cover-subtitle{font-size:13px;font-weight:700;letter-spacing:0.2em;color:var(--dark);}
+.cover-meta{position:absolute;bottom:120px;left:50%;transform:translateX(-50%);text-align:center;font-size:12px;line-height:2;color:var(--gray-text);white-space:nowrap;}
+.cover-notice{position:absolute;bottom:40px;left:48px;font-size:9px;color:var(--gray-light);line-height:1.8;}
+.concept-lead{font-family:'Noto Serif JP',serif;font-size:22px;font-weight:700;letter-spacing:0.06em;line-height:1.8;margin-bottom:32px;color:var(--gray-text);}
+.concept-block{background:var(--pale);border-left:4px solid var(--main);padding:20px 24px;margin-bottom:24px;font-size:13px;line-height:2;color:var(--gray-text);}
+.concept-manifesto{display:flex;flex-direction:column;gap:10px;margin-top:20px;}
+.concept-manifesto-item{font-size:14px;font-weight:700;letter-spacing:0.08em;color:var(--dark);border-bottom:1px solid var(--border);padding-bottom:10px;}
+.concl-head{font-weight:700;font-size:12.5px;color:var(--dark);border-bottom:2px solid var(--main);padding-bottom:6px;margin-bottom:12px;letter-spacing:0.05em;}
+.user-list{padding-left:0;list-style:none;display:flex;flex-direction:column;gap:5px;margin-top:8px;}
+.user-list li{font-size:12px;line-height:1.7;padding-left:16px;position:relative;color:var(--gray-text);}
+.user-list li::before{content:'▸';position:absolute;left:0;color:var(--main);font-size:10px;top:3px;}
+.diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.diff-box{padding:14px 16px;}.diff-box--plain{background:#F5F5F5;}.diff-box--main{background:var(--pale);border:1.5px solid var(--main);}
+.diff-box__label{font-weight:700;font-size:11px;margin-bottom:6px;}.diff-box--plain .diff-box__label{color:var(--gray-light);}.diff-box--main .diff-box__label{color:var(--main);}
+.diff-box__text{font-size:11.5px;line-height:1.9;}
+.scope-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px;}
+.scope-card{border:1.5px solid var(--main);padding:16px 16px 12px;}
+.scope-card-title{font-weight:700;font-size:11px;letter-spacing:0.05em;margin-bottom:10px;color:var(--main);border-bottom:2px solid var(--main);padding-bottom:5px;}
+.scope-card ul{padding-left:14px;font-size:11px;line-height:2;color:var(--gray-text);}
+.scope-card-later{grid-column:1/-1;border-color:var(--light);background:var(--pale);}
+.phase-timeline{display:flex;align-items:center;gap:0;margin:20px 0 28px;}
+.phase-box{background:var(--main);color:white;font-weight:700;font-size:12px;padding:10px 14px;text-align:center;letter-spacing:0.05em;flex:1;position:relative;}
+.phase-box:not(:last-child)::after{content:'';position:absolute;right:-13px;top:50%;transform:translateY(-50%);border-left:13px solid var(--main);border-top:20px solid transparent;border-bottom:20px solid transparent;z-index:1;}
+.phase-box .phase-sub{font-size:9px;font-weight:400;opacity:0.85;margin-top:3px;}
+.tag-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.tag{background:var(--pale);border:1.5px solid var(--main);padding:3px 10px;font-size:10px;color:var(--main);font-weight:700;}
+.detail-section{margin-bottom:24px;}
+@page{size:A4;margin:0;}
+@media print{body{background:white;padding:0;gap:0;}.page{box-shadow:none;page-break-after:always;break-after:page;width:210mm;min-height:297mm;}}
+</style>
+</head>
+<body>
+${preview}
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${title}_企画書.html`;
+  a.click();
+}
+
+// ===== INIT =====
+initLists();
+render();
+</script>
+</body>
+</html>
