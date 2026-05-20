@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YTP 行動設計</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0e0e0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --border: #2a2a2e;
+    --accent: #c8f060;
+    --accent2: #60c8f0;
+    --accent-dim: rgba(200,240,96,0.12);
+    --text: #e8e8ea;
+    --text-dim: #7a7a82;
+    --text-mid: #b0b0b8;
+    --danger: #f06060;
+    --warn: #f0b060;
+    --r: 10px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 16px; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* ── LAYOUT ── */
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .screen {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    padding: 24px 20px 40px;
+    animation: fadeIn .3s ease;
+  }
+  .screen.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .app-logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: .2em;
+  }
+  .app-header-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* ── TYPOGRAPHY ── */
+  .label {
+    font-size: 11px;
+    letter-spacing: .12em;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+  }
+  .h1 { font-size: 26px; font-weight: 700; line-height: 1.25; }
+  .h2 { font-size: 18px; font-weight: 500; }
+  .h3 { font-size: 14px; font-weight: 500; }
+  .body { font-size: 14px; line-height: 1.7; color: var(--text-mid); }
+  .mono { font-family: 'DM Mono', monospace; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width .4s ease;
+  }
+
+  /* ── QUESTION ── */
+  .question-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .question-text {
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.5;
+    margin-bottom: 28px;
+    min-height: 60px;
+  }
+  .question-sub {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  /* ── OPTIONS ── */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .opt-btn {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r);
+    padding: 14px 16px;
+    text-align: left;
+    cursor: pointer;
+    transition: all .18s;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .opt-btn:active { transform: scale(.98); }
+  .opt-btn.selected {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+  }
+  .opt-score {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    min-width: 24px;
+    padding-top: 2px;
+  }
+  .opt-btn.selected .opt-score { color: var(--accent); }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    background: var(--accent);
+    color: #0e0e0f;
+    border: none;
+    border-radius: var(--r);
+    padding: 15px 24px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity .15s, transform .15s;
+    letter-spacing: .02em;
+  }
+  .btn-primary:active { opacity: .85; transform: scale(.98); }
+  .btn-primary:disabled { opacity: .35; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-mid);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r);
+    padding: 13px 24px;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+    transition: all .15s;
+  }
+  .btn-secondary:active { background: var(--surface2); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 8px 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 24px;
+  }
+  .btn-row .btn-primary { flex: 2; }
+  .btn-row .btn-secondary { flex: 1; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-accent {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  /* ── YTP RESULT ── */
+  .ytp-ring-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0 20px;
+  }
+  .ytp-ring {
+    position: relative;
+    width: 160px;
+    height: 160px;
+  }
+  .ytp-ring svg {
+    transform: rotate(-90deg);
+    width: 160px;
+    height: 160px;
+  }
+  .ytp-ring-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+  .ytp-ring-fill {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1);
+  }
+  .ytp-ring-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .ytp-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 38px;
+    font-weight: 500;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .ytp-unit { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+
+  .ytp-range-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .ytp-range-chip {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .ytp-range-chip.highlight {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .ytp-range-chip .label { display: block; margin-bottom: 4px; }
+  .ytp-range-chip .val {
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .ytp-range-chip.highlight .val { color: var(--accent); }
+
+  /* ── TIME INPUT ── */
+  .time-input-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 20px 0;
+  }
+  .time-input {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 36px;
+    font-weight: 400;
+    width: 88px;
+    text-align: center;
+    padding: 12px 4px;
+    outline: none;
+    transition: border-color .15s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .time-input:focus { border-color: var(--accent); }
+  .time-sep {
+    font-size: 32px;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+  }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  /* ── ACTION LIST ── */
+  .action-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .action-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .action-name { flex: 1; font-size: 14px; }
+  .action-lv-btns { display: flex; gap: 4px; }
+  .lv-btn {
+    width: 32px; height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--surface2);
+    color: var(--text-dim);
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .lv-btn.active-lv1 { border-color: #60f0a0; background: rgba(96,240,160,.15); color: #60f0a0; }
+  .lv-btn.active-lv2 { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+  .lv-btn.active-lv3 { border-color: var(--warn); background: rgba(240,176,96,.12); color: var(--warn); }
+  .lv-btn.active-lv4 { border-color: var(--danger); background: rgba(240,96,96,.12); color: var(--danger); }
+  .action-del {
+    background: none; border: none; color: var(--text-dim);
+    font-size: 16px; cursor: pointer; padding: 4px;
+    line-height: 1;
+  }
+
+  .add-action-row {
+    display: flex; gap: 8px; margin-bottom: 20px;
+  }
+  .action-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .action-input:focus { border-color: var(--accent); }
+  .action-input::placeholder { color: var(--text-dim); }
+  .add-btn {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 20px;
+    width: 42px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all .12s;
+  }
+  .add-btn:active { background: var(--accent-dim); border-color: var(--accent); }
+
+  /* ── RESULT DISPLAY ── */
+  .result-time-big {
+    font-family: 'DM Mono', monospace;
+    font-size: 56px;
+    font-weight: 400;
+    color: var(--accent);
+    text-align: center;
+    letter-spacing: -.02em;
+    line-height: 1;
+    margin: 8px 0 4px;
+  }
+  .result-label-center { text-align: center; }
+  .result-detail {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.8;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── DAILY ADJUSTMENT ── */
+  .slider-row { margin-bottom: 20px; }
+  .slider-label-row {
+    display: flex; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 0 4px var(--accent-dim);
+  }
+
+  /* ── BADGES / CHIPS ── */
+  .chip {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .chip.green { border-color: #60f0a0; color: #60f0a0; }
+  .chip.yellow { border-color: var(--accent); color: var(--accent); }
+  .chip.orange { border-color: var(--warn); color: var(--warn); }
+  .chip.red { border-color: var(--danger); color: var(--danger); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  /* ── WELCOME ── */
+  .welcome-hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 40px 0 20px;
+  }
+  .welcome-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .2em;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .welcome-title {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  .welcome-title span { color: var(--accent); }
+  .welcome-desc {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text-mid);
+    margin-bottom: 32px;
+  }
+  .welcome-note {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    padding: 12px;
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .section-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  /* ── MISC ── */
+  .spacer { flex: 1; }
+  .mt8 { margin-top: 8px; }
+  .mt16 { margin-top: 16px; }
+  .mt24 { margin-top: 24px; }
+  .mb8 { margin-bottom: 8px; }
+  .mb16 { margin-bottom: 16px; }
+  .text-center { text-align: center; }
+  .text-accent { color: var(--accent); }
+  .text-dim { color: var(--text-dim); }
+  .text-mid { color: var(--text-mid); }
+
+  .lv-legend {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .lv-legend-item {
+    font-size: 11px; font-family: 'DM Mono', monospace;
+    padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border);
+  }
+
+  /* today screen tabs */
+  .tab-row {
+    display: flex; gap: 0; margin-bottom: 24px;
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  }
+  .tab-btn {
+    flex: 1; padding: 10px; background: var(--surface);
+    border: none; color: var(--text-dim); font-family: inherit;
+    font-size: 13px; cursor: pointer; transition: all .15s;
+  }
+  .tab-btn.active {
+    background: var(--accent-dim); color: var(--accent); font-weight: 500;
+  }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="app-header">
+    <span class="app-logo">YTP</span>
+    <span class="app-header-sub" id="header-sub">行動設計</span>
+  </header>
+
+  <!-- ════════════════════════════════ SCREEN: WELCOME -->
+  <section class="screen active" id="screen-welcome">
+    <div class="welcome-hero">
+      <p class="welcome-tag">YOYUU TEKISEI POINT</p>
+      <h1 class="welcome-title">その人には、<br>その人の<br><span>動ける余裕</span>がある。</h1>
+      <p class="welcome-desc">
+        余裕は多ければいいわけではない。<br>
+        少なすぎると焦り、多すぎると崩れる。<br>
+        このアプリは「あなたの適正な余裕」を算出し、<br>
+        今日の推奨開始時刻を提示する。
+      </p>
+      <div class="welcome-note">
+        入力を強制しない。行動を命令しない。<br>
+        人格を評価しない。
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-start">はじめる（初回診断 20問）</button>
+    <button class="btn-ghost mt8" id="btn-skip-to-today" style="display:none">今日の設計へ →</button>
+  </section>
+
+  <!-- ════════════════════════════════ SCREEN: DIAGNOSIS (20 questions) -->
+  <section class="screen" id="screen-diag">
+    <div class="progress-bar">
+      <div class="progress-fill" id="diag-progress" style="width:0%"></div>
+    </div>
+    <p class="question-num" id="diag-num">Q1 / 20</p>
+    <div class="question-text" id="diag-q"></div>
+    <div class="options" id="diag-opts"></div>
+    <div class="btn-row mt24">
+      <button class="btn-secondary" id="diag-back">戻る</button>
+      <button class="btn-primary" id="diag-next" disabled>次へ</button>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════ SCREEN: BASE YTP RESULT -->
+  <section class="screen" id="screen-base-result">
+    <p class="label mb8">診断完了</p>
+    <h2 class="section-title">あなたの基礎YTP</h2>
+    <p class="section-desc">これがあなたの「行動しやすい余裕幅」の基準値です。</p>
+
+    <div class="ytp-ring-wrap">
+      <div class="ytp-ring">
+        <svg viewBox="0 0 160 160">
+          <circle class="ytp-ring-bg" cx="80" cy="80" r="68"/>
+          <circle class="ytp-ring-fill" id="ring-fill" cx="80" cy="80" r="68"
+            stroke-dasharray="427" stroke-dashoffset="427"/>
+        </svg>
+        <div class="ytp-ring-inner">
+          <span class="ytp-val" id="base-ytp-val">--</span>
+          <span class="ytp-unit">適正 YTP (分)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ytp-range-row">
+      <div class="ytp-range-chip">
+        <span class="label">最低</span>
+        <span class="val" id="base-min-val">--</span>
+        <span class="label">分</span>
+      </div>
+      <div class="ytp-range-chip highlight">
+        <span class="label">適正 ★</span>
+        <span class="val" id="base-opt-val">--</span>
+        <span class="label">分</span>
+      </div>
+      <div class="ytp-range-chip">
+        <span class="label">上限</span>
+        <span class="val" id="base-max-val">--</span>
+        <span class="label">分</span>
+      </div>
+    </div>
+
+    <div class="card mt16" id="base-desc-card">
+      <p class="label mb8">YTPタイプ</p>
+      <p id="base-type-text" class="body"></p>
+    </div>
+
+    <div class="spacer"></div>
+    <button class="btn-primary" id="btn-to-today">今日の行動設計へ →</button>
+  </section>
+
+  <!-- ════════════════════════════════ SCREEN: DAILY (today) -->
+  <section class="screen" id="screen-today">
+    <p class="label mb8">TODAY</p>
+    <h2 class="section-title mb8">今日の行動設計</h2>
+
+    <div class="tab-row">
+      <button class="tab-btn active" data-tab="daily-q">状態確認</button>
+      <button class="tab-btn" data-tab="actions">行動登録</button>
+    </div>
+
+    <!-- Tab: daily questions (5 questions) -->
+    <div class="tab-pane active" id="tab-daily-q">
+      <p class="section-desc">今日の状態を教えてください（5項目）</p>
+      <div id="daily-sliders"></div>
+      <button class="btn-primary" id="btn-calc-today">推奨開始時刻を算出 →</button>
+    </div>
+
+    <!-- Tab: actions -->
+    <div class="tab-pane" id="tab-actions">
+      <p class="section-desc">今日やる準備行動を登録してください（省略可）</p>
+      <div class="lv-legend">
+        <span class="lv-legend-item" style="border-color:#60f0a0;color:#60f0a0">Lv1 軽い</span>
+        <span class="lv-legend-item" style="border-color:var(--accent);color:var(--accent)">Lv2 普通</span>
+        <span class="lv-legend-item" style="border-color:var(--warn);color:var(--warn)">Lv3 重い</span>
+        <span class="lv-legend-item" style="border-color:var(--danger);color:var(--danger)">Lv4 かなり重い</span>
+      </div>
+      <div class="add-action-row">
+        <input class="action-input" id="action-input" type="text" placeholder="例: 洗顔、着替え…" maxlength="20">
+        <button class="add-btn" id="btn-add-action">＋</button>
+      </div>
+      <div class="action-list" id="action-list"></div>
+      <p class="text-dim" style="font-size:12px;line-height:1.6">
+        Lvを選択しない行動はLv2（普通）として計算されます。<br>
+        行動が未登録の場合は簡易ルートで算出します。
+      </p>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════ SCREEN: DEPARTURE INPUT -->
+  <section class="screen" id="screen-depart">
+    <p class="label mb8">出発時刻</p>
+    <h2 class="section-title mb8">何時に出発しますか？</h2>
+    <p class="section-desc">「家を出る時刻」を入力してください。</p>
+
+    <div class="time-input-wrap">
+      <input class="time-input" id="depart-h" type="number" min="0" max="23" placeholder="HH" value="">
+      <span class="time-sep">:</span>
+      <input class="time-input" id="depart-m" type="number" min="0" max="59" placeholder="MM" value="">
+    </div>
+
+    <div class="card">
+      <p class="label mb8">今日のYTP</p>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span class="mono text-accent" style="font-size:28px" id="today-ytp-disp">--</span>
+        <span class="text-dim" style="font-size:13px">分（適正）</span>
+      </div>
+      <p class="text-dim mt8" style="font-size:12px" id="today-ytp-note"></p>
+    </div>
+
+    <div class="spacer"></div>
+    <button class="btn-primary" id="btn-calc-result">算出する</button>
+  </section>
+
+  <!-- ════════════════════════════════ SCREEN: RESULT -->
+  <section class="screen" id="screen-result">
+    <p class="label mb8 result-label-center">推奨開始時刻</p>
+    <div class="result-time-big" id="result-time">--:--</div>
+    <p class="text-center text-dim mt8" style="font-size:13px" id="result-sub"></p>
+
+    <div class="divider"></div>
+
+    <div class="card card-accent">
+      <p class="label mb8">今日のYTP</p>
+      <div style="display:flex;gap:12px;align-items:center">
+        <span class="mono text-accent" style="font-size:24px" id="res-ytp">--</span>
+        <span class="text-dim" style="font-size:13px">分（適正）</span>
+        <span class="chip yellow" id="res-ytp-chip" style="margin-left:auto"></span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <div style="flex:1;text-align:center">
+          <div class="label mb8">最低</div>
+          <div class="mono" style="font-size:16px" id="res-min">--</div>
+        </div>
+        <div style="flex:1;text-align:center">
+          <div class="label mb8">適正★</div>
+          <div class="mono text-accent" style="font-size:16px" id="res-opt">--</div>
+        </div>
+        <div style="flex:1;text-align:center">
+          <div class="label mb8">上限</div>
+          <div class="mono" style="font-size:16px" id="res-max">--</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-detail" id="result-detail"></div>
+
+    <div class="btn-row mt16">
+      <button class="btn-secondary" id="btn-redo">やり直す</button>
+      <button class="btn-primary" id="btn-new-day">明日も設計する</button>
+    </div>
+  </section>
+
+</div><!-- /app -->
+
+<script>
+// ══════════════════════════════════════════════
+//  DATA: 20 Questions
+// ══════════════════════════════════════════════
+const QUESTIONS = [
+  {
+    text: "予定の1〜2時間前に起きても、スマホを見始めたら止まらなくなることがある",
+    sub: null,
+    opts: [
+      { label: "ほぼない", score: 0 },
+      { label: "たまにある", score: 2 },
+      { label: "よくある", score: 4 },
+      { label: "ほぼ毎回ある", score: 6 },
+    ]
+  },
+  {
+    text: "準備を「もう少し後でいいや」と思ってギリギリになることが多い",
+    sub: null,
+    opts: [
+      { label: "めったにない", score: 0 },
+      { label: "ときどきある", score: 2 },
+      { label: "よくある", score: 4 },
+      { label: "ほぼ毎回そうなる", score: 6 },
+    ]
+  },
+  {
+    text: "「早めに起きた」のに、なぜか時間が足りなくなることがある",
+    sub: null,
+    opts: [
+      { label: "ない", score: 0 },
+      { label: "ときどき", score: 2 },
+      { label: "よくある", score: 5 },
+      { label: "ほぼ毎回", score: 7 },
+    ]
+  },
+  {
+    text: "着替え・洗顔・持ち物確認などの準備行動の順番に迷うことがある",
+    sub: null,
+    opts: [
+      { label: "ほぼない", score: 0 },
+      { label: "たまに迷う", score: 2 },
+      { label: "よく迷う", score: 4 },
+      { label: "毎回何かしら迷う", score: 5 },
+    ]
+  },
+  {
+    text: "予定前に「まだ時間あるし」とひとつ余計なことをして遅れたことがある",
+    sub: null,
+    opts: [
+      { label: "ない", score: 0 },
+      { label: "たまに", score: 2 },
+      { label: "よくある", score: 4 },
+      { label: "ほぼ毎回", score: 6 },
+    ]
+  },
+  {
+    text: "体調が悪い日は準備に明らかに時間がかかると感じる",
+    sub: null,
+    opts: [
+      { label: "あまり変わらない", score: 0 },
+      { label: "少し時間がかかる", score: 2 },
+      { label: "かなり時間がかかる", score: 4 },
+      { label: "準備自体が難しくなる", score: 6 },
+    ]
+  },
+  {
+    text: "「時計を見ながら行動できる」感覚は自分にどのくらい当てはまる？",
+    sub: null,
+    opts: [
+      { label: "かなり当てはまる", score: 0 },
+      { label: "まあまあ当てはまる", score: 1 },
+      { label: "あまり当てはまらない", score: 3 },
+      { label: "まったく当てはまらない", score: 5 },
+    ]
+  },
+  {
+    text: "眠気がある日とない日で、行動開始の速さはどのくらい変わる？",
+    sub: null,
+    opts: [
+      { label: "ほとんど変わらない", score: 0 },
+      { label: "少し遅くなる", score: 2 },
+      { label: "かなり遅くなる", score: 4 },
+      { label: "起き上がれないこともある", score: 7 },
+    ]
+  },
+  {
+    text: "重要な予定（面接・病院など）ほど緊張して準備が崩れやすい",
+    sub: null,
+    opts: [
+      { label: "むしろ集中できる", score: -1 },
+      { label: "あまり変わらない", score: 0 },
+      { label: "少し崩れる", score: 2 },
+      { label: "かなり崩れやすい", score: 5 },
+    ]
+  },
+  {
+    text: "予定まで時間がありすぎると、かえってだらけてしまうことがある",
+    sub: "「余裕が多すぎると崩れる」に共感できますか？",
+    opts: [
+      { label: "全然ない、余裕は多いほどいい", score: 0 },
+      { label: "たまにある", score: 3 },
+      { label: "よくある", score: 5 },
+      { label: "余裕があるほど崩れる", score: 8 },
+    ]
+  },
+  {
+    text: "前日に準備の計画を立てても、当日は計画通りに動けないことが多い",
+    sub: null,
+    opts: [
+      { label: "ほぼ計画通りに動ける", score: 0 },
+      { label: "少しズレることがある", score: 2 },
+      { label: "よくズレる", score: 4 },
+      { label: "計画があっても意味がない", score: 6 },
+    ]
+  },
+  {
+    text: "「玄関を出る直前」に何かを忘れて戻ることがある",
+    sub: null,
+    opts: [
+      { label: "ほぼない", score: 0 },
+      { label: "たまにある", score: 2 },
+      { label: "よくある", score: 4 },
+      { label: "ほぼ毎回ある", score: 5 },
+    ]
+  },
+  {
+    text: "「これだけ終わったら準備しよう」という切りのタイミングを逃しやすい",
+    sub: null,
+    opts: [
+      { label: "逃さない", score: 0 },
+      { label: "たまに逃す", score: 2 },
+      { label: "よく逃す", score: 4 },
+      { label: "切りのタイミングが分からない", score: 6 },
+    ]
+  },
+  {
+    text: "複数の準備行動を「同時にうまくこなす」のが苦手に感じる",
+    sub: null,
+    opts: [
+      { label: "得意", score: 0 },
+      { label: "どちらでもない", score: 1 },
+      { label: "やや苦手", score: 3 },
+      { label: "かなり苦手", score: 5 },
+    ]
+  },
+  {
+    text: "予定がある日の朝、気持ちが乗らずに布団でぐずぐずしてしまう",
+    sub: null,
+    opts: [
+      { label: "ほぼない", score: 0 },
+      { label: "ときどき", score: 2 },
+      { label: "よくある", score: 4 },
+      { label: "ほぼ毎回", score: 6 },
+    ]
+  },
+  {
+    text: "「あと5分だけ」が積み重なって遅刻またはギリギリになったことがある",
+    sub: null,
+    opts: [
+      { label: "ない", score: 0 },
+      { label: "ときどき", score: 2 },
+      { label: "よくある", score: 4 },
+      { label: "ほぼ毎回", score: 7 },
+    ]
+  },
+  {
+    text: "準備中に別のことが気になって中断してしまうことがある",
+    sub: "（物が目に入る、音が気になる、別の考えが浮かぶなど）",
+    opts: [
+      { label: "ほぼない", score: 0 },
+      { label: "たまにある", score: 2 },
+      { label: "よくある", score: 4 },
+      { label: "ほぼ毎回ある", score: 6 },
+    ]
+  },
+  {
+    text: "予定前の準備時間を「自分で正確に見積もれる」と思う？",
+    sub: null,
+    opts: [
+      { label: "だいたい見積もれる", score: 0 },
+      { label: "少しズレることがある", score: 2 },
+      { label: "よくズレる", score: 4 },
+      { label: "まったく見積もれない", score: 7 },
+    ]
+  },
+  {
+    text: "通知・アラームを使っても、無意識に止めてしまい効果がないことがある",
+    sub: null,
+    opts: [
+      { label: "通知は機能している", score: 0 },
+      { label: "ときどき無視する", score: 2 },
+      { label: "よく無視する", score: 4 },
+      { label: "通知は意味をなさない", score: 6 },
+    ]
+  },
+  {
+    text: "「余裕があるから大丈夫」と思ったのに、結局ギリギリになることがある",
+    sub: null,
+    opts: [
+      { label: "ほぼない", score: 0 },
+      { label: "ときどき", score: 2 },
+      { label: "よくある", score: 5 },
+      { label: "余裕があるほどそうなる", score: 8 },
+    ]
+  },
+];
+
+// ══════════════════════════════════════════════
+//  DATA: Daily sliders (5)
+// ══════════════════════════════════════════════
+const DAILY_ITEMS = [
+  { key: "sleepy",   label: "眠気",           sub: "今日の眠気はどのくらい？",            min: "すっきり", max: "かなり眠い",   range: [-3, 10] },
+  { key: "health",   label: "体調",           sub: "今日の体調はどのくらい？",            min: "快調",     max: "かなりしんどい", range: [-2, 8]  },
+  { key: "phone",    label: "スマホ逸脱リスク", sub: "今日スマホを見たら止まらなそう？",    min: "大丈夫",   max: "危ない",       range: [0, 8]   },
+  { key: "weight",   label: "準備の重さ",      sub: "今日の準備行動の多さ・重さは？",      min: "軽め",     max: "かなり多い",   range: [-2, 8]  },
+  { key: "pressure", label: "予定の重要度",    sub: "今日の予定はどのくらい重要？",        min: "軽い用事", max: "かなり重要",   range: [-3, 0]  },
+];
+
+// Lv average times (minutes)
+const LV_AVG = { 1: 5, 2: 10, 3: 18, 4: 28 };
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let state = {
+  diagAnswers: [],   // index → score
+  currentQ: 0,
+  baseYtp: null,     // { min, opt, max }
+  dailyAdj: {},      // key → slider value (0-4)
+  todayYtp: null,
+  actions: [],       // [{ name, lv }]
+  departH: null,
+  departM: null,
+};
+
+// ══════════════════════════════════════════════
+//  STORAGE
+// ══════════════════════════════════════════════
+function save() {
+  localStorage.setItem('ytp_base', JSON.stringify(state.baseYtp));
+  localStorage.setItem('ytp_actions', JSON.stringify(state.actions));
+}
+function loadBase() {
+  const b = localStorage.getItem('ytp_base');
+  if (b) state.baseYtp = JSON.parse(b);
+  const a = localStorage.getItem('ytp_actions');
+  if (a) state.actions = JSON.parse(a);
+}
+
+// ══════════════════════════════════════════════
+//  YTP CALC
+// ══════════════════════════════════════════════
+function calcBaseYtp(totalScore) {
+  // score 0-90 → opt 15-70 min
+  const opt = Math.round(15 + (totalScore / 90) * 55);
+  const min = Math.round(opt * 0.58);
+  const max = Math.round(opt * 1.6);
+  return { min, opt, max, score: totalScore };
+}
+
+function calcTodayYtp(baseYtp, dailyAdj) {
+  // Each slider 0-4 maps to its range
+  let correction = 0;
+  DAILY_ITEMS.forEach(item => {
+    const val = dailyAdj[item.key] ?? 2;
+    const [lo, hi] = item.range;
+    const mapped = lo + (val / 4) * (hi - lo);
+    correction += mapped;
+  });
+  const opt = Math.max(5, Math.round(baseYtp.opt + correction));
+  const ratio = opt / baseYtp.opt;
+  const min = Math.round(baseYtp.min * ratio);
+  const max = Math.round(baseYtp.max * ratio);
+  return { min, opt, max, correction: Math.round(correction) };
+}
+
+function calcNeededTime(actions, todayYtp) {
+  if (actions.length === 0) {
+    // simple: just use todayYtp
+    return { total: todayYtp.opt, breakdown: null };
+  }
+  const actionSum = actions.reduce((s, a) => s + LV_AVG[a.lv || 2], 0);
+  const switchCost = (actions.length - 1) * 3;
+  const buffer = 5; // genkan buffer
+  // high lv bonus
+  const heavyCount = actions.filter(a => (a.lv || 2) >= 3).length;
+  const heavyBonus = heavyCount * 3;
+  const total = actionSum + switchCost + buffer + heavyBonus;
+  return { total, actionSum, switchCost, buffer, heavyBonus };
+}
+
+function calcStartTime(departH, departM, neededMin) {
+  const total = departH * 60 + departM - neededMin;
+  let h = Math.floor(total / 60) % 24;
+  let m = total % 60;
+  if (h < 0) h += 24;
+  if (m < 0) { m += 60; h = (h - 1 + 24) % 24; }
+  return { h, m };
+}
+
+function ytpType(score) {
+  if (score < 20) return { label: "安定スタート型", desc: "準備の見積もりが比較的正確で、少ない余裕でも安定して動けるタイプ。ただし当日の状態変化には注意が必要です。" };
+  if (score < 40) return { label: "標準バッファ型", desc: "一定の余裕があると動きやすいタイプ。スマホや眠気の影響を受けやすい日は、やや多めの余裕設定が安心です。" };
+  if (score < 60) return { label: "余裕設計型", desc: "余裕が多いと逆に崩れやすい傾向があります。適正幅をしっかり守ることが、安定した行動開始のカギです。" };
+  return { label: "高感度型", desc: "その日の状態によって行動開始のしやすさが大きく変わるタイプ。日次の状態確認を毎回行うことで、より精度の高い設計が可能です。" };
+}
+
+// ══════════════════════════════════════════════
+//  SCREENS
+// ══════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+// ── WELCOME ──
+function initWelcome() {
+  loadBase();
+  if (state.baseYtp) {
+    document.getElementById('btn-start').textContent = '再診断する（20問）';
+    document.getElementById('btn-skip-to-today').style.display = 'block';
+  }
+}
+
+document.getElementById('btn-start').addEventListener('click', () => {
+  state.diagAnswers = [];
+  state.currentQ = 0;
+  showScreen('diag');
+  renderDiagQ();
+});
+document.getElementById('btn-skip-to-today').addEventListener('click', () => {
+  showScreen('today');
+  renderDailySliders();
+  renderActions();
+  document.getElementById('header-sub').textContent = '今日の設計';
+});
+
+// ── DIAGNOSIS ──
+function renderDiagQ() {
+  const q = QUESTIONS[state.currentQ];
+  const total = QUESTIONS.length;
+  document.getElementById('diag-num').textContent = `Q${state.currentQ + 1} / ${total}`;
+  document.getElementById('diag-progress').style.width = `${(state.currentQ / total) * 100}%`;
+
+  const qEl = document.getElementById('diag-q');
+  qEl.innerHTML = q.text + (q.sub ? `<div class="question-sub">${q.sub}</div>` : '');
+
+  const optsEl = document.getElementById('diag-opts');
+  optsEl.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span class="opt-score">${String.fromCharCode(65+i)}</span><span>${opt.label}</span>`;
+    const current = state.diagAnswers[state.currentQ];
+    if (current !== undefined && current === opt.score) btn.classList.add('selected');
+    btn.addEventListener('click', () => {
+      state.diagAnswers[state.currentQ] = opt.score;
+      optsEl.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      document.getElementById('diag-next').disabled = false;
+    });
+    optsEl.appendChild(btn);
+  });
+
+  document.getElementById('diag-next').disabled = state.diagAnswers[state.currentQ] === undefined;
+  document.getElementById('diag-back').disabled = state.currentQ === 0;
+}
+
+document.getElementById('diag-next').addEventListener('click', () => {
+  if (state.currentQ < QUESTIONS.length - 1) {
+    state.currentQ++;
+    renderDiagQ();
+  } else {
+    finishDiag();
+  }
+});
+document.getElementById('diag-back').addEventListener('click', () => {
+  if (state.currentQ > 0) { state.currentQ--; renderDiagQ(); }
+});
+
+function finishDiag() {
+  const total = state.diagAnswers.reduce((s, v) => s + v, 0);
+  state.baseYtp = calcBaseYtp(total);
+  save();
+  showBaseResult();
+  showScreen('base-result');
+}
+
+function showBaseResult() {
+  const b = state.baseYtp;
+  document.getElementById('base-ytp-val').textContent = b.opt;
+  document.getElementById('base-min-val').textContent = b.min;
+  document.getElementById('base-opt-val').textContent = b.opt;
+  document.getElementById('base-max-val').textContent = b.max;
+
+  // ring animation
+  const circ = 427;
+  const pct = Math.min(1, (b.opt - 5) / 65);
+  const offset = circ - pct * circ;
+  setTimeout(() => {
+    document.getElementById('ring-fill').style.strokeDashoffset = offset;
+  }, 100);
+
+  const type = ytpType(b.score);
+  document.getElementById('base-type-text').innerHTML =
+    `<strong style="color:var(--accent)">${type.label}</strong><br>${type.desc}`;
+}
+
+document.getElementById('btn-to-today').addEventListener('click', () => {
+  showScreen('today');
+  renderDailySliders();
+  renderActions();
+  document.getElementById('header-sub').textContent = '今日の設計';
+});
+
+// ── TODAY: TABS ──
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── DAILY SLIDERS ──
+function renderDailySliders() {
+  const el = document.getElementById('daily-sliders');
+  el.innerHTML = '';
+  DAILY_ITEMS.forEach(item => {
+    const val = state.dailyAdj[item.key] ?? 2;
+    const wrap = document.createElement('div');
+    wrap.className = 'slider-row';
+    wrap.innerHTML = `
+      <div class="slider-label-row">
+        <span class="h3">${item.label}</span>
+        <span class="text-dim" style="font-size:12px">${item.sub}</span>
+      </div>
+      <div class="slider-label-row mb8">
+        <span class="label">${item.min}</span>
+        <span class="label">${item.max}</span>
+      </div>
+      <input type="range" min="0" max="4" step="1" value="${val}" data-key="${item.key}">
+    `;
+    el.appendChild(wrap);
+  });
+  el.querySelectorAll('input[type=range]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      state.dailyAdj[inp.dataset.key] = parseInt(inp.value);
+    });
+  });
+}
+
+document.getElementById('btn-calc-today').addEventListener('click', () => {
+  if (!state.baseYtp) {
+    alert('まず基礎診断を受けてください。');
+    return;
+  }
+  state.todayYtp = calcTodayYtp(state.baseYtp, state.dailyAdj);
+  // show depart screen
+  const t = state.todayYtp;
+  document.getElementById('today-ytp-disp').textContent = t.opt;
+  const diff = t.correction;
+  document.getElementById('today-ytp-note').textContent =
+    `基礎YTP ${state.baseYtp.opt}分 ${diff >= 0 ? '+' : ''}${diff}分の補正`;
+  showScreen('depart');
+  document.getElementById('header-sub').textContent = '出発時刻';
+});
+
+// ── ACTIONS ──
+function renderActions() {
+  const list = document.getElementById('action-list');
+  list.innerHTML = '';
+  state.actions.forEach((action, idx) => {
+    const item = document.createElement('div');
+    item.className = 'action-item';
+    const lv = action.lv || 2;
+    item.innerHTML = `
+      <span class="action-name">${action.name}</span>
+      <div class="action-lv-btns">
+        ${[1,2,3,4].map(l => `<button class="lv-btn ${lv===l?'active-lv'+l:''}" data-idx="${idx}" data-lv="${l}">L${l}</button>`).join('')}
+      </div>
+      <button class="action-del" data-idx="${idx}">×</button>
+    `;
+    list.appendChild(item);
+  });
+  list.querySelectorAll('.lv-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      state.actions[idx].lv = parseInt(btn.dataset.lv);
+      save();
+      renderActions();
+    });
+  });
+  list.querySelectorAll('.action-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.actions.splice(parseInt(btn.dataset.idx), 1);
+      save();
+      renderActions();
+    });
+  });
+}
+
+document.getElementById('btn-add-action').addEventListener('click', addAction);
+document.getElementById('action-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addAction();
+});
+function addAction() {
+  const inp = document.getElementById('action-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  state.actions.push({ name, lv: 2 });
+  save();
+  inp.value = '';
+  renderActions();
+}
+
+// ── DEPART → RESULT ──
+document.getElementById('btn-calc-result').addEventListener('click', () => {
+  const h = parseInt(document.getElementById('depart-h').value);
+  const m = parseInt(document.getElementById('depart-m').value);
+  if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
+    alert('正しい時刻を入力してください（例: 09 : 30）');
+    return;
+  }
+  state.departH = h;
+  state.departM = m;
+
+  const needed = calcNeededTime(state.actions, state.todayYtp);
+  const start = calcStartTime(h, m, needed.total);
+
+  // populate result screen
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('result-time').textContent = `${pad(start.h)}:${pad(start.m)}`;
+  document.getElementById('result-sub').textContent = `出発 ${pad(h)}:${pad(m)} の ${needed.total} 分前`;
+
+  const t = state.todayYtp;
+  document.getElementById('res-ytp').textContent = t.opt;
+  document.getElementById('res-min').textContent = t.min + '分';
+  document.getElementById('res-opt').textContent = t.opt + '分';
+  document.getElementById('res-max').textContent = t.max + '分';
+
+  const diff = t.correction;
+  const chipEl = document.getElementById('res-ytp-chip');
+  chipEl.textContent = diff >= 0 ? `+${diff}分` : `${diff}分`;
+
+  let detail = '';
+  if (needed.breakdown === null) {
+    detail = `簡易ルート（行動未登録）\n\n必要時間 = 今日の適正YTP ${t.opt} 分\n推奨開始 = ${pad(h)}:${pad(m)} − ${t.opt} 分`;
+  } else {
+    detail = `詳細ルート（行動 ${state.actions.length} 件）\n\n行動時間合計    ${needed.actionSum} 分\n切替コスト       ${needed.switchCost} 分\n玄関バッファ     ${needed.buffer} 分\n高Lvボーナス     ${needed.heavyBonus} 分\n─────────────\n合計必要時間     ${needed.total} 分`;
+  }
+  document.getElementById('result-detail').textContent = detail;
+
+  showScreen('result');
+  document.getElementById('header-sub').textContent = '結果';
+});
+
+// ── RESULT ACTIONS ──
+document.getElementById('btn-redo').addEventListener('click', () => {
+  showScreen('today');
+  renderDailySliders();
+  renderActions();
+  document.getElementById('header-sub').textContent = '今日の設計';
+});
+document.getElementById('btn-new-day').addEventListener('click', () => {
+  state.dailyAdj = {};
+  state.todayYtp = null;
+  showScreen('today');
+  renderDailySliders();
+  renderActions();
+  document.getElementById('header-sub').textContent = '今日の設計';
+});
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+initWelcome();
+</script>
+</body>
+</html>
