@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>接客ログ</title>
+<style>
+  :root{
+    --bg:#f5f6f8;
+    --card:#ffffff;
+    --text:#1f2937;
+    --muted:#6b7280;
+    --line:#e5e7eb;
+    --main:#2563eb;
+    --main-dark:#1d4ed8;
+    --danger:#dc2626;
+    --ok:#16a34a;
+    --warn:#f59e0b;
+    --shadow:0 10px 30px rgba(0,0,0,.08);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding-bottom:130px;
+  }
+  header{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:rgba(245,246,248,.92);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+    padding:14px 14px 10px;
+  }
+  h1{
+    margin:0 0 10px;
+    font-size:22px;
+    line-height:1.25;
+  }
+  .summary{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+  }
+  .summary .box{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:9px 10px;
+  }
+  .label{
+    display:block;
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:2px;
+  }
+  .value{
+    display:block;
+    font-weight:700;
+    font-size:16px;
+  }
+  main{padding:14px;max-width:820px;margin:0 auto;}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px;
+    margin-bottom:12px;
+    box-shadow:var(--shadow);
+  }
+  h2{
+    margin:0 0 10px;
+    font-size:17px;
+  }
+  h3{
+    margin:14px 0 8px;
+    font-size:14px;
+    color:var(--muted);
+  }
+  .buttons{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+  }
+  .buttons.three{grid-template-columns:repeat(3,1fr);}
+  .buttons.category{grid-template-columns:repeat(2,1fr);}
+  button{
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--text);
+    border-radius:12px;
+    min-height:46px;
+    padding:9px 10px;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  button:active{transform:translateY(1px);}
+  button.selected{
+    background:var(--main);
+    border-color:var(--main);
+    color:#fff;
+  }
+  button.primary{
+    background:var(--main);
+    border-color:var(--main);
+    color:#fff;
+  }
+  button.secondary{
+    background:#111827;
+    border-color:#111827;
+    color:#fff;
+  }
+  button.danger{
+    background:#fff;
+    border-color:#fecaca;
+    color:var(--danger);
+  }
+  button.ok{
+    background:#ecfdf5;
+    border-color:#bbf7d0;
+    color:#166534;
+  }
+  button.warn{
+    background:#fffbeb;
+    border-color:#fde68a;
+    color:#92400e;
+  }
+  .fieldRow{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .moneyBtn{
+    width:100%;
+    min-height:56px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:flex-start;
+    gap:2px;
+    padding:10px 12px;
+  }
+  .moneyBtn .small{font-size:12px;color:var(--muted);font-weight:600;}
+  .moneyBtn .amount{font-size:20px;font-weight:800;}
+  .selected .small{color:rgba(255,255,255,.82);}
+  textarea{
+    width:100%;
+    min-height:70px;
+    resize:vertical;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px;
+    font-size:16px;
+    font-family:inherit;
+  }
+  .status{
+    padding:10px 12px;
+    border-radius:12px;
+    background:#f9fafb;
+    border:1px solid var(--line);
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.5;
+  }
+  .error{
+    background:#fef2f2;
+    border-color:#fecaca;
+    color:#991b1b;
+  }
+  .success{
+    background:#ecfdf5;
+    border-color:#bbf7d0;
+    color:#166534;
+  }
+  .bottomBar{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    z-index:25;
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    background:rgba(255,255,255,.94);
+    border-top:1px solid var(--line);
+    backdrop-filter:blur(14px);
+  }
+  .bottomInner{
+    max-width:820px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .logItem{
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px;
+    margin-top:8px;
+    background:#fff;
+  }
+  .logTop{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    font-weight:800;
+  }
+  .logMeta{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.5;
+    margin-top:4px;
+  }
+  .logActions{
+    display:flex;
+    gap:8px;
+    margin-top:8px;
+  }
+  .logActions button{min-height:38px;font-size:13px;flex:1;}
+  .hidden{display:none!important;}
+  .modalOverlay{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    background:rgba(0,0,0,.38);
+    display:flex;
+    align-items:flex-end;
+  }
+  .calcPanel{
+    width:100%;
+    background:#fff;
+    border-radius:22px 22px 0 0;
+    padding:16px 14px calc(18px + env(safe-area-inset-bottom));
+    box-shadow:0 -12px 32px rgba(0,0,0,.2);
+  }
+  .calcPanelInner{max-width:520px;margin:0 auto;}
+  .calcTitle{font-size:15px;color:var(--muted);font-weight:700;margin-bottom:6px;}
+  .calcDisplay{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    font-size:30px;
+    min-height:62px;
+    text-align:right;
+    font-weight:900;
+    margin-bottom:10px;
+    background:#f9fafb;
+    overflow:hidden;
+  }
+  .calcKeys{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+  }
+  .calcKeys button{
+    min-height:58px;
+    font-size:22px;
+    border-radius:14px;
+  }
+  .calcKeys .wide{grid-column:span 2;}
+  .calcKeys .done{background:var(--main);border-color:var(--main);color:#fff;}
+  .calcKeys .clear{color:var(--danger);}
+  .toolbar{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:10px;
+  }
+  .note{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+    margin-top:8px;
+  }
+  @media (min-width:700px){
+    .summary{grid-template-columns:repeat(4,1fr);}
+    .buttons{grid-template-columns:repeat(4,1fr);}
+    .buttons.category{grid-template-columns:repeat(4,1fr);}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>接客ログ</h1>
+  <div class="summary">
+    <div class="box"><span class="label">接客組数</span><span class="value" id="sumGroups">0組</span></div>
+    <div class="box"><span class="label">接客人数</span><span class="value" id="sumPeople">0人</span></div>
+    <div class="box"><span class="label">成約率</span><span class="value" id="sumRate">0%</span></div>
+    <div class="box"><span class="label">売上合計</span><span class="value" id="sumSales">0円</span></div>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>新規接客</h2>
+    <div class="status" id="recordInfo">日付・時刻・接客番号は保存時に自動記録します。</div>
+
+    <h3>組人数</h3>
+    <div class="buttons" id="peopleButtons"></div>
+
+    <h3>大分類</h3>
+    <div class="buttons category" id="majorButtons"></div>
+
+    <h3 id="minorTitle" class="hidden">商品カテゴリ</h3>
+    <div class="buttons category hidden" id="minorButtons"></div>
+
+    <h3>結果</h3>
+    <div class="buttons">
+      <button id="btnContract" onclick="setResult('成約')">成約</button>
+      <button id="btnNoContract" onclick="setResult('未成約')">未成約</button>
+    </div>
+
+    <div id="contractArea" class="hidden">
+      <h3>金額</h3>
+      <div class="fieldRow">
+        <button class="moneyBtn" onclick="openCalc('sales')">
+          <span class="small">売上 必須</span>
+          <span class="amount" id="salesLabel">未入力</span>
+        </button>
+        <button class="moneyBtn" onclick="openCalc('discount')">
+          <span class="small">値引き 任意</span>
+          <span class="amount" id="discountLabel">0円</span>
+        </button>
+      </div>
+      <div class="status" style="margin-top:8px;">
+        正規金額：<b id="regularLabel">未計算</b><br>
+        ※ 正規金額 = 売上 + 値引き額。値引きなしなら0円のままで保存。
+      </div>
+    </div>
+
+    <div id="noContractArea" class="hidden">
+      <h3>未成約理由</h3>
+      <div class="buttons category" id="reasonButtons"></div>
+    </div>
+
+    <h3>メモ 任意</h3>
+    <textarea id="memo" placeholder="例：家族確認。価格で迷い。ネット比較。妻は機能に反応。"></textarea>
+
+    <div class="status" id="message" style="margin-top:10px;">必須：組人数、大分類、商品カテゴリ、結果。成約なら売上、未成約なら理由。</div>
+  </section>
+
+  <section class="card">
+    <h2>本日の記録</h2>
+    <div class="toolbar">
+      <button class="secondary" onclick="downloadCSV()">CSV出力</button>
+      <button class="danger" onclick="clearAll()">全削除</button>
+    </div>
+    <div class="note">表示は本日分のみです。CSVは保存済みの全記録を出力します。文字化け対策としてBOM付きUTF-8で出力します。</div>
+    <div id="logList"></div>
+  </section>
+</main>
+
+<div class="bottomBar">
+  <div class="bottomInner">
+    <button class="primary" onclick="saveRecord()">保存</button>
+    <button onclick="resetForm()">入力リセット</button>
+  </div>
+</div>
+
+<div id="calcOverlay" class="modalOverlay hidden" onclick="closeCalcByBg(event)">
+  <div class="calcPanel">
+    <div class="calcPanelInner">
+      <div class="calcTitle" id="calcTitle">金額入力</div>
+      <div class="calcDisplay" id="calcDisplay">0</div>
+      <div class="calcKeys">
+        <button onclick="tapCalc('7')">7</button><button onclick="tapCalc('8')">8</button><button onclick="tapCalc('9')">9</button>
+        <button onclick="tapCalc('4')">4</button><button onclick="tapCalc('5')">5</button><button onclick="tapCalc('6')">6</button>
+        <button onclick="tapCalc('1')">1</button><button onclick="tapCalc('2')">2</button><button onclick="tapCalc('3')">3</button>
+        <button onclick="tapCalc('0')">0</button><button onclick="tapCalc('00')">00</button><button onclick="tapCalc('000')">000</button>
+        <button class="clear" onclick="backCalc()">←</button><button class="clear" onclick="clearCalc()">C</button><button class="done" onclick="doneCalc()">決定</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'customer_log_records_v1';
+
+const majors = {
+  '黒物': ['テレビ','レコーダー','オーディオ','イヤホン・ヘッドホン','スピーカー','カメラ','ゲーム機','ゲームソフト','スマートウォッチ','その他黒物'],
+  'PC・周辺機器': ['ノートPC','デスクトップPC','モニター','プリンター','キーボード','マウス','外付けSSD・HDD','USBメモリ','ルーター','PCアクセサリ','その他PC周辺機器'],
+  '白物': ['冷蔵庫','洗濯機','エアコン','掃除機','電子レンジ','炊飯器','トースター','食洗機','空気清浄機','加湿器','除湿機','扇風機','暖房器具','その他白物'],
+  '理美容・健康': ['ドライヤー','ヘアアイロン','シェーバー','電動歯ブラシ','体重計','マッサージ機','美容家電','健康家電','その他理美容・健康'],
+  'スマホ・通信': ['スマートフォン','タブレット','携帯アクセサリ','ケース・フィルム','充電器','回線契約','その他スマホ・通信'],
+  'その他': ['電池','照明','時計','季節家電','消耗品','その他']
+};
+
+const reasons = ['金額不足','家族に確認','一度考える','他店比較','ネット比較','サイズ確認','設置確認','機能比較','在庫・納期','色・デザイン','今すぐ不要','本人判断不可','予算オーバー','その他'];
+const peopleOptions = [1,2,3,4,5,6];
+
+let form = {
+  people:null,
+  major:'',
+  minor:'',
+  result:'',
+  sales:null,
+  discount:0,
+  reason:'',
+  memo:''
+};
+let calcTarget = '';
+let calcValue = '';
+
+function yen(n){
+  const num = Number(n || 0);
+  return num.toLocaleString('ja-JP') + '円';
+}
+function todayYmd(d=new Date()){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}/${m}/${day}`;
+}
+function timeHm(d=new Date()){
+  const h=String(d.getHours()).padStart(2,'0');
+  const m=String(d.getMinutes()).padStart(2,'0');
+  return `${h}:${m}`;
+}
+function getRecords(){
+  try{return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');}
+  catch(e){return [];} 
+}
+function setRecords(records){localStorage.setItem(STORAGE_KEY, JSON.stringify(records));}
+
+function initButtons(){
+  const people = document.getElementById('peopleButtons');
+  people.innerHTML = peopleOptions.map(n=>`<button id="people_${n}" onclick="setPeople(${n})">${n === 6 ? '6人以上' : n + '人'}</button>`).join('');
+
+  const major = document.getElementById('majorButtons');
+  major.innerHTML = Object.keys(majors).map(m=>`<button id="major_${safeId(m)}" onclick="setMajor('${escapeJs(m)}')">${m}</button>`).join('');
+
+  const reason = document.getElementById('reasonButtons');
+  reason.innerHTML = reasons.map(r=>`<button id="reason_${safeId(r)}" onclick="setReason('${escapeJs(r)}')">${r}</button>`).join('');
+}
+function safeId(s){return String(s).replace(/[^a-zA-Z0-9ぁ-んァ-ン一-龥]/g,'_');}
+function escapeJs(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function markButtons(prefix, value){
+  document.querySelectorAll(`[id^="${prefix}_"]`).forEach(b=>b.classList.remove('selected'));
+  if(value !== null && value !== ''){
+    const el = document.getElementById(`${prefix}_${safeId(value)}`);
+    if(el) el.classList.add('selected');
+  }
+}
+function setPeople(n){form.people=n; markButtons('people', n);}
+function setMajor(m){
+  form.major=m; form.minor='';
+  markButtons('major', m);
+  document.getElementById('minorTitle').classList.remove('hidden');
+  const box = document.getElementById('minorButtons');
+  box.classList.remove('hidden');
+  box.innerHTML = majors[m].map(x=>`<button id="minor_${safeId(x)}" onclick="setMinor('${escapeJs(x)}')">${x}</button>`).join('');
+}
+function setMinor(x){form.minor=x; markButtons('minor', x);}
+function setResult(r){
+  form.result=r;
+  document.getElementById('btnContract').classList.toggle('selected', r==='成約');
+  document.getElementById('btnNoContract').classList.toggle('selected', r==='未成約');
+  document.getElementById('contractArea').classList.toggle('hidden', r!=='成約');
+  document.getElementById('noContractArea').classList.toggle('hidden', r!=='未成約');
+  if(r==='未成約'){
+    form.sales=0;
+    form.discount=0;
+    updateMoneyLabels();
+  }
+}
+function setReason(r){form.reason=r; markButtons('reason', r);}
+
+function openCalc(target){
+  if(form.result !== '成約'){
+    showMessage('金額入力は成約時だけ使います。', true);
+    return;
+  }
+  calcTarget=target;
+  calcValue = target === 'sales' ? (form.sales ? String(form.sales) : '') : (form.discount ? String(form.discount) : '');
+  document.getElementById('calcTitle').textContent = target === 'sales' ? '売上を入力' : '値引き額を入力';
+  updateCalcDisplay();
+  document.getElementById('calcOverlay').classList.remove('hidden');
+}
+function closeCalcByBg(e){if(e.target.id === 'calcOverlay') closeCalc();}
+function closeCalc(){document.getElementById('calcOverlay').classList.add('hidden');}
+function updateCalcDisplay(){
+  const n = Number(calcValue || 0);
+  document.getElementById('calcDisplay').textContent = n.toLocaleString('ja-JP');
+}
+function tapCalc(s){
+  if(calcValue.length > 12) return;
+  calcValue += s;
+  calcValue = String(Number(calcValue || 0));
+  updateCalcDisplay();
+}
+function backCalc(){calcValue = calcValue.slice(0,-1); updateCalcDisplay();}
+function clearCalc(){calcValue=''; updateCalcDisplay();}
+function doneCalc(){
+  const n = Number(calcValue || 0);
+  if(calcTarget === 'sales') form.sales = n;
+  if(calcTarget === 'discount') form.discount = n;
+  updateMoneyLabels();
+  closeCalc();
+}
+function updateMoneyLabels(){
+  document.getElementById('salesLabel').textContent = form.sales && form.sales > 0 ? yen(form.sales) : '未入力';
+  document.getElementById('discountLabel').textContent = form.discount && form.discount > 0 ? yen(form.discount) : '0円';
+  if(form.result === '成約' && form.sales && form.sales > 0){
+    document.getElementById('regularLabel').textContent = yen(Number(form.sales) + Number(form.discount || 0));
+  }else{
+    document.getElementById('regularLabel').textContent = '未計算';
+  }
+}
+function validate(){
+  if(!form.people) return '組人数を選んでください。';
+  if(!form.major) return '大分類を選んでください。';
+  if(!form.minor) return '商品カテゴリを選んでください。';
+  if(!form.result) return '成約 / 未成約を選んでください。';
+  if(form.result === '成約' && (!form.sales || Number(form.sales) <= 0)) return '成約の場合は売上を入力してください。';
+  if(form.result === '未成約' && !form.reason) return '未成約の場合は理由を選んでください。';
+  return '';
+}
+function saveRecord(){
+  form.memo = document.getElementById('memo').value.trim();
+  const err = validate();
+  if(err){showMessage(err, true); return;}
+  const records = getRecords();
+  const now = new Date();
+  const isContract = form.result === '成約';
+  const record = {
+    id: Date.now(),
+    date: todayYmd(now),
+    time: timeHm(now),
+    no: records.length + 1,
+    people: form.people,
+    major: form.major,
+    minor: form.minor,
+    result: form.result,
+    sales: isContract ? Number(form.sales) : 0,
+    discount: isContract ? Number(form.discount || 0) : 0,
+    regular: isContract ? Number(form.sales) + Number(form.discount || 0) : 0,
+    reason: isContract ? '' : form.reason,
+    memo: form.memo
+  };
+  records.push(record);
+  setRecords(records);
+  showMessage('保存しました。', false);
+  resetForm(false);
+  render();
+}
+function resetForm(clearMsg=true){
+  form = {people:null,major:'',minor:'',result:'',sales:null,discount:0,reason:'',memo:''};
+  document.getElementById('memo').value='';
+  document.querySelectorAll('button.selected').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('minorTitle').classList.add('hidden');
+  document.getElementById('minorButtons').classList.add('hidden');
+  document.getElementById('minorButtons').innerHTML='';
+  document.getElementById('contractArea').classList.add('hidden');
+  document.getElementById('noContractArea').classList.add('hidden');
+  updateMoneyLabels();
+  if(clearMsg) showMessage('入力をリセットしました。', false);
+}
+function showMessage(msg, isErr){
+  const el = document.getElementById('message');
+  el.textContent = msg;
+  el.className = 'status ' + (isErr ? 'error' : 'success');
+  setTimeout(()=>{el.className='status';}, 1800);
+}
+function render(){
+  const records = getRecords();
+  const today = todayYmd();
+  const todayRecords = records.filter(r=>r.date === today);
+  const groups = todayRecords.length;
+  const people = todayRecords.reduce((a,r)=>a+Number(r.people||0),0);
+  const contracts = todayRecords.filter(r=>r.result==='成約').length;
+  const rate = groups ? Math.round((contracts / groups) * 1000) / 10 : 0;
+  const sales = todayRecords.reduce((a,r)=>a+Number(r.sales||0),0);
+  document.getElementById('sumGroups').textContent = groups + '組';
+  document.getElementById('sumPeople').textContent = people + '人';
+  document.getElementById('sumRate').textContent = rate + '%';
+  document.getElementById('sumSales').textContent = yen(sales);
+
+  const list = document.getElementById('logList');
+  if(todayRecords.length === 0){
+    list.innerHTML = '<div class="status" style="margin-top:10px;">本日の記録はまだありません。</div>';
+    return;
+  }
+  list.innerHTML = todayRecords.slice().reverse().map(r=>`
+    <div class="logItem">
+      <div class="logTop">
+        <span>No.${r.no} ${r.major} / ${r.minor}</span>
+        <span>${r.result === '成約' ? yen(r.sales) : '未成約'}</span>
+      </div>
+      <div class="logMeta">
+        ${r.date} ${r.time} / ${r.people === 6 ? '6人以上' : r.people + '人'} / ${r.result}<br>
+        ${r.result === '成約' ? `値引き ${yen(r.discount)} / 正規金額 ${yen(r.regular)}` : `理由：${r.reason}`}<br>
+        ${r.memo ? 'メモ：' + escapeHtml(r.memo) : ''}
+      </div>
+      <div class="logActions">
+        <button class="danger" onclick="deleteRecord(${r.id})">削除</button>
+      </div>
+    </div>
+  `).join('');
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>'"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+function deleteRecord(id){
+  if(!confirm('この記録を削除しますか？')) return;
+  const records = getRecords().filter(r=>r.id !== id).map((r,i)=>({...r,no:i+1}));
+  setRecords(records);
+  render();
+}
+function clearAll(){
+  if(!confirm('全記録を削除しますか？')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  render();
+}
+function csvEscape(v){
+  const s = String(v ?? '');
+  return '"' + s.replace(/"/g,'""') + '"';
+}
+function downloadCSV(){
+  const records = getRecords();
+  if(records.length === 0){showMessage('出力する記録がありません。', true); return;}
+  const header = ['日付','時刻','接客番号','組人数','大分類','商品カテゴリ','成約','売上','値引き額','正規金額','未成約理由','メモ'];
+  const rows = records.map(r=>[
+    r.date,r.time,r.no,r.people,r.major,r.minor,r.result,r.sales,r.discount,r.regular,r.reason,r.memo
+  ]);
+  const csv = '\uFEFF' + [header, ...rows].map(row=>row.map(csvEscape).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `接客ログ_${todayYmd().replaceAll('/','-')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+initButtons();
+render();
+</script>
+</body>
+</html>
