@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PORTFOLIO BOX</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&family=Dela+Gothic+One&family=DotGothic16&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="termsOverlay" class="terms-overlay">
+  <div class="terms-box">
+
+    <div class="terms-label">PORTFOLIO BOX</div>
+
+    <h2>ARCHIVE ACCESS</h2>
+
+    <p>
+      この保管庫には、個人制作物および外部サイトへの接続情報が含まれています。
+    </p>
+
+    <p>
+      一部の展示物は試験公開中であり、表示崩れ・未完成・動作不良が発生する場合があります。
+    </p>
+
+    <p>
+      また、外部リンク先の内容は各管理者に帰属します。
+    </p>
+
+    <p>
+      記録物の無断転載・再配布は禁止されています。
+    </p>
+
+    <p>
+      閲覧を続行する場合のみ、下のボタンを押してください。
+    </p>
+
+    <button id="acceptTermsButton" class="terms-button">
+      OPEN THE BOX
+    </button>
+
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="topbar-brand">SITE INTRO 📦</div>
+
+ 
+</div>
+
+<section class="hero">
+
+  <div class="hero-bg"></div>
+  <div class="hero-stripe"></div>
+
+  <div class="hero-inner">
+
+    <div>
+
+      <div class="hero-sticker">
+        SITE INTRODUCTION
+      </div>
+
+      <div class="hero-label">
+        P-0000 / ARCHIVE
+      </div>
+
+      <h1 class="hero-title">
+        <span class="shadow2">
+          PORTFOLIO<br>BOX
+        </span>
+
+        <span class="shadow1">
+          PORTFOLIO<br>BOX
+        </span>
+
+        <span class="main">
+          PORTFOLIO<br>BOX
+        </span>
+      </h1>
+
+      <p class="hero-sub">
+        作品を並べるだけではなく、記録として残す。
+        棚の中にしまうように、制作物を見やすく整理する。
+      </p>
+
+    </div>
+
+    <div class="mini-box">
+
+      <div class="mini-cell">GAME</div>
+      <div class="mini-cell">APP</div>
+      <div class="mini-cell">OTHER</div>
+
+      <div class="mini-cell">WEB</div>
+      <div class="mini-cell">BOX</div>
+      <div class="mini-cell">LOG</div>
+
+    </div>
+
+  </div>
+
+</section>
+
+<div class="shelf-edge"></div>
+
+<div class="controls">
+
+  <div class="search-area">
+
+    <div class="search-icon">
+      🔍
+    </div>
+
+    <input
+      id="searchInput"
+      class="search"
+      type="search"
+      placeholder="言葉で探す ｜ ゲーム、アプリ"
+    >
+
+  </div>
+
+  <div id="filterArea" class="filters"></div>
+
+  <div id="countText" class="count">
+    0 BOXES
+  </div>
+
+</div>
+
+<main class="cards-section">
+
+  <div class="section-head">
+
+    <div class="section-num">
+      01
+    </div>
+
+    <div class="section-title">
+      <h2>FEATURED SITES</h2>
+      <span>紹介サイト一覧</span>
+    </div>
+
+    <div class="section-line"></div>
+
+  </div>
+
+  <div id="siteList" class="box-shelf"></div>
+
+</main>
+
+<div class="shelf-bottom"></div>
+
+<footer class="footer">
+
+  <strong>
+    ポートフォリオ棚
+  </strong>
+
+  <span id="lastUpdated">
+    LAST UPDATED — ----.--.--
+  </span>
+
+</footer>
+
+<script src="script.js"></script>
+
+</body>
+</html>
