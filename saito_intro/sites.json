@@ -1,0 +1,46 @@
+[
+    {
+        "title": "バー氷解（PC）",
+        "titleEn": "BAR HYOKAI",
+        "url": "https://sin-skull.github.io/game/%E3%83%90%E3%83%BC%E3%83%86%E3%83%B3%E3%83%80%E3%83%BC/bar.html",
+        "description": "",
+        "category": "ゲーム",
+        "categoryCode": "GAME",
+        "image": "https://sin-skull.github.io/game/%E3%83%90%E3%83%BC%E3%83%86%E3%83%B3%E3%83%80%E3%83%BC/img/0.png",
+        "mark": "氷",
+        "date": "2026-05-23"
+    },
+    {
+        "title": "お前は誰だ（スマホ・PC）",
+        "titleEn": "Who are you?",
+        "url": "https://sin-skull.github.io/game/who_are_you2/title.html",
+        "description": "",
+        "category": "ゲーム",
+        "categoryCode": "GAME",
+        "image": "https://sin-skull.github.io/game/who_are_you2/png/rogo.png",
+        "mark": "誰",
+        "date": "2026-05-23"
+    },
+    {
+        "title": "YTP余裕適正度ポイント（スマホ）",
+        "titleEn": "YTP",
+        "url": "https://sin-skull.github.io/a/ytp/index.html",
+        "description": "",
+        "category": "アプリ",
+        "categoryCode": "APP",
+        "image": "",
+        "mark": "Y",
+        "date": "2026-05-23"
+    },
+    {
+        "title": "決められないなら私が決める。（スマホ・PC）",
+        "titleEn": "If you can't decide, then I will.",
+        "url": "https://sin-skull.github.io/a/yujyuhudan/a.html",
+        "description": "",
+        "category": "アプリ",
+        "categoryCode": "APP",
+        "image": "",
+        "mark": "□",
+        "date": "2026-05-23"
+    }
+]

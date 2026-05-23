@@ -1,0 +1,925 @@
+:root{
+  --cream:#f5f0e8;
+  --offwhite:#faf7f2;
+  --brown:#3d2b1f;
+  --brown2:#5c3d2a;
+  --red:#e8291c;
+  --blue:#1a4fc4;
+  --yellow:#f5c800;
+  --green:#1a8c3c;
+  --orange:#f07018;
+  --pink:#e8308a;
+  --plastic:#d4cfc8;
+  --plastic2:#e8e2d8;
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  background:var(--cream);
+  color:var(--brown);
+  font-family:'Zen Maru Gothic','Hiragino Kaku Gothic ProN',sans-serif;
+  overflow-x:hidden;
+  background-image:radial-gradient(circle,rgba(61,43,31,.055) 1px,transparent 1px);
+  background-size:20px 20px;
+}
+
+.topbar{
+  height:54px;
+  background:var(--blue);
+  border-bottom:4px solid var(--brown);
+  padding:0 32px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  position:relative;
+  overflow:hidden;
+}
+
+.topbar::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,.06) 0,
+    rgba(255,255,255,.06) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.topbar-brand{
+  position:relative;
+  z-index:1;
+  font-family:'Dela Gothic One',sans-serif;
+  color:var(--yellow);
+  font-size:20px;
+  letter-spacing:.06em;
+  text-shadow:2px 2px 0 var(--brown);
+}
+
+.topbar-nav{
+  display:flex;
+  position:relative;
+  z-index:1;
+}
+
+.topbar-nav a{
+  font-family:'DotGothic16',monospace;
+  font-size:11px;
+  letter-spacing:.15em;
+  color:var(--cream);
+  text-decoration:none;
+  padding:6px 14px;
+  border:2px solid rgba(255,255,255,.32);
+  border-right:0;
+  background:rgba(255,255,255,.08);
+}
+
+.topbar-nav a:last-child{
+  border-right:2px solid rgba(255,255,255,.32);
+}
+
+.hero{
+  position:relative;
+  overflow:hidden;
+  background:var(--offwhite);
+  border-bottom:6px solid var(--brown);
+}
+
+.hero-bg{
+  position:absolute;
+  inset:0;
+  background:url('https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?auto=format&fit=crop&w=1800&q=80') center/cover;
+  filter:brightness(.18) saturate(.2);
+  opacity:.38;
+}
+
+.hero-stripe{
+  position:absolute;
+  inset:0;
+  background:repeating-linear-gradient(
+    -45deg,
+    transparent 0,
+    transparent 18px,
+    rgba(245,200,0,.065) 18px,
+    rgba(245,200,0,.065) 36px
+  );
+}
+
+.hero-inner{
+  position:relative;
+  z-index:2;
+  min-height:68vh;
+  padding:64px 48px 56px;
+  display:grid;
+  grid-template-columns:1fr 260px;
+  align-items:end;
+  gap:38px;
+}
+
+.hero-sticker{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:var(--red);
+  color:#fff;
+  font-family:'DotGothic16',monospace;
+  font-size:10px;
+  letter-spacing:.3em;
+  padding:6px 14px;
+  border:3px solid var(--brown);
+  box-shadow:3px 3px 0 var(--brown);
+  margin-bottom:28px;
+}
+
+.hero-sticker::before{
+  content:'★';
+  font-size:9px;
+}
+
+.hero-label{
+  font-family:'DotGothic16',monospace;
+  font-size:12px;
+  letter-spacing:.3em;
+  color:var(--blue);
+  margin-bottom:12px;
+}
+
+.hero-title{
+  font-family:'Dela Gothic One',sans-serif;
+  font-size:clamp(54px,10vw,132px);
+  line-height:.88;
+  letter-spacing:.04em;
+  color:var(--brown);
+  position:relative;
+  display:inline-block;
+  margin-bottom:28px;
+}
+
+.hero-title span.shadow1,
+.hero-title span.shadow2{
+  position:absolute;
+  inset:0;
+  z-index:-1;
+}
+
+.hero-title span.shadow1{
+  color:var(--yellow);
+  transform:translate(5px,5px);
+}
+
+.hero-title span.shadow2{
+  color:var(--red);
+  transform:translate(9px,9px);
+  z-index:-2;
+}
+
+.hero-title span.main{
+  position:relative;
+  z-index:1;
+}
+
+.hero-sub{
+  display:flex;
+  gap:16px;
+  align-items:center;
+  font-size:13px;
+  letter-spacing:.18em;
+  line-height:2;
+  color:var(--brown2);
+  max-width:620px;
+}
+
+.hero-sub::before{
+  content:"";
+  width:40px;
+  height:3px;
+  background:var(--red);
+  border-radius:2px;
+  flex-shrink:0;
+}
+
+.mini-box{
+  align-self:stretch;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:1fr 1fr 1fr;
+  background:var(--brown);
+  gap:6px;
+  border:6px solid var(--brown);
+  box-shadow:8px 8px 0 rgba(61,43,31,.25);
+  min-height:300px;
+}
+
+.mini-cell{
+  background:var(--plastic2);
+  position:relative;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  font-family:'DotGothic16',monospace;
+  color:rgba(61,43,31,.46);
+  font-size:10px;
+  letter-spacing:.2em;
+}
+
+.mini-cell::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:12px;
+  background:var(--cell);
+  border-bottom:3px solid var(--brown);
+}
+
+.mini-cell:nth-child(1){--cell:var(--red);}
+.mini-cell:nth-child(2){--cell:var(--blue);}
+.mini-cell:nth-child(3){--cell:var(--yellow);}
+.mini-cell:nth-child(4){--cell:var(--green);}
+.mini-cell:nth-child(5){--cell:var(--orange);}
+.mini-cell:nth-child(6){--cell:var(--pink);}
+
+.shelf-edge,
+.shelf-bottom{
+  height:20px;
+  background:linear-gradient(to bottom,var(--plastic),#b8b0a4);
+  border-top:3px solid var(--brown);
+  border-bottom:4px solid rgba(61,43,31,.5);
+  position:relative;
+}
+
+.controls{
+  display:flex;
+  align-items:stretch;
+  background:var(--plastic2);
+  border-bottom:4px solid var(--brown);
+  padding:0 48px;
+  position:relative;
+  box-shadow:0 4px 0 rgba(61,43,31,.2);
+}
+
+.controls::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:6px;
+  background:linear-gradient(to bottom,rgba(255,255,255,.5),transparent);
+}
+
+.search-area{
+  flex:1;
+  display:flex;
+  gap:12px;
+  align-items:center;
+  padding:16px 24px 16px 0;
+  border-right:3px solid var(--brown);
+}
+
+.search-icon{
+  width:34px;
+  height:34px;
+  background:var(--yellow);
+  border:3px solid var(--brown);
+  box-shadow:2px 2px 0 var(--brown);
+  display:grid;
+  place-items:center;
+  font-weight:900;
+}
+
+.search{
+  flex:1;
+  background:#fff;
+  border:3px solid var(--brown);
+  outline:none;
+  color:var(--brown);
+  font-family:'DotGothic16',monospace;
+  font-size:12px;
+  letter-spacing:.1em;
+  padding:8px 12px;
+  box-shadow:inset 2px 2px 0 rgba(0,0,0,.08);
+}
+
+.search::placeholder{
+  color:rgba(61,43,31,.35);
+}
+
+.filters{
+  display:flex;
+  align-items:stretch;
+}
+
+.filter-btn{
+  background:var(--plastic2);
+  color:rgba(61,43,31,.52);
+  border:0;
+  border-right:3px solid var(--brown);
+  padding:0 22px;
+  font-family:'DotGothic16',monospace;
+  font-size:11px;
+  letter-spacing:.22em;
+  cursor:pointer;
+  position:relative;
+}
+
+.filter-btn:hover{
+  background:var(--plastic);
+  color:var(--brown);
+}
+
+.filter-btn.active{
+  background:var(--blue);
+  color:var(--yellow);
+  font-weight:700;
+}
+
+.filter-btn.active::before{
+  content:'●';
+  font-size:6px;
+  position:absolute;
+  top:8px;
+  left:50%;
+  transform:translateX(-50%);
+}
+
+.count{
+  padding-left:20px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:'DotGothic16',monospace;
+  font-size:10px;
+  letter-spacing:.22em;
+  color:var(--green);
+}
+
+.count::before{
+  content:'●';
+  font-size:8px;
+  animation:blink 1.2s step-end infinite;
+}
+
+@keyframes blink{
+  0%,100%{opacity:1;}
+  50%{opacity:0;}
+}
+
+.cards-section{
+  padding:0 48px 80px;
+  background:var(--offwhite);
+  position:relative;
+  background-image:
+    linear-gradient(rgba(61,43,31,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(61,43,31,.04) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+
+.section-head{
+  display:flex;
+  align-items:center;
+  gap:20px;
+  padding:48px 0 36px;
+  margin-bottom:0;
+  position:relative;
+}
+
+.section-head::after{
+  content:"";
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
+  height:12px;
+  background:linear-gradient(to bottom,var(--plastic),#b0a898);
+  border-top:3px solid var(--brown);
+  border-bottom:3px solid rgba(61,43,31,.4);
+}
+
+.section-num{
+  font-family:'Dela Gothic One',sans-serif;
+  font-size:72px;
+  color:rgba(61,43,31,.1);
+  line-height:1;
+}
+
+.section-title h2{
+  font-family:'DotGothic16',monospace;
+  font-size:10px;
+  letter-spacing:.35em;
+  color:rgba(61,43,31,.5);
+  margin-bottom:6px;
+}
+
+.section-title span{
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:.08em;
+}
+
+.section-line{
+  flex:1;
+  height:3px;
+  background:repeating-linear-gradient(
+    90deg,
+    var(--brown) 0,
+    var(--brown) 8px,
+    transparent 8px,
+    transparent 14px
+  );
+  opacity:.15;
+}
+
+.box-shelf{
+  background:var(--brown);
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding:8px;
+  border:6px solid var(--brown);
+  box-shadow:8px 8px 0 rgba(61,43,31,.22);
+  margin-top:34px;
+}
+
+.site-card{
+  position:relative;
+  min-height:430px;
+  background:var(--offwhite);
+  border:0;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.58);
+  overflow:hidden;
+  display:grid;
+  grid-template-rows:190px 1fr;
+  transition:transform .15s,filter .15s;
+}
+
+.site-card:hover{
+  transform:translate(-2px,-2px);
+  filter:brightness(1.015);
+}
+
+.site-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border:4px solid rgba(61,43,31,.18);
+  pointer-events:none;
+  z-index:8;
+}
+
+.card-colorbar{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:12px;
+  z-index:7;
+  background:var(--cell);
+  border-bottom:3px solid var(--brown);
+}
+
+.site-card:nth-child(4n+1){--cell:var(--red);}
+.site-card:nth-child(4n+2){--cell:var(--blue);}
+.site-card:nth-child(4n+3){--cell:var(--yellow);}
+.site-card:nth-child(4n+4){--cell:var(--green);}
+
+.file-code{
+  position:absolute;
+  top:16px;
+  right:16px;
+  font-family:'Dela Gothic One',sans-serif;
+  font-size:54px;
+  color:rgba(61,43,31,.065);
+  line-height:1;
+  z-index:1;
+}
+
+.thumb{
+  position:relative;
+  overflow:hidden;
+  background:var(--plastic);
+  border-bottom:4px solid var(--brown);
+  min-height:190px;
+}
+
+.thumb img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  filter:brightness(.76) saturate(.56) contrast(1.08);
+  transition:transform .45s,filter .35s;
+}
+
+.site-card:hover .thumb img{
+  transform:scale(1.04);
+  filter:brightness(.9) saturate(.72) contrast(1.04);
+}
+
+.thumb-sticker{
+  position:absolute;
+  top:22px;
+  left:-2px;
+  z-index:4;
+  background:var(--yellow);
+  border:2px solid var(--brown);
+  box-shadow:2px 2px 0 var(--brown);
+  padding:4px 10px;
+  font-family:'DotGothic16',monospace;
+  font-size:9px;
+  letter-spacing:.2em;
+  color:var(--brown);
+  font-weight:700;
+}
+
+.thumb.empty{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  background:repeating-linear-gradient(
+    45deg,
+    var(--plastic2) 0,
+    var(--plastic2) 10px,
+    var(--plastic) 10px,
+    var(--plastic) 20px
+  );
+}
+
+.empty-mark{
+  font-family:'Zen Maru Gothic','Hiragino Kaku Gothic ProN',sans-serif;
+  font-weight:900;
+  font-size:64px;
+  color:rgba(61,43,31,.12);
+  line-height:1;
+  letter-spacing:.02em;
+}
+
+.empty-label{
+  font-family:'DotGothic16',monospace;
+  font-size:9px;
+  letter-spacing:.3em;
+  color:rgba(61,43,31,.36);
+  border:2px solid rgba(61,43,31,.2);
+  padding:4px 10px;
+  background:rgba(250,247,242,.35);
+}
+
+.card-body{
+  position:relative;
+  z-index:2;
+  padding:28px 28px 30px;
+  display:grid;
+  align-content:start;
+}
+
+.meta{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+
+.tag{
+  color:#fff;
+  padding:4px 10px;
+  font-family:'DotGothic16',monospace;
+  font-size:10px;
+  letter-spacing:.18em;
+  border:2px solid var(--brown);
+  box-shadow:2px 2px 0 var(--brown);
+  font-weight:700;
+  background:var(--cell);
+}
+
+.date{
+  font-family:'DotGothic16',monospace;
+  font-size:9px;
+  letter-spacing:.18em;
+  color:rgba(61,43,31,.45);
+}
+
+.card-title{
+  font-family:'Zen Maru Gothic','Hiragino Kaku Gothic ProN',sans-serif;
+  font-weight:900;
+  font-size:clamp(24px,3vw,38px);
+  line-height:1.25;
+  letter-spacing:.03em;
+  color:var(--brown);
+  margin-bottom:8px;
+}
+
+.card-en{
+  font-family:'DotGothic16',monospace;
+  font-size:10px;
+  letter-spacing:.3em;
+  color:rgba(61,43,31,.42);
+  margin-bottom:18px;
+}
+
+.divider{
+  width:100%;
+  height:3px;
+  background:repeating-linear-gradient(
+    90deg,
+    var(--brown) 0,
+    var(--brown) 6px,
+    transparent 6px,
+    transparent 10px
+  );
+  opacity:.18;
+  margin-bottom:18px;
+}
+
+.desc{
+  font-size:13px;
+  line-height:2;
+  color:rgba(61,43,31,.66);
+  margin-bottom:24px;
+}
+
+.cta{
+  width:fit-content;
+  display:inline-flex;
+  align-items:center;
+  gap:12px;
+  color:var(--brown);
+  background:var(--yellow);
+  border:3px solid var(--brown);
+  box-shadow:4px 4px 0 var(--brown);
+  text-decoration:none;
+  padding:12px 18px;
+  font-family:'DotGothic16',monospace;
+  font-size:11px;
+  letter-spacing:.22em;
+  font-weight:700;
+  transition:transform .1s,box-shadow .1s;
+  margin-top:auto;
+}
+
+.cta:hover{
+  transform:translate(2px,2px);
+  box-shadow:2px 2px 0 var(--brown);
+}
+
+.arrow{
+  position:relative;
+  width:20px;
+  height:2px;
+  background:var(--brown);
+  transition:width .2s;
+}
+
+.cta:hover .arrow{
+  width:28px;
+}
+
+.arrow::after{
+  content:"";
+  position:absolute;
+  right:0;
+  top:-4px;
+  width:8px;
+  height:8px;
+  border-top:2px solid var(--brown);
+  border-right:2px solid var(--brown);
+  transform:rotate(45deg);
+}
+
+.empty-result{
+  grid-column:1 / -1;
+  background:var(--offwhite);
+  border:4px solid var(--brown);
+  padding:32px;
+  text-align:center;
+  font-weight:700;
+  color:rgba(61,43,31,.6);
+}
+
+.footer{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:36px 48px;
+  background:var(--brown);
+  color:rgba(245,240,232,.6);
+  font-family:'DotGothic16',monospace;
+  font-size:10px;
+  letter-spacing:.22em;
+}
+
+.footer strong{
+  font-family:'Dela Gothic One',sans-serif;
+  font-size:18px;
+  letter-spacing:.08em;
+  color:var(--yellow);
+  text-shadow:2px 2px 0 rgba(0,0,0,.4);
+}
+
+.fade-up{
+  opacity:0;
+  transform:translateY(16px);
+  transition:opacity .5s ease,transform .5s ease;
+}
+
+.fade-up.visible{
+  opacity:1;
+  transform:none;
+}
+
+.terms-overlay{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:
+    radial-gradient(circle at center,rgba(245,200,0,.12),transparent 38%),
+    rgba(61,43,31,.82);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+
+.terms-overlay.hidden{
+  display:none;
+}
+
+.terms-box{
+  max-width:560px;
+  width:100%;
+  background:var(--offwhite);
+  border:6px solid var(--brown);
+  box-shadow:10px 10px 0 rgba(61,43,31,.55);
+  padding:30px;
+  position:relative;
+}
+
+.terms-box::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:14px;
+  background:repeating-linear-gradient(
+    90deg,
+    var(--red) 0,
+    var(--red) 18px,
+    var(--yellow) 18px,
+    var(--yellow) 36px,
+    var(--blue) 36px,
+    var(--blue) 54px
+  );
+  border-bottom:4px solid var(--brown);
+}
+
+.terms-label{
+  margin-top:18px;
+  display:inline-block;
+  background:var(--blue);
+  color:var(--yellow);
+  border:3px solid var(--brown);
+  box-shadow:3px 3px 0 var(--brown);
+  padding:6px 12px;
+  font-family:'DotGothic16',monospace;
+  font-size:11px;
+  letter-spacing:.22em;
+  font-weight:700;
+}
+
+.terms-box h2{
+  margin:20px 0;
+  font-family:'Zen Maru Gothic','Hiragino Kaku Gothic ProN',sans-serif;
+  font-weight:900;
+  font-size:34px;
+  line-height:1.15;
+  color:var(--brown);
+}
+
+.terms-box p{
+  font-size:14px;
+  line-height:2;
+  color:rgba(61,43,31,.72);
+  margin-bottom:12px;
+}
+
+.terms-button{
+  margin-top:18px;
+  width:100%;
+  background:var(--yellow);
+  color:var(--brown);
+  border:4px solid var(--brown);
+  box-shadow:5px 5px 0 var(--brown);
+  padding:14px 18px;
+  font-family:'DotGothic16',monospace;
+  font-size:13px;
+  letter-spacing:.24em;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.terms-button:hover{
+  transform:translate(2px,2px);
+  box-shadow:3px 3px 0 var(--brown);
+}
+
+@media(max-width:900px){
+  .topbar-nav{
+    display:none;
+  }
+
+  .hero-inner{
+    padding:48px 24px 44px;
+    grid-template-columns:1fr;
+  }
+
+  .mini-box{
+    min-height:180px;
+    grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(2,90px);
+  }
+
+  .controls{
+    padding:0 24px;
+    flex-direction:column;
+  }
+
+  .search-area{
+    border-right:0;
+    border-bottom:3px solid var(--brown);
+    padding-right:0;
+  }
+
+  .filters{
+    flex-wrap:wrap;
+  }
+
+  .filter-btn{
+    padding:16px;
+  }
+
+  .count{
+    display:none;
+  }
+
+  .cards-section{
+    padding:0 20px 60px;
+  }
+
+  .box-shelf{
+    grid-template-columns:1fr;
+    gap:7px;
+    padding:7px;
+  }
+
+  .site-card{
+    min-height:0;
+    grid-template-rows:200px 1fr;
+  }
+
+  .card-title{
+    font-size:clamp(24px,7vw,34px);
+    line-height:1.28;
+  }
+
+  .empty-mark{
+    font-size:56px;
+  }
+
+  .card-body{
+    padding:24px 20px;
+  }
+
+  .cta{
+    width:100%;
+    justify-content:space-between;
+  }
+
+  .footer{
+    padding:28px 24px;
+    flex-direction:column;
+    gap:14px;
+    text-align:center;
+  }
+
+  .terms-box{
+    padding:24px 20px;
+  }
+
+  .terms-box h2{
+    font-size:28px;
+  }
+}
