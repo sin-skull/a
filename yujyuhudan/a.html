@@ -1,0 +1,2230 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>おすすめ重要度仕分け</title>
+<style>
+
+  :root {
+    --bg: #f4f1ea;
+    --card: #fffaf0;
+    --ink: #2b2620;
+    --sub: #6f665c;
+    --line: #d8cdbd;
+    --accent: #2f2a24;
+    --accent2: #efe4d1;
+    --danger: #4d1f1f;
+    --shadow: 0 10px 30px rgba(35, 28, 20, 0.12);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top, #fff7e8 0, #f4f1ea 45%, #ebe1d2 100%);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  }
+
+  .app {
+    width: min(440px, 100%);
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .screen {
+    width: 100%;
+    display: none;
+  }
+
+  .screen.active {
+    display: block;
+  }
+
+  .card {
+    background: rgba(255, 250, 240, 0.96);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+  }
+
+  h1 {
+    font-size: 26px;
+    line-height: 1.25;
+    margin: 0 0 12px;
+    letter-spacing: 0.02em;
+  }
+
+  h2 {
+    font-size: 28px;
+    margin: 0 0 20px;
+    letter-spacing: 0.03em;
+  }
+
+  p {
+    margin: 0 0 14px;
+    line-height: 1.8;
+  }
+
+  .muted {
+    color: var(--sub);
+    font-size: 13px;
+  }
+
+  .row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .grid.two {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  button {
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    border-radius: 999px;
+    padding: 13px 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:active {
+    transform: translateY(1px);
+  }
+
+  .ghost {
+    background: transparent;
+    color: var(--accent);
+  }
+
+  .wide {
+    width: 100%;
+    margin-top: 14px;
+  }
+
+  input, textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: #fffdf7;
+    color: var(--ink);
+    border-radius: 16px;
+    padding: 13px 14px;
+    font-size: 16px;
+    outline: none;
+  }
+
+  textarea {
+    min-height: 110px;
+    resize: vertical;
+    line-height: 1.7;
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .input-with-button {
+    display: grid;
+    grid-template-columns: 1fr 70px;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .topline {
+    min-height: 28px;
+    margin-bottom: 18px;
+    color: var(--sub);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .sentence {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    background: var(--accent2);
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .history-area {
+    display: none;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .history-area.open {
+    display: block;
+  }
+
+  .history-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .history-list button {
+    padding-inline: 14px;
+  }
+
+  .error {
+    min-height: 24px;
+    margin-top: 10px;
+    color: var(--danger);
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .result-rank {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  .importance {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 18px;
+  }
+
+  .result-text {
+    white-space: pre-line;
+    font-size: 18px;
+    line-height: 1.9;
+    font-weight: 700;
+  }
+
+  .small-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .mode-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .mode-tabs button {
+    border-radius: 16px;
+  }
+
+  .back {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .empty {
+    color: var(--sub);
+    font-size: 14px;
+  }
+
+  .menu-btn {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    padding: 0;
+    z-index: 20;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .menu-panel {
+    position: fixed;
+    top: 68px;
+    right: 14px;
+    width: min(260px, calc(100vw - 28px));
+    background: #fffaf0;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: var(--shadow);
+    z-index: 19;
+    display: none;
+  }
+
+  .menu-panel.open {
+    display: block;
+  }
+
+  .menu-panel button {
+    width: 100%;
+    margin: 5px 0;
+    border-radius: 14px;
+  }
+
+
+  body {
+    background:
+      radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.22), transparent 28%),
+      linear-gradient(145deg, #15110e 0%, #271b15 48%, #4a2b1c 100%);
+    color: #fff2df;
+  }
+
+  .app {
+    padding: 16px;
+  }
+
+  .card {
+    background: rgba(30, 22, 17, 0.9);
+    border: 1px solid rgba(255, 228, 190, 0.2);
+    border-radius: 28px;
+    padding: 24px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(12px);
+  }
+
+  h1 {
+    font-size: 30px;
+    line-height: 1.42;
+    margin-bottom: 26px;
+    font-weight: 900;
+  }
+
+  h2 {
+    font-size: 34px;
+    margin-bottom: 24px;
+    font-weight: 900;
+  }
+
+  button {
+    background: #fff2df;
+    color: #201813;
+    border: 1px solid #fff2df;
+    box-shadow: 0 7px 0 #8f6a45;
+    border-radius: 18px;
+    font-weight: 900;
+  }
+
+  button:active {
+    transform: translateY(4px);
+    box-shadow: 0 3px 0 #8f6a45;
+  }
+
+  .ghost {
+    color: #fff2df;
+    background: rgba(255, 242, 223, 0.08);
+    border: 1px solid rgba(255, 242, 223, 0.28);
+    box-shadow: none;
+  }
+
+  .start-btn {
+    font-size: 20px;
+    padding: 18px 14px;
+  }
+
+  .grid {
+    gap: 12px;
+  }
+
+  input, textarea {
+    background: rgba(255, 242, 223, 0.08);
+    color: #fff2df;
+    border: 1px solid rgba(255, 242, 223, 0.24);
+    border-radius: 18px;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: rgba(255, 242, 223, 0.42);
+  }
+
+  .sentence {
+    background: rgba(255, 242, 223, 0.1);
+    border: 1px solid rgba(255, 242, 223, 0.16);
+    color: #ffe8c8;
+    font-weight: 800;
+  }
+
+  .menu-btn {
+    background: rgba(255, 242, 223, 0.9);
+    box-shadow: 0 5px 0 #8f6a45;
+    border-radius: 16px;
+  }
+
+  .menu-panel {
+    background: rgba(30, 22, 17, 0.96);
+    border: 1px solid rgba(255, 228, 190, 0.22);
+  }
+
+  .result-rank {
+    background: #fff2df;
+    color: #201813;
+  }
+
+  .importance {
+    color: #ffe8c8;
+  }
+
+  .result-text {
+    color: #fff2df;
+  }
+
+  .error {
+    color: #ffb3a7;
+  }
+
+
+  body {
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.02) 25%, transparent 25%) 0 0/22px 22px,
+      #080808;
+    color: #f5f1e8;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  }
+
+  .app {
+    padding: 18px;
+    align-items: center;
+  }
+
+  .card {
+    position: relative;
+    background: #111;
+    border: 2px solid #f5f1e8;
+    border-radius: 0;
+    padding: 24px;
+    box-shadow: 10px 10px 0 #d12727;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border: 1px dashed rgba(245,241,232,0.26);
+    pointer-events: none;
+  }
+
+  h1 {
+    position: relative;
+    font-size: 34px;
+    line-height: 1.32;
+    margin: 0 0 28px;
+    font-weight: 950;
+    letter-spacing: -0.04em;
+  }
+
+  h2 {
+    position: relative;
+    font-size: 42px;
+    line-height: 1;
+    margin: 0 0 24px;
+    font-weight: 950;
+    letter-spacing: -0.06em;
+  }
+
+  p {
+    position: relative;
+  }
+
+  button {
+    position: relative;
+    background: #f5f1e8;
+    color: #080808;
+    border: 2px solid #f5f1e8;
+    border-radius: 0;
+    padding: 14px 10px;
+    font-size: 15px;
+    font-weight: 950;
+    box-shadow: 5px 5px 0 #d12727;
+  }
+
+  button:active {
+    transform: translate(4px, 4px);
+    box-shadow: 1px 1px 0 #d12727;
+  }
+
+  .ghost {
+    color: #f5f1e8;
+    background: #111;
+    border: 2px solid #f5f1e8;
+    box-shadow: 4px 4px 0 rgba(245,241,232,0.3);
+  }
+
+  .start-btn {
+    font-size: 24px;
+    padding: 18px 14px;
+    background: #d12727;
+    color: #fff;
+    border-color: #d12727;
+    box-shadow: 6px 6px 0 #f5f1e8;
+  }
+
+  .grid {
+    position: relative;
+    gap: 11px;
+  }
+
+  .grid button:nth-child(odd) {
+    transform: rotate(-1deg);
+  }
+
+  .grid button:nth-child(even) {
+    transform: rotate(1deg);
+  }
+
+  .grid button:active {
+    transform: translate(4px, 4px) rotate(0deg);
+  }
+
+  input, textarea {
+    position: relative;
+    background: #080808;
+    color: #f5f1e8;
+    border: 2px solid #f5f1e8;
+    border-radius: 0;
+    padding: 14px;
+    font-size: 16px;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: rgba(245,241,232,0.38);
+  }
+
+  .input-with-button {
+    position: relative;
+    grid-template-columns: 1fr 62px;
+    margin-top: 16px;
+  }
+
+  .sentence {
+    position: relative;
+    background: #d12727;
+    border: 2px solid #f5f1e8;
+    border-radius: 0;
+    color: #fff;
+    font-weight: 950;
+    padding: 10px 12px;
+    transform: rotate(-1deg);
+  }
+
+  .menu-btn {
+    background: #d12727;
+    color: #fff;
+    border-color: #d12727;
+    box-shadow: 4px 4px 0 #f5f1e8;
+    border-radius: 0;
+  }
+
+  .menu-panel {
+    background: #111;
+    border: 2px solid #f5f1e8;
+    border-radius: 0;
+    box-shadow: 7px 7px 0 #d12727;
+  }
+
+  .result-rank {
+    background: #d12727;
+    color: #fff;
+    border-radius: 0;
+    padding: 8px 14px;
+    font-weight: 950;
+  }
+
+  .importance {
+    color: #f5f1e8;
+    font-size: 22px;
+    font-weight: 950;
+  }
+
+  .result-text {
+    color: #f5f1e8;
+    font-size: 20px;
+    line-height: 1.85;
+    font-weight: 950;
+  }
+
+  .error {
+    color: #ff5a5a;
+    font-weight: 950;
+  }
+
+  .empty {
+    color: rgba(245,241,232,0.58);
+  }
+
+
+
+  .select-block {
+    position: relative;
+    margin-top: 18px;
+  }
+
+  .mini-title {
+    display: inline-block;
+    margin: 0 0 8px;
+    padding: 4px 8px;
+    background: #d12727;
+    color: #fff;
+    font-weight: 950;
+    border: 2px solid #f5f1e8;
+  }
+
+  button.selected {
+    background: #d12727;
+    color: #fff;
+    border-color: #d12727;
+    box-shadow: 5px 5px 0 #f5f1e8;
+  }
+
+  .history-card {
+    width: 100%;
+    display: block;
+    text-align: left;
+    margin: 10px 0;
+    line-height: 1.7;
+  }
+
+  .reviewed {
+    opacity: 0.75;
+    font-size: 13px;
+  }
+
+
+  .history-page-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .history-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+    text-align: left;
+    line-height: 1.45;
+  }
+
+  .history-main {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .history-sub {
+    opacity: 0.72;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+
+  .judging-card {
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .judging-lines {
+    margin-top: 18px;
+    font-size: 18px;
+    line-height: 2;
+    font-weight: 950;
+    white-space: pre-line;
+  }
+
+  .judging-line {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: popLine 0.22s forwards;
+  }
+
+  @keyframes popLine {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .evidence-box {
+    margin-top: 18px;
+    padding: 12px;
+    border: 2px dashed rgba(245,241,232,0.55);
+    font-size: 13px;
+    line-height: 1.7;
+    opacity: 0.86;
+    font-weight: 850;
+  }
+
+  .evidence-title {
+    display: inline-block;
+    margin-bottom: 6px;
+    padding: 2px 7px;
+    background: #d12727;
+    color: #fff;
+    font-weight: 950;
+  }
+
+  .evidence-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .evidence-item {
+    border: 1px solid rgba(245,241,232,0.5);
+    padding: 3px 7px;
+    background: rgba(245,241,232,0.08);
+  }
+
+
+  .excuse-btn {
+    margin-top: 18px;
+  }
+
+  .excuse-reply {
+    min-height: 32px;
+    margin-top: 12px;
+    font-size: 15px;
+    font-weight: 950;
+    color: #ffb3a7;
+    line-height: 1.7;
+  }
+
+
+  .load-excuse {
+    min-height: 74px;
+    margin-top: 18px;
+    padding: 12px;
+    border: 2px dashed rgba(245,241,232,0.55);
+    font-size: 15px;
+    line-height: 1.7;
+    font-weight: 950;
+    color: #f5f1e8;
+  }
+
+  .show-result-btn {
+    margin-top: 12px;
+    background: #d12727;
+    color: #fff;
+    border-color: #d12727;
+    box-shadow: 6px 6px 0 #f5f1e8;
+  }
+
+
+  .load-wrap {
+    margin-top: 18px;
+  }
+
+  .load-track {
+    width: 100%;
+    height: 20px;
+    border: 2px solid #f5f1e8;
+    background: #080808;
+    overflow: hidden;
+  }
+
+  .load-bar {
+    width: 0%;
+    height: 100%;
+    background: #d12727;
+    transition: width 0.12s linear;
+  }
+
+  .load-percent {
+    margin-top: 8px;
+    font-size: 14px;
+    font-weight: 950;
+    text-align: right;
+  }
+
+  .slow-question {
+    margin-top: 16px;
+    font-size: 18px;
+    font-weight: 950;
+    color: #ffb3a7;
+  }
+
+
+  .history-excuse {
+    grid-column: 1 / -1;
+    opacity: 0.68;
+    font-size: 12px;
+    line-height: 1.45;
+    margin-top: 4px;
+  }
+
+
+  .load-track {
+    position: relative;
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  .fade-in {
+    animation: fadeInUp 0.38s ease-out forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+
+  .load-track {
+    position: relative;
+    overflow: visible;
+  }
+
+  .runner {
+    position: absolute;
+    left: 0%;
+    top: -30px;
+    width: 28px;
+    height: 38px;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .runner-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .runner-head-svg {
+    fill: #111;
+    stroke: #f5f1e8;
+    stroke-width: 3;
+  }
+
+  .runner-body-svg,
+  .runner-arm-svg,
+  .runner-leg-svg {
+    stroke: #f5f1e8;
+    stroke-width: 3;
+    stroke-linecap: round;
+    fill: none;
+  }
+
+  .runner-arm-left-svg {
+    transform-origin: 16px 16px;
+    animation: svgArmLeftRun 0.42s infinite ease-in-out;
+  }
+
+  .runner-arm-right-svg {
+    transform-origin: 16px 16px;
+    animation: svgArmRightRun 0.42s infinite ease-in-out;
+  }
+
+  .runner-leg-left-svg {
+    transform-origin: 16px 25px;
+    animation: svgLegLeftRun 0.42s infinite ease-in-out;
+  }
+
+  .runner-leg-right-svg {
+    transform-origin: 16px 25px;
+    animation: svgLegRightRun 0.42s infinite ease-in-out;
+  }
+
+  @keyframes svgArmLeftRun {
+    0%, 100% { transform: rotate(24deg); }
+    50% { transform: rotate(-34deg); }
+  }
+
+  @keyframes svgArmRightRun {
+    0%, 100% { transform: rotate(-30deg); }
+    50% { transform: rotate(26deg); }
+  }
+
+  @keyframes svgLegLeftRun {
+    0%, 100% { transform: rotate(-18deg); }
+    50% { transform: rotate(28deg); }
+  }
+
+  @keyframes svgLegRightRun {
+    0%, 100% { transform: rotate(26deg); }
+    50% { transform: rotate(-22deg); }
+  }
+
+
+  @media (max-width: 480px) {
+    .app {
+      width: 100%;
+      min-height: 100svh;
+      padding: 14px;
+      align-items: center;
+    }
+
+    .card {
+      padding: 20px;
+      box-shadow: 7px 7px 0 #d12727;
+    }
+
+    h1 {
+      font-size: clamp(26px, 8vw, 32px);
+      line-height: 1.28;
+      letter-spacing: -0.05em;
+    }
+
+    h2 {
+      font-size: clamp(30px, 10vw, 38px);
+      line-height: 1.05;
+      margin-bottom: 20px;
+    }
+
+    button {
+      font-size: 13px;
+      padding: 12px 8px;
+      line-height: 1.25;
+    }
+
+    .grid {
+      gap: 9px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .input-with-button {
+      grid-template-columns: 1fr 56px;
+    }
+
+    input,
+    textarea {
+      font-size: 15px;
+      padding: 12px;
+    }
+
+    .sentence {
+      font-size: 12px;
+      line-height: 1.55;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+
+    .result-rank {
+      font-size: 13px;
+    }
+
+    .importance {
+      font-size: 17px;
+      margin-bottom: 14px;
+    }
+
+    .result-text {
+      font-size: clamp(16px, 4.7vw, 18px);
+      line-height: 1.78;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+
+    .judging-lines {
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    .load-excuse {
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .history-row {
+      grid-template-columns: 1fr;
+    }
+
+    .history-sub {
+      font-size: 11px;
+    }
+
+    .menu-panel {
+      width: min(240px, calc(100vw - 28px));
+    }
+  }
+
+
+  @media (max-width: 360px) {
+    button {
+      font-size: 12px;
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+
+    h1 {
+      font-size: 25px;
+    }
+
+    h2 {
+      font-size: 30px;
+    }
+
+    .result-text {
+      font-size: 16px;
+    }
+
+    .mini-title {
+      font-size: 12px;
+    }
+  }
+
+
+  .result-text {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  .history-excuse {
+    grid-column: 1 / -1;
+    opacity: 0.68;
+    font-size: 12px;
+    line-height: 1.45;
+    margin-top: 4px;
+  }
+
+</style>
+</head>
+<body>
+
+<button class="menu-btn" onclick="toggleMenu()">☰</button>
+<div id="menuPanel" class="menu-panel">
+  <button onclick="menuGo('who')">普通に聞かせる</button>
+  <button class="ghost" onclick="menuGo('natural')">まとめて話す</button>
+  <button class="ghost" onclick="menuGo('history')">前の相談</button>
+</div>
+
+<div class="app">
+
+  <section id="start" class="screen active">
+    <div class="card">
+      <h1>決められないなら<br>私が決める。</h1>
+      <button class="wide start-btn" onclick="startStepMode()">聞かせる</button>
+    </div>
+  </section>
+
+  <section id="natural" class="screen">
+    <div class="card">
+      <button class="ghost back" onclick="go('start')">戻る</button>
+      <h2>投げろ</h2>
+      <textarea id="naturalText" placeholder="友達に〇〇を勧められた"></textarea>
+      <button class="wide" onclick="judgeNatural()">判定</button>
+      <div id="naturalError" class="error"></div>
+    </div>
+  </section>
+
+  <section id="who" class="screen">
+    <div class="card">
+      <button class="ghost back" onclick="go('start')">戻る</button>
+      <div id="sentenceWho" class="sentence"></div>
+      <h2>誰が？</h2>
+      <div class="grid">
+        <button onclick="selectWho('家族', '家族')">家族</button>
+        <button onclick="selectWho('友達', '友達')">友達</button>
+        <button onclick="selectWho('先生', '先生')">先生</button>
+        <button onclick="selectWho('知人', '知人')">知人</button>
+        <button onclick="selectWho('他人', '他人')">他人</button>
+        <button onclick="selectWho('親友', '親友')">親友</button>
+      </div>
+      <div class="input-with-button">
+        <input id="whoName" placeholder="名前だけ">
+        <button onclick="selectTypedWho()">さん</button>
+      </div>
+      <button class="ghost wide" onclick="toggleHistory('whoHistory')">履歴</button>
+      <div id="whoHistory" class="history-area">
+        <div id="whoHistoryList" class="history-list"></div>
+      </div>
+      <div id="whoError" class="error"></div>
+    </div>
+  </section>
+
+  <section id="item" class="screen">
+    <div class="card">
+      <button class="ghost back" onclick="go('who')">戻る</button>
+      <div id="sentenceItem" class="sentence"></div>
+      <h2>何を。</h2>
+      <div class="grid">
+        <button onclick="selectItem('漫画', '漫画')">漫画</button>
+        <button onclick="selectItem('アニメ', 'アニメ')">アニメ</button>
+        <button onclick="selectItem('映画', '映画')">映画</button>
+        <button onclick="selectItem('ゲーム', 'ゲーム')">ゲーム</button>
+        <button onclick="selectItem('曲', '曲')">曲</button>
+        <button onclick="selectItem('動画', '動画')">動画</button>
+        <button onclick="selectItem('本', '本')">本</button>
+        <button onclick="selectItem('店', '店')">店</button>
+        <button onclick="selectItem('アプリ', 'アプリ')">アプリ</button>
+      </div>
+      <div class="input-with-button">
+        <input id="itemName" placeholder="ないなら書け">
+        <button onclick="selectTypedItem()">を</button>
+      </div>
+      <button class="ghost wide" onclick="toggleHistory('itemHistory')">履歴</button>
+      <div id="itemHistory" class="history-area">
+        <div id="itemHistoryList" class="history-list"></div>
+      </div>
+      <div id="itemError" class="error"></div>
+    </div>
+  </section>
+
+  <section id="mood" class="screen">
+    <div class="card">
+      <button class="ghost back" onclick="go('item')">戻る</button>
+      <div id="sentenceMood" class="sentence"></div>
+      <h2>投げ方。</h2>
+
+      <div class="select-block">
+        <div class="mini-title">熱量</div>
+        <div class="grid two">
+          <button data-group="heat" onclick="selectPressure('heat','縦ノリ', this)">縦ノリ</button>
+          <button data-group="heat" onclick="selectPressure('heat','恋愛相談', this)">恋愛相談</button>
+          <button data-group="heat" onclick="selectPressure('heat','木刀対真剣', this)">木刀対真剣</button>
+          <button data-group="heat" onclick="selectPressure('heat','事件並み', this)">事件並み</button>
+          <button data-group="heat" onclick="selectPressure('heat','宇宙並み', this)">宇宙並み</button>
+        </div>
+      </div>
+
+      <div class="select-block">
+        <div class="mini-title">断りにくさ</div>
+        <div class="grid">
+          <button data-group="refusal" onclick="selectPressure('refusal','スルー', this)">スルー</button>
+          <button data-group="refusal" onclick="selectPressure('refusal','面倒くさそう', this)">面倒くさそう</button>
+          <button data-group="refusal" onclick="selectPressure('refusal','出来ない', this)">出来ない</button>
+        </div>
+      </div>
+
+      <div class="select-block">
+        <div class="mini-title">回数</div>
+        <div class="grid">
+          <button data-group="repeat" onclick="selectPressure('repeat','初回', this)">初回</button>
+          <button data-group="repeat" onclick="selectPressure('repeat','前も言ってた', this)">前も言ってた</button>
+          <button data-group="repeat" onclick="selectPressure('repeat','何回目だよ', this)">何回目だよ</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="feeling" class="screen">
+    <div class="card">
+      <button class="ghost back" onclick="go('mood')">戻る</button>
+      <div id="sentenceFeeling" class="sentence"></div>
+      <h2>こっち。</h2>
+
+      <div class="select-block">
+        <div class="mini-title">興味</div>
+        <div class="grid two">
+          <button data-group="interest" onclick="selectSelf('interest','ある', this)">ある</button>
+          <button data-group="interest" onclick="selectSelf('interest','ちょいある', this)">ちょいある</button>
+          <button data-group="interest" onclick="selectSelf('interest','別に', this)">別に</button>
+          <button data-group="interest" onclick="selectSelf('interest','ない', this)">ない</button>
+        </div>
+      </div>
+
+      <div class="select-block">
+        <div class="mini-title">重さ</div>
+        <div class="grid two">
+          <button data-group="weight" onclick="selectSelf('weight','軽い', this)">軽い</button>
+          <button data-group="weight" onclick="selectSelf('weight','普通', this)">普通</button>
+          <button data-group="weight" onclick="selectSelf('weight','重い', this)">重い</button>
+          <button data-group="weight" onclick="selectSelf('weight','無理', this)">無理</button>
+        </div>
+      </div>
+
+      <div class="select-block">
+        <div class="mini-title">余裕</div>
+        <div class="grid two">
+          <button data-group="capacity" onclick="selectSelf('capacity','入る', this)">入る</button>
+          <button data-group="capacity" onclick="selectSelf('capacity','まあ入る', this)">まあ入る</button>
+          <button data-group="capacity" onclick="selectSelf('capacity','今きつい', this)">今きつい</button>
+          <button data-group="capacity" onclick="selectSelf('capacity','一切入らん', this)">一切入らん</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section id="judging" class="screen">
+    <div class="card judging-card">
+      <h2 id="judgingTitle">考え中</h2>
+      <div id="judgingLines" class="judging-lines"></div>
+
+      <div class="load-wrap">
+        <div class="load-track">
+          <div id="loadBar" class="load-bar"></div>
+          <div id="runner" class="runner" aria-hidden="true">
+            <svg class="runner-svg" viewBox="0 0 32 44">
+              <circle class="runner-head-svg" cx="16" cy="7" r="5"></circle>
+              <line class="runner-body-svg" x1="16" y1="12" x2="16" y2="25"></line>
+              <line class="runner-arm-svg runner-arm-left-svg" x1="16" y1="16" x2="7" y2="23"></line>
+              <line class="runner-arm-svg runner-arm-right-svg" x1="16" y1="16" x2="25" y2="10"></line>
+              <line class="runner-leg-svg runner-leg-left-svg" x1="16" y1="25" x2="8" y2="38"></line>
+              <line class="runner-leg-svg runner-leg-right-svg" x1="16" y1="25" x2="25" y2="35"></line>
+            </svg>
+          </div>
+        </div>
+        <div id="loadPercent" class="load-percent">0%</div>
+      </div>
+
+      <div id="slowQuestion" class="slow-question" style="display:none;">ロードが遅いですか？</div>
+      <button id="excuseBtn" class="ghost wide excuse-btn" onclick="generateLoadExcuse()" style="display:none;">遅い原因</button>
+      <div id="loadExcuse" class="load-excuse" style="display:none;"></div>
+      <button id="showResultBtn" class="wide show-result-btn" onclick="showResult()" style="display:none;">先を急ぐ</button>
+    </div>
+  </section>
+
+  <section id="result" class="screen">
+    <div class="card">
+      <div id="resultRank" class="result-rank"></div>
+      <div id="resultImportance" class="importance"></div>
+      <div id="resultText" class="result-text"></div>
+      <div id="evidenceBox" class="evidence-box"></div>
+      <div class="small-actions">
+        <button onclick="saveResult()">覚えとく</button>
+        <button class="ghost" onclick="resetApp()">もう一件聞かせる</button>
+      </div>
+      <button class="ghost wide" onclick="go('history')">前の相談</button>
+      <div id="saveMessage" class="error"></div>
+    </div>
+  </section>
+
+  
+
+  <section id="history" class="screen">
+    <div class="card">
+      <button class="ghost back" onclick="go('start')">戻る</button>
+      <h2>前の相談</h2>
+      <div id="resultHistoryList" class="history-page-list"></div>
+    </div>
+  </section>
+
+  <section id="review" class="screen">
+    <div class="card">
+      <button class="ghost back" onclick="go('history')">戻る</button>
+      <div id="reviewTarget" class="sentence"></div>
+      <div id="reviewExcuse" class="load-excuse" style="display:none;"></div>
+      <h2>戻ってきたな、おかえり</h2>
+      <div class="result-text">この件についてどうだった？<br>いいじゃん〜聞かせてよ〜！</div>
+      <div class="grid" style="margin-top:18px;">
+        <button onclick="answerReview('良い')">良い</button>
+        <button onclick="answerReview('普通')">普通</button>
+        <button onclick="answerReview('悪い')">悪い</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="reviewResult" class="screen">
+    <div class="card">
+      <button class="ghost back" onclick="go('review')">戻る</button>
+      <div id="reviewResultTarget" class="sentence"></div>
+      <div id="reviewResultExcuse" class="load-excuse" style="display:none;"></div>
+      <div id="reviewReply" class="result-text"></div>
+      <button class="ghost wide" onclick="go('history')">前の相談に戻る</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const STORAGE_KEYS = {
+  who: "reco_who_history_v2",
+  item: "reco_item_history_v2",
+  results: "reco_result_history_v2"
+};
+
+const defaultState = {
+  who: "",
+  whoType: "",
+  item: "",
+  itemType: "",
+  heat: "",
+  refusal: "",
+  repeat: "",
+  interest: "",
+  weight: "",
+  capacity: "",
+  sourceText: "",
+  rank: "",
+  importance: "",
+  resultText: "",
+  loadExcuse: ""
+};
+
+let current = { ...defaultState };
+let selectedReviewIndex = null;
+let excuseCount = 0;
+
+const whoScores = {
+  "親友": 22,
+  "友達": 14,
+  "家族": 10,
+  "先生": 8,
+  "知人": 4,
+  "他人": -8,
+  "名前入力": 12,
+  "不明": 0
+};
+
+const itemScores = {
+  "漫画": 10,
+  "アニメ": 10,
+  "映画": 8,
+  "ゲーム": 8,
+  "曲": 6,
+  "動画": 5,
+  "本": 6,
+  "店": 7,
+  "アプリ": 3,
+  "自由入力": 5,
+  "不明": 0
+};
+
+const heatScores = {
+  "縦ノリ": -4,
+  "恋愛相談": 4,
+  "木刀対真剣": 10,
+  "事件並み": 16,
+  "宇宙並み": 22
+};
+
+const refusalScores = {
+  "スルー": -6,
+  "面倒くさそう": 8,
+  "出来ない": 16
+};
+
+const repeatScores = {
+  "初回": 0,
+  "前も言ってた": 8,
+  "何回目だよ": 15
+};
+
+const interestScores = {
+  "ある": 24,
+  "ちょいある": 12,
+  "別に": 0,
+  "ない": -18
+};
+
+const weightScores = {
+  "軽い": 10,
+  "普通": 0,
+  "重い": -12,
+  "無理": -24
+};
+
+const capacityScores = {
+  "入る": 12,
+  "まあ入る": 5,
+  "今きつい": -12,
+  "一切入らん": -24
+};
+
+const defaultItems = ["漫画", "アニメ", "映画", "ゲーム", "曲", "動画", "本", "店", "アプリ"];
+
+const importanceLabels = {
+  S: "最優先",
+  A: "高い",
+  B: "普通より上",
+  C: "保留",
+  D: "低い",
+  E: "かなり低い"
+};
+
+function go(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  renderSentence();
+  renderHistories();
+  clearErrors();
+}
+
+function startStepMode() {
+  current = { ...defaultState };
+  document.querySelectorAll("button.selected").forEach(b => b.classList.remove("selected"));
+  go("who");
+}
+
+function clearErrors() {
+  ["whoError", "itemError", "naturalError", "saveMessage"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = "";
+  });
+}
+
+function getList(key) {
+  try { return JSON.parse(localStorage.getItem(key) || "[]"); }
+  catch { return []; }
+}
+
+function setList(key, list) {
+  localStorage.setItem(key, JSON.stringify(list));
+}
+
+function addUnique(key, value) {
+  const v = value.trim();
+  if (!v) return;
+  const list = getList(key);
+  if (!list.includes(v)) {
+    list.unshift(v);
+    setList(key, list.slice(0, 20));
+  }
+}
+
+function toggleHistory(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle("open");
+  renderHistories();
+}
+
+function toggleMenu() {
+  document.getElementById("menuPanel").classList.toggle("open");
+}
+
+function menuGo(id) {
+  document.getElementById("menuPanel").classList.remove("open");
+  if (id === "who") return startStepMode();
+  go(id);
+}
+
+function renderHistories() {
+  renderWhoHistory();
+  renderItemHistory();
+  renderResultHistory();
+}
+
+function renderWhoHistory() {
+  const list = getList(STORAGE_KEYS.who);
+  const box = document.getElementById("whoHistoryList");
+  if (!box) return;
+  box.innerHTML = "";
+  if (list.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "まだ履歴はありません";
+    box.appendChild(empty);
+    return;
+  }
+  list.forEach(name => {
+    const btn = document.createElement("button");
+    btn.className = "ghost";
+    btn.textContent = name;
+    btn.addEventListener("click", () => selectWho(name, "名前入力"));
+    box.appendChild(btn);
+  });
+}
+
+function renderItemHistory() {
+  const list = getList(STORAGE_KEYS.item);
+  const box = document.getElementById("itemHistoryList");
+  if (!box) return;
+  box.innerHTML = "";
+  if (list.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "まだ履歴はありません";
+    box.appendChild(empty);
+    return;
+  }
+  list.forEach(item => {
+    const btn = document.createElement("button");
+    btn.className = "ghost";
+    btn.textContent = item;
+    btn.addEventListener("click", () => selectItem(item, "自由入力"));
+    box.appendChild(btn);
+  });
+}
+
+function renderResultHistory() {
+  const list = getList(STORAGE_KEYS.results);
+  const box = document.getElementById("resultHistoryList");
+  if (!box) return;
+  box.innerHTML = "";
+
+  if (list.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "まだ何も覚えてない";
+    box.appendChild(empty);
+    return;
+  }
+
+  list.forEach((r, index) => {
+    const btn = document.createElement("button");
+    btn.className = "ghost history-row";
+    btn.type = "button";
+    btn.addEventListener("click", () => openReview(index));
+
+    const left = document.createElement("span");
+    left.className = "history-main";
+    left.textContent = `${r.rank}：${r.summary}`;
+
+    const right = document.createElement("span");
+    right.className = "history-sub";
+    right.textContent = r.review ? `結果：${r.review}` : "未評価";
+
+    btn.appendChild(left);
+    btn.appendChild(right);
+
+    if (r.loadExcuse) {
+      const mark = document.createElement("span");
+      mark.className = "history-excuse";
+      mark.textContent = "遅い原因あり";
+      btn.appendChild(mark);
+    }
+
+    box.appendChild(btn);
+  });
+}
+
+function selectWho(label, type) {
+  current.who = label;
+  current.whoType = type;
+  if (type === "名前入力") addUnique(STORAGE_KEYS.who, label);
+  go("item");
+}
+
+function selectTypedWho() {
+  const input = document.getElementById("whoName");
+  const value = input.value.trim();
+  if (!value) {
+    document.getElementById("whoError").textContent = "誰だよ";
+    return;
+  }
+  const name = value.endsWith("さん") ? value : value + "さん";
+  input.value = "";
+  selectWho(name, "名前入力");
+}
+
+function selectItem(label, type) {
+  current.item = label;
+  current.itemType = type;
+  if (type === "自由入力" && !defaultItems.includes(label)) addUnique(STORAGE_KEYS.item, label);
+  go("mood");
+}
+
+function selectTypedItem() {
+  const input = document.getElementById("itemName");
+  const value = input.value.trim();
+  if (!value) {
+    document.getElementById("itemError").textContent = "何を勧められたんだよ";
+    return;
+  }
+  input.value = "";
+  selectItem(value, defaultItems.includes(value) ? value : "自由入力");
+}
+
+function markSelected(btn, group) {
+  document.querySelectorAll(`button[data-group="${group}"]`).forEach(b => b.classList.remove("selected"));
+  if (btn) btn.classList.add("selected");
+}
+
+function selectPressure(key, value, btn) {
+  current[key] = value;
+  markSelected(btn, key);
+  if (current.heat && current.refusal && current.repeat) {
+    setTimeout(() => go("feeling"), 120);
+  }
+}
+
+function selectSelf(key, value, btn) {
+  current[key] = value;
+  markSelected(btn, key);
+  if (current.interest && current.weight && current.capacity) {
+    setTimeout(() => judgeCurrent(), 120);
+  }
+}
+
+function judgeNatural() {
+  const text = document.getElementById("naturalText").value.trim();
+  if (!text) {
+    document.getElementById("naturalError").textContent = "なんか書いて";
+    return;
+  }
+
+  current = { ...defaultState };
+  current.sourceText = text;
+
+  const who = detectWho(text);
+  current.who = who.label;
+  current.whoType = who.type;
+
+  const item = detectItem(text);
+  current.item = item.label;
+  current.itemType = item.type;
+
+  const pressure = detectPressure(text);
+  current.heat = pressure.heat;
+  current.refusal = pressure.refusal;
+  current.repeat = pressure.repeat;
+
+  const self = detectSelf(text);
+  current.interest = self.interest;
+  current.weight = self.weight;
+  current.capacity = self.capacity;
+
+  judgeCurrent();
+}
+
+function detectWho(text) {
+  const rules = [
+    { words: ["親友"], label: "親友", type: "親友" },
+    { words: ["友達", "友人", "フレンド"], label: "友達", type: "友達" },
+    { words: ["家族", "母", "父", "兄", "姉", "弟", "妹"], label: "家族", type: "家族" },
+    { words: ["先生", "教授"], label: "先生", type: "先生" },
+    { words: ["先輩", "後輩", "知人", "同僚", "バイト先"], label: "知人", type: "知人" },
+    { words: ["他人", "知らない人", "知らん人"], label: "他人", type: "他人" }
+  ];
+  for (const rule of rules) {
+    if (rule.words.some(w => text.includes(w))) return { label: rule.label, type: rule.type };
+  }
+  const nameMatch = text.match(/(.+?)さんに/);
+  if (nameMatch && nameMatch[1].length <= 10) {
+    return { label: nameMatch[1] + "さん", type: "名前入力" };
+  }
+  return { label: "勧めてきた人", type: "不明" };
+}
+
+function detectItem(text) {
+  const typeRules = [
+    { words: ["漫画", "マンガ", "コミック", "単行本"], label: "漫画", type: "漫画" },
+    { words: ["アニメ", "TVアニメ", "anime"], label: "アニメ", type: "アニメ" },
+    { words: ["映画", "邦画", "洋画", "ムービー"], label: "映画", type: "映画" },
+    { words: ["ゲーム", "Switch", "PS5", "Steam", "ソシャゲ"], label: "ゲーム", type: "ゲーム" },
+    { words: ["曲", "音楽", "歌", "アルバム", "MV"], label: "曲", type: "曲" },
+    { words: ["動画", "YouTube", "配信", "実況"], label: "動画", type: "動画" },
+    { words: ["小説", "書籍", "ラノベ", "本"], label: "本", type: "本" },
+    { words: ["店", "ラーメン", "カフェ", "レストラン", "居酒屋"], label: "店", type: "店" },
+    { words: ["アプリ", "ツール", "サービス"], label: "アプリ", type: "アプリ" }
+  ];
+  let detected = { label: "何か", type: "不明" };
+  for (const rule of typeRules) {
+    if (rule.words.some(w => text.includes(w))) {
+      detected = { label: rule.label, type: rule.type };
+      break;
+    }
+  }
+  const title = extractTitle(text);
+  if (title) detected.label = title;
+  return detected;
+}
+
+function extractTitle(text) {
+  let m = text.match(/に(.+?)という/);
+  if (m) return cleanTitle(m[1]);
+  m = text.match(/に(.+?)を/);
+  if (m) return cleanTitle(m[1]);
+  m = text.match(/「(.+?)」/);
+  if (m) return cleanTitle(m[1]);
+  return "";
+}
+
+function cleanTitle(value) {
+  return value.replace(/友達|親友|家族|先生|先輩|後輩|知人|他人|知らない人|母|父|兄|姉|弟|妹|さん/g, "").trim();
+}
+
+function detectPressure(text) {
+  let heat = "恋愛相談";
+  let refusal = "スルー";
+  let repeat = "初回";
+
+  if (text.includes("宇宙") || text.includes("人生") || text.includes("世界変わる")) heat = "宇宙並み";
+  else if (text.includes("事件") || text.includes("大事件") || text.includes("やばい")) heat = "事件並み";
+  else if (text.includes("熱弁") || text.includes("めちゃくちゃ") || text.includes("真剣")) heat = "木刀対真剣";
+  else if (text.includes("相談") || text.includes("本気")) heat = "恋愛相談";
+  else if (text.includes("ノリ") || text.includes("軽く") || text.includes("なんとなく")) heat = "縦ノリ";
+
+  if (text.includes("断れない") || text.includes("逃げ場") || text.includes("絶対") || text.includes("強制")) refusal = "出来ない";
+  else if (text.includes("面倒") || text.includes("めんど") || text.includes("圧") || text.includes("聞かれそう")) refusal = "面倒くさそう";
+
+  if (text.includes("何回目") || text.includes("しつこい") || text.includes("何度も") || text.includes("何回も")) repeat = "何回目だよ";
+  else if (text.includes("前も") || text.includes("また") || text.includes("前にも")) repeat = "前も言ってた";
+
+  return { heat, refusal, repeat };
+}
+
+function detectSelf(text) {
+  let interest = "別に";
+  let weight = "普通";
+  let capacity = "まあ入る";
+
+  if (text.includes("気になる") || text.includes("面白そう") || text.includes("良さそう")) interest = "ある";
+  if (text.includes("ちょっと") || text.includes("少し")) interest = "ちょいある";
+  if (text.includes("興味ない") || text.includes("興味無い")) interest = "ない";
+
+  if (text.includes("軽い") || text.includes("すぐ") || text.includes("短い")) weight = "軽い";
+  if (text.includes("重い") || text.includes("長い") || text.includes("時間かかる")) weight = "重い";
+  if (text.includes("無理") || text.includes("きつい")) weight = "無理";
+
+  if (text.includes("今いける") || text.includes("余裕")) capacity = "入る";
+  if (text.includes("今きつい") || text.includes("忙しい")) capacity = "今きつい";
+  if (text.includes("一切") || text.includes("入らん") || text.includes("入らない")) capacity = "一切入らん";
+
+  return { interest, weight, capacity };
+}
+
+function judgeCurrent() {
+  const score = calcScore(current);
+  const rank = getRank(score);
+  current.rank = rank;
+  current.importance = importanceLabels[rank];
+  current.resultText = makeResultText(rank, current);
+
+  runJudging(rank, () => {
+    showResult();
+  });
+}
+
+function showResult() {
+  document.getElementById("resultRank").textContent = "判定：" + current.rank;
+  document.getElementById("resultImportance").textContent = "重要度：" + current.importance;
+  document.getElementById("resultText").textContent = current.resultText;
+  renderEvidence();
+  go("result");
+}
+
+function runJudging(rank, done) {
+  const title = document.getElementById("judgingTitle");
+  const linesBox = document.getElementById("judgingLines");
+  if (!title || !linesBox) {
+    done();
+    return;
+  }
+
+  title.textContent = getJudgingTitle(rank);
+  linesBox.innerHTML = "";
+  excuseCount = 0;
+
+  const loadExcuse = document.getElementById("loadExcuse");
+  const slowQuestion = document.getElementById("slowQuestion");
+  const excuseBtn = document.getElementById("excuseBtn");
+  const resultBtn = document.getElementById("showResultBtn");
+  const loadBar = document.getElementById("loadBar");
+  const loadPercent = document.getElementById("loadPercent");
+
+  if (loadExcuse) {
+    loadExcuse.textContent = "";
+    loadExcuse.style.display = "none";
+  }
+  if (slowQuestion) slowQuestion.style.display = "none";
+  if (excuseBtn) excuseBtn.style.display = "none";
+  if (resultBtn) resultBtn.style.display = "none";
+  if (loadBar) loadBar.style.width = "0%";
+  if (loadPercent) loadPercent.textContent = "0%";
+
+  go("judging");
+
+  const lines = getJudgingLines(rank);
+  lines.forEach((line, index) => {
+    setTimeout(() => {
+      const div = document.createElement("div");
+      div.className = "judging-line";
+      div.textContent = line;
+      linesBox.appendChild(div);
+    }, 620 * index);
+  });
+
+  runLoadGauge();
+
+  setTimeout(() => {
+    revealElement(slowQuestion);
+    revealElement(excuseBtn);
+  }, 6000);
+}
+
+function revealElement(el) {
+  if (!el) return;
+  el.style.display = "block";
+  el.classList.remove("fade-in");
+  void el.offsetWidth;
+  el.classList.add("fade-in");
+}
+
+function runLoadGauge() {
+  const bar = document.getElementById("loadBar");
+  const percent = document.getElementById("loadPercent");
+  const runner = document.getElementById("runner");
+  if (!bar || !percent || !runner) return;
+
+  let value = 0;
+  runner.style.left = "0%";
+
+  const timer = setInterval(() => {
+    if (value >= 80) {
+      clearInterval(timer);
+      value = 80;
+    } else {
+      value += Math.ceil(Math.random() * 7);
+      if (value > 80) value = 80;
+    }
+
+    bar.style.width = value + "%";
+    percent.textContent = value + "%";
+    runner.style.left = value + "%";
+  }, 180);
+}
+
+function completeLoadGauge() {
+  const bar = document.getElementById("loadBar");
+  const percent = document.getElementById("loadPercent");
+  const runner = document.getElementById("runner");
+
+  if (bar) bar.style.width = "100%";
+  if (percent) percent.textContent = "100%";
+  if (runner) runner.style.left = "100%";
+}
+
+function generateLoadExcuse() {
+  const box = document.getElementById("loadExcuse");
+  const resultBtn = document.getElementById("showResultBtn");
+  if (!box) return;
+
+  const timeframes = [
+    "今朝", "今日", "今日の朝", "出勤途中", "出発前", "家を出た後", "到着直前",
+    "電車の中", "バスの中"
+  ];
+
+  const locations = [
+    "道端で", "駅前で", "バス停で", "交差点で", "歩道で", "横断歩道で", "エレベーター内で",
+    "階段で", "地下道で", "路地で", "公園で", "コンビニの前で", "信号待ち中に", "駐車場で",
+    "改札口で", "ホームで", "車内で", "玄関で"
+  ];
+
+  const subjects = [
+    "お年寄り", "転んだ子供", "落とし物", "迷子", "急病人", "交通事故", "具合の悪い人",
+    "閉じ込められた人", "倒れている人", "観光客", "壊れた傘", "落ちた携帯電話", "電車",
+    "壊れた目覚まし時計", "故障したパソコン", "パンクした自転車", "故障したエレベーター",
+    "壊れた信号機", "体調不良のバス運転手", "悪天候", "電池切れのスマートウォッチ"
+  ];
+
+  const actions = [
+    "道案内をしていて", "助けを求めていて", "落ちていて", "探されていて", "救急車を待っていて",
+    "現場検証をしていて", "介抱されていて", "救出を待っていて", "拾われるのを待っていて",
+    "交番に届けられていて", "遅延していて", "壊れていて", "動かなくなっていて", "故障していて",
+    "パンクしていて", "停止していて", "体調不良になっていて", "電池切れになっていて", "悪化していて"
+  ];
+
+  const t = timeframes[Math.floor(Math.random() * timeframes.length)];
+  const l = locations[Math.floor(Math.random() * locations.length)];
+  const s = subjects[Math.floor(Math.random() * subjects.length)];
+  const a = actions[Math.floor(Math.random() * actions.length)];
+
+  const excuse = `${t}、${l}${s}が${a}、遅刻してしまいました。`;
+  current.loadExcuse = excuse;
+  box.textContent = excuse;
+  revealElement(box);
+
+  if (resultBtn) {
+    resultBtn.style.display = "none";
+    setTimeout(() => {
+      completeLoadGauge();
+      revealElement(resultBtn);
+    }, 3000);
+  }
+}
+
+function getJudgingTitle(rank) {
+  if (rank === "S") return "終わりです。";
+  if (rank === "E") return "忘れていいか確認";
+  return "考え中";
+}
+
+function getJudgingLines(rank) {
+  if (rank === "S") {
+    return [
+      "反論を確認中…",
+      "無駄でした。",
+      "終わりです。"
+    ];
+  }
+
+  if (rank === "E") {
+    return [
+      "その言葉を残すか確認中…",
+      "覚えておく価値を探しています…",
+      "なさそうです。"
+    ];
+  }
+
+  if (rank === "A") {
+    return [
+      "言い訳を確認中…",
+      "逃げ道を測定中…",
+      "ちょっと危ないです。"
+    ];
+  }
+
+  if (rank === "B") {
+    return [
+      "覚える価値を確認中…",
+      "誤魔化しルートを検索中…",
+      "一旦、覚えとく。"
+    ];
+  }
+
+  if (rank === "C") {
+    return [
+      "今じゃない感を検出中…",
+      "相手の記憶力を疑っています…",
+      "寝かせます。"
+    ];
+  }
+
+  if (rank === "D") {
+    return [
+      "気にはなってる度を確認中…",
+      "本当に気だけでした…",
+      "低めです。"
+    ];
+  }
+
+  return [
+    "相手の温度を確認中…",
+    "こっちの事情を確認中…",
+    "決めた。"
+  ];
+}
+
+function renderEvidence() {
+  const box = document.getElementById("evidenceBox");
+  if (!box) return;
+
+  const items = [
+    current.who || "誰か",
+    current.item || "何か",
+    current.heat || "熱量不明",
+    current.refusal || "断りにくさ不明",
+    current.repeat || "回数不明",
+    current.interest || "興味不明",
+    current.weight || "重さ不明",
+    current.capacity || "余裕不明"
+  ].filter(Boolean);
+
+  box.innerHTML = "";
+
+  const title = document.createElement("div");
+  title.className = "evidence-title";
+  title.textContent = "覚えたこと";
+  box.appendChild(title);
+
+  const wrap = document.createElement("div");
+  wrap.className = "evidence-items";
+
+  items.forEach(value => {
+    const span = document.createElement("span");
+    span.className = "evidence-item";
+    span.textContent = value;
+    wrap.appendChild(span);
+  });
+
+  box.appendChild(wrap);
+}
+
+function calcScore(data) {
+  let score = 35;
+  score += whoScores[data.whoType] ?? 0;
+  score += itemScores[data.itemType] ?? 0;
+
+  const heat = heatScores[data.heat] ?? 4;
+  const refusal = refusalScores[data.refusal] ?? -6;
+  const repeat = repeatScores[data.repeat] ?? 0;
+  const interest = interestScores[data.interest] ?? 0;
+  const weight = weightScores[data.weight] ?? 0;
+  const capacity = capacityScores[data.capacity] ?? 5;
+
+  score += interest;
+  score += weight;
+  score += capacity;
+
+  const pressureTotal = heat + refusal + repeat;
+
+  if (data.interest === "ある" || data.interest === "ちょいある") {
+    score += Math.round(pressureTotal * 0.65);
+  } else if (data.interest === "ない") {
+    score -= Math.round(Math.max(pressureTotal, 0) * 0.65);
+  } else {
+    score += Math.round(pressureTotal * 0.25);
+  }
+
+  if (data.interest === "ない") score = Math.min(score, 54);
+  if (data.weight === "無理") score = Math.min(score, 44);
+  if (data.capacity === "一切入らん") score = Math.min(score, 39);
+  if (data.whoType === "他人" && data.itemType === "アプリ") score = Math.min(score, 28);
+
+  if ((data.interest === "ある" || data.interest === "ちょいある") && data.weight === "軽い" && data.capacity === "入る") {
+    score = Math.max(score, 58);
+  }
+
+  return score;
+}
+
+function getRank(score) {
+  if (score >= 85) return "S";
+  if (score >= 70) return "A";
+  if (score >= 55) return "B";
+  if (score >= 40) return "C";
+  if (score >= 25) return "D";
+  return "E";
+}
+
+function br(lines) {
+  return lines.join("\n");
+}
+
+function makeResultText(rank, data) {
+  const who = data.who || "勧めてきた人";
+  const texts = {
+    S: br([
+      "こんなのやる訳",
+      "ないじゃん！",
+      "",
+      `${who}には`,
+      "一回言っとけ！",
+      "",
+      "「いやそれでさ、",
+      "やってみたら",
+      "マジで良くて！」"
+    ]),
+
+    A: br([
+      "今すぐじゃなくてもいい。",
+      "自分に甘いなら",
+      "喝入れてやるべきだよ！",
+      "",
+      `${who}に`,
+      "言っときな！",
+      "",
+      "「マジでやる男だから！",
+      "マジオだから！！」"
+    ]),
+
+    B: br([
+      "あー、まあ。",
+      "一応メモっとくか。",
+      "",
+      "「聞かれたら、",
+      "誤魔化してやる…",
+      "俺はやるんだ！」"
+    ]),
+
+    C: br([
+      "まだだ。",
+      "まだその時じゃない…",
+      "by万𓏸獅子",
+      "",
+      `${who}も`,
+      "忘れてるよ。な？"
+    ]),
+
+    D: br([
+      "「気には",
+      "なってるんだよな〜",
+      "いや〜気には",
+      "なってる！",
+      "",
+      "うーん気には",
+      "なってんだけどな〜",
+      "いやほんと気には((」"
+    ]),
+
+    E: br([
+      "忘れろ、",
+      "その言葉は呪いだ…"
+    ])
+  };
+  return texts[rank];
+}
+
+function saveResult() {
+  if (!current.rank) return;
+  const list = getList(STORAGE_KEYS.results);
+  const summary = makeSummary(current);
+  list.unshift({
+    rank: current.rank,
+    importance: current.importance,
+    summary,
+    who: current.who || "勧めてきた人",
+    whoType: current.whoType || "不明",
+    item: current.item || "",
+    review: "",
+    loadExcuse: current.loadExcuse || "",
+    createdAt: new Date().toISOString()
+  });
+  setList(STORAGE_KEYS.results, list.slice(0, 30));
+  document.getElementById("saveMessage").textContent = "覚えといた";
+  renderResultHistory();
+}
+
+
+function openReview(index) {
+  const list = getList(STORAGE_KEYS.results);
+  const item = list[index];
+  if (!item) return;
+
+  selectedReviewIndex = index;
+  document.getElementById("reviewTarget").textContent = item.summary;
+
+  const reviewExcuse = document.getElementById("reviewExcuse");
+  if (reviewExcuse) {
+    if (item.loadExcuse) {
+      reviewExcuse.textContent = `遅い原因：${item.loadExcuse}`;
+      reviewExcuse.style.display = "block";
+    } else {
+      reviewExcuse.textContent = "";
+      reviewExcuse.style.display = "none";
+    }
+  }
+
+  go("review");
+}
+
+function answerReview(value) {
+  const list = getList(STORAGE_KEYS.results);
+  const item = list[selectedReviewIndex];
+  if (!item) return;
+
+  item.review = value;
+  list[selectedReviewIndex] = item;
+  setList(STORAGE_KEYS.results, list);
+
+  document.getElementById("reviewResultTarget").textContent = item.summary;
+
+  const resultExcuse = document.getElementById("reviewResultExcuse");
+  if (resultExcuse) {
+    if (item.loadExcuse) {
+      resultExcuse.textContent = `遅い原因：${item.loadExcuse}`;
+      resultExcuse.style.display = "block";
+    } else {
+      resultExcuse.textContent = "";
+      resultExcuse.style.display = "none";
+    }
+  }
+
+  document.getElementById("reviewReply").textContent = getReviewReply(value, item.who);
+  renderResultHistory();
+  go("reviewResult");
+}
+
+function getReviewReply(value, who) {
+  const name = who || "あいつ";
+
+  if (value === "良い") {
+    return br([
+      "良かったの！？",
+      "ふーん、あいつも",
+      "結構やるじゃん？",
+      "私程じゃないけど…？"
+    ]);
+  }
+
+  if (value === "普通") {
+    return br([
+      "まぁ…そうゆう日も",
+      "あるよね！",
+      `${name}のこと`,
+      "話さないでおく！",
+      "元気だしてこ！",
+      "",
+      `そういえば${name}って…`,
+      "あ。"
+    ]);
+  }
+
+  return br([
+    "え〜最悪じゃん〜",
+    "適当言ってるよね〜、",
+    "私暇じゃねぇっつーの。",
+    "",
+    "でも安心して、",
+    "私覚えてるから！"
+  ]);
+}
+
+function makeSummary(data) {
+  if (data.sourceText) return data.sourceText;
+  if (!data.who && !data.item) return "";
+  if (data.who && !data.item) return `${data.who}に`;
+  if (data.who && data.item) return `${data.who}に${data.item}を勧められた`;
+  if (!data.who && data.item) return `${data.item}を`;
+  return "";
+}
+
+function resetApp() {
+  current = { ...defaultState };
+  const n = document.getElementById("naturalText");
+  if (n) n.value = "";
+  document.querySelectorAll("button.selected").forEach(b => b.classList.remove("selected"));
+  go("start");
+}
+
+function renderSentence() {
+  const text = makeSummary(current);
+  ["sentenceWho", "sentenceItem", "sentenceMood", "sentenceFeeling"].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.style.display = text ? "block" : "none";
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const whoInput = document.getElementById("whoName");
+  const itemInput = document.getElementById("itemName");
+  const naturalInput = document.getElementById("naturalText");
+
+  if (whoInput) whoInput.addEventListener("keydown", e => { if (e.key === "Enter") selectTypedWho(); });
+  if (itemInput) itemInput.addEventListener("keydown", e => { if (e.key === "Enter") selectTypedItem(); });
+  if (naturalInput) naturalInput.addEventListener("keydown", e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") judgeNatural();
+  });
+
+  renderHistories();
+});
+</script>
+</body>
+</html>
