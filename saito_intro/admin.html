@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>sites.json 編集ツール</title>
+<style>
+body{
+  margin:0;
+  background:#f5f0e8;
+  color:#3d2b1f;
+  font-family:system-ui,sans-serif;
+}
+header{
+  background:#1a4fc4;
+  color:#f5c800;
+  padding:18px 24px;
+  border-bottom:4px solid #3d2b1f;
+}
+main{
+  max-width:960px;
+  margin:24px auto 120px;
+  padding:0 16px;
+}
+.notice,.card{
+  background:#faf7f2;
+  border:3px solid #3d2b1f;
+  box-shadow:4px 4px 0 #3d2b1f;
+  padding:16px;
+  margin-bottom:20px;
+}
+label{
+  display:block;
+  font-weight:700;
+  margin:14px 0 6px;
+}
+input,textarea,select{
+  width:100%;
+  padding:10px;
+  border:2px solid #3d2b1f;
+  box-sizing:border-box;
+  font-size:15px;
+}
+textarea{
+  min-height:100px;
+}
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+button,a.button{
+  background:#f5c800;
+  color:#3d2b1f;
+  border:3px solid #3d2b1f;
+  box-shadow:3px 3px 0 #3d2b1f;
+  padding:10px 16px;
+  font-weight:700;
+  cursor:pointer;
+  text-decoration:none;
+  display:inline-block;
+}
+button:hover,a.button:hover{
+  transform:translate(1px,1px);
+  box-shadow:2px 2px 0 #3d2b1f;
+}
+.danger{
+  background:#e8291c;
+  color:white;
+}
+.actions{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  background:#e8e2d8;
+  border-top:4px solid #3d2b1f;
+  padding:12px;
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.preview-img{
+  max-width:240px;
+  max-height:150px;
+  display:block;
+  margin-top:8px;
+  border:2px solid #3d2b1f;
+  object-fit:cover;
+}
+.preview-img[src=""],.preview-img:not([src]){
+  display:none;
+}
+@media(max-width:700px){
+  .row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>sites.json 編集ツール</h1>
+</header>
+
+<main>
+  <div class="notice">
+    <strong>使い方</strong><br>
+    1. GitHub上の <code>sites.json</code> を読み込む<br>
+    2. 内容を編集する<br>
+    3. <code>sites.json</code> という名前でダウンロードする<br>
+    4. GitHubの該当フォルダを開いて、既存の <code>sites.json</code> に上書きアップロードする
+  </div>
+
+  <div class="notice">
+    <button type="button" onclick="loadFromGithub()">GitHubのsites.jsonを読み込む</button>
+    <button type="button" onclick="addItem()">BOXを追加</button>
+  </div>
+
+  <div id="items"></div>
+</main>
+
+<div class="actions">
+  <button type="button" onclick="downloadJson()">sites.jsonをダウンロード</button>
+  <a class="button" href="https://github.com/sin-skull/a/tree/main/saito_intro" target="_blank" rel="noopener">
+    GitHubフォルダを開く
+  </a>
+</div>
+
+<script>
+const jsonUrl = "https://sin-skull.github.io/a/saito_intro/sites.json";
+const githubFolderUrl = "https://github.com/sin-skull/a/tree/main/saito_intro";
+const genres = ["ゲーム", "アプリ", "その他"];
+
+let sites = [];
+
+async function loadFromGithub(){
+  try{
+    const res = await fetch(jsonUrl + "?t=" + Date.now());
+    const data = await res.json();
+
+    if(!Array.isArray(data)){
+      alert("JSON形式が配列ではありません。");
+      return;
+    }
+
+    sites = data;
+    render();
+    alert("読み込みました。");
+  }catch(e){
+    console.error(e);
+    alert("読み込みに失敗しました。");
+  }
+}
+
+function render(){
+  const items = document.getElementById("items");
+  items.innerHTML = "";
+
+  sites.forEach((site,index)=>{
+    const card = document.createElement("section");
+    card.className = "card";
+
+    card.innerHTML = `
+      <h2>BOX ${index + 1}</h2>
+
+      <label>タイトル</label>
+      <input data-key="title" value="${escapeAttr(site.title || "")}">
+
+      <label>英字タイトル</label>
+      <input data-key="titleEn" value="${escapeAttr(site.titleEn || "")}">
+
+      <label>URL</label>
+      <input data-key="url" value="${escapeAttr(site.url || "")}">
+
+      <label>説明</label>
+      <textarea data-key="description">${escapeHtml(site.description || "")}</textarea>
+
+      <div class="row">
+        <div>
+          <label>ジャンル</label>
+          <select data-key="category">
+            ${genres.map(g=>`
+              <option value="${g}" ${site.category === g ? "selected" : ""}>${g}</option>
+            `).join("")}
+          </select>
+        </div>
+
+        <div>
+          <label>日付</label>
+          <input data-key="date" value="${escapeAttr(site.date || "")}">
+        </div>
+      </div>
+
+      <label>画像URL</label>
+      <input data-key="image" class="image-input" value="${escapeAttr(site.image || "")}">
+      <img class="preview-img" src="${escapeAttr(site.image || "")}" onerror="this.style.display='none'">
+
+      <label>画像なし時の一文字</label>
+      <input data-key="mark" value="${escapeAttr(site.mark || "□")}">
+
+      <br><br>
+      <button type="button" class="danger" onclick="removeItem(${index})">このBOXを削除</button>
+    `;
+
+    card.querySelectorAll("[data-key]").forEach(input=>{
+      input.addEventListener("input",()=>{
+        updateSite(index,input.dataset.key,input.value);
+      });
+      input.addEventListener("change",()=>{
+        updateSite(index,input.dataset.key,input.value);
+      });
+    });
+
+    const imageInput = card.querySelector(".image-input");
+    const preview = card.querySelector(".preview-img");
+
+    imageInput.addEventListener("input",()=>{
+      preview.src = imageInput.value.trim();
+      preview.style.display = imageInput.value.trim() ? "block" : "none";
+    });
+
+    items.appendChild(card);
+  });
+}
+
+function updateSite(index,key,value){
+  sites[index][key] = value;
+
+  if(key === "category"){
+    sites[index].categoryCode = categoryToCode(value);
+  }
+}
+
+function addItem(){
+  sites.push({
+    title:"",
+    titleEn:"",
+    url:"",
+    description:"",
+    category:"その他",
+    categoryCode:"OTHER",
+    image:"",
+    mark:"□",
+    date:new Date().toISOString().slice(0,10)
+  });
+
+  render();
+}
+
+function removeItem(index){
+  if(!confirm("このBOXを削除しますか？")) return;
+  sites.splice(index,1);
+  render();
+}
+
+function downloadJson(){
+  const normalized = sites.map(site=>{
+    const category = genres.includes(site.category) ? site.category : "その他";
+
+    return {
+      title: site.title || "",
+      titleEn: site.titleEn || "",
+      url: site.url || "",
+      description: site.description || "",
+      category: category,
+      categoryCode: categoryToCode(category),
+      image: site.image || "",
+      mark: (site.mark || "□").slice(0,1),
+      date: site.date || ""
+    };
+  });
+
+  const json = JSON.stringify(normalized,null,2);
+  const blob = new Blob([json],{type:"application/json"});
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "sites.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+
+  setTimeout(()=>{
+    if(confirm("sites.jsonをダウンロードしました。GitHubのフォルダを開きますか？")){
+      window.open(githubFolderUrl,"_blank");
+    }
+  },300);
+}
+
+function categoryToCode(category){
+  if(category === "ゲーム") return "GAME";
+  if(category === "アプリ") return "APP";
+  return "OTHER";
+}
+
+function escapeHtml(str){
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
+
+function escapeAttr(str){
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
+
+loadFromGithub();
+</script>
+
+</body>
+</html>
