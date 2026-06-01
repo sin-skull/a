@@ -1,0 +1,1312 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>すけDO</title>
+
+<!-- favicon / app icon -->
+<link rel="icon" href="./favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+
+<!-- PWA setting -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#050506">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="すけDO">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root{
+  --bg:#050506;--panel:#0f1112;--panel2:#141617;--border:rgba(255,255,255,.12);
+  --muted:rgba(255,255,255,.65);--muted2:rgba(255,255,255,.42);
+  --accent:#ffea00;--red:#ff3b30;--orange:#ff9500;--green:#30d158;--blue:#0a84ff;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html,body{width:100%;height:100%;background:var(--bg);color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;overscroll-behavior:none}
+button{cursor:pointer;font-family:inherit}
+#app{display:flex;flex-direction:column;height:100%;max-width:760px;margin:0 auto}
+#screens{flex:1;overflow:hidden;position:relative}
+.screen{position:absolute;inset:0;overflow-y:auto;padding:env(safe-area-inset-top,10px) 14px 8px;display:none}
+.screen.active{display:block}
+#screen-schedule{overflow-y:hidden}
+#nav{display:flex;background:var(--panel);border-top:1px solid var(--border);padding-bottom:var(--safe-b)}
+.nav-btn{flex:1;border:0;background:transparent;color:var(--muted);padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;transition:color .15s}
+.nav-btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-btn.active{color:var(--accent)}
+.page-title{font-size:20px;font-weight:800;letter-spacing:.04em;margin-bottom:16px}
+.section-label{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:20px 0 8px}
+.card{background:var(--panel);border-radius:12px;padding:14px}
+.field{width:100%;border:0;border-radius:10px;background:var(--panel2);color:#fff;padding:12px 14px;font-size:15px;outline:none}
+.field::placeholder{color:var(--muted2);font-size:13px}
+textarea.field{min-height:80px;resize:vertical;font-size:13px;line-height:1.5}
+.btn{width:100%;border:0;border-radius:10px;padding:14px;font-size:14px;font-weight:600;transition:opacity .1s}
+.btn:active{opacity:.7}
+.btn.primary{background:#fff;color:#000}
+.btn.secondary{background:rgba(255,255,255,.12);color:#fff}
+.btn.danger{background:transparent;color:var(--red);border:1px solid var(--red)}
+.chip{display:inline-flex;align-items:center;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700}
+.gap{height:12px}.gap2{height:20px}
+/* ONBOARDING */
+.onboarding{text-align:center;padding:40px 16px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.onboarding-icon{font-size:48px}
+.onboarding-title{font-size:18px;font-weight:700}
+.onboarding-desc{font-size:13px;color:var(--muted);line-height:1.6}
+/* HOME */
+.dir-list{display:flex;flex-direction:column;gap:8px}
+.dir-card{background:var(--panel);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;border:1px solid var(--border);cursor:pointer}
+.dir-card.active-dir{border-color:var(--accent)}
+.dir-icon{font-size:22px;width:36px;text-align:center}
+.dir-name{flex:1;font-size:15px;font-weight:600}
+.dir-count{color:var(--muted);font-size:12px}
+.stats-row{display:flex;gap:8px;margin-bottom:16px}
+.stat-box{flex:1;background:var(--panel);border-radius:10px;padding:12px;text-align:center}
+.stat-num{font-size:22px;font-weight:800}
+.stat-label{color:var(--muted);font-size:11px;margin-top:2px}
+.io-row{display:flex;gap:8px}
+.io-btn{flex:1;border:0;border-radius:10px;padding:12px;background:var(--panel);color:var(--muted);font-size:13px}
+/* EVENT */
+.file-block{margin-bottom:6px}
+.file-header{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--panel);border-radius:10px;border:1px solid var(--border)}
+.file-toggle{border:0;background:transparent;color:var(--muted);font-size:16px;width:24px;flex:0 0 24px}
+.file-color{width:10px;height:10px;border-radius:50%;flex:0 0 10px}
+.file-name{flex:1;font-size:14px;font-weight:600}
+.file-edit{border:0;background:transparent;color:var(--muted);font-size:16px;padding:4px}
+.label-block{margin:3px 0 3px 20px}
+.label-header{display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--panel2);border-radius:8px}
+.label-toggle{border:0;background:transparent;color:var(--muted2);font-size:13px;width:20px;flex:0 0 20px}
+.label-name{flex:1;font-size:13px;color:rgba(255,255,255,.7)}
+.label-edit{border:0;background:transparent;color:var(--muted2);font-size:14px;padding:4px}
+.text-block{margin:2px 0 2px 36px}
+.text-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,.04);border-radius:7px}
+.text-status{font-size:14px;width:20px;text-align:center;flex:0 0 20px}
+.text-name{flex:1;font-size:12px;color:rgba(255,255,255,.6)}
+.text-dates{font-size:10px;color:var(--muted2)}
+.text-edit{border:0;background:transparent;color:var(--muted2);font-size:13px;padding:4px}
+.add-child{border:0;border-radius:7px;background:rgba(255,255,255,.06);color:var(--muted);font-size:12px;padding:6px 12px;width:100%;margin-top:3px}
+/* SCHEDULE */
+.sched-nav{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sched-nav-btn{border:0;border-radius:8px;background:var(--panel);color:rgba(255,255,255,.7);width:36px;height:34px;font-size:20px;flex:0 0 36px}
+.sched-title{flex:1;text-align:center;font-size:16px;font-weight:700}
+.unit-btns{display:flex;gap:6px;margin-bottom:14px}
+.unit-btn{flex:1;border:0;border-radius:8px;padding:8px 0;background:var(--panel);color:var(--muted);font-size:12px}
+.unit-btn.active{background:var(--accent);color:#000;font-weight:700}
+.sched-top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}
+.zoom-row{display:flex;align-items:center;gap:8px}
+.zoom-btn{border:0;border-radius:6px;background:var(--panel);color:#fff;width:28px;height:28px;font-size:16px;flex:0 0 28px}
+.zoom-label{color:var(--muted);font-size:12px;min-width:38px;text-align:center}
+.sched-add-btn{border:0;border-radius:8px;background:rgba(255,234,0,.15);color:var(--accent);font-size:12px;font-weight:700;padding:6px 12px;white-space:nowrap}
+.ruler-wrap{display:flex;align-items:center;margin-bottom:6px}
+.ruler-spacer{flex:0 0 80px}
+.ruler{position:relative;height:20px;flex:1;min-width:0}
+.ruler-mark{position:absolute;color:var(--muted2);font-size:9px;transform:translateX(-50%)}
+.today-vline{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,234,0,.7);pointer-events:none;z-index:3}
+.chart-scroll{overflow-x:hidden;-webkit-overflow-scrolling:touch}
+#screen-schedule .chart-scroll{overflow-y:visible;max-height:none}
+#screen-schedule .chart-inner{height:auto;min-height:0}
+.chart-inner{position:relative}
+.company-name-col{display:flex;align-items:center;gap:6px;padding:5px 0;cursor:pointer}
+.company-dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
+.company-label{font-size:12px;font-weight:600;color:rgba(255,255,255,.75)}
+.company-toggle{font-size:10px;color:var(--muted);margin-left:2px}
+.bar-row{display:flex;align-items:center;margin-bottom:3px;position:relative}
+.bar-label-col{width:80px;flex:0 0 80px;font-size:10px;color:var(--muted2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:6px}
+.bar-track{position:relative;height:26px;background:rgba(255,255,255,.04);border-radius:5px;overflow:visible;flex:1}
+.gantt-bar{position:absolute;top:3px;bottom:3px;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:12px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.8);cursor:pointer;min-width:6px;transition:filter .15s;border:1px solid rgba(0,0,0,.25);box-shadow:inset 0 -3px 6px rgba(0,0,0,.25)}
+.gantt-bar:active{filter:brightness(1.2)}
+.tab-chip{position:absolute;top:-22px;padding:4px 7px;border-radius:6px;font-size:11px;font-weight:800;color:#fff;white-space:nowrap;cursor:pointer;z-index:6;box-shadow:0 3px 8px rgba(0,0,0,.45);border:1px solid rgba(0,0,0,.2)}
+.tab-chip.sel{outline:1px solid rgba(255,255,255,.9);color:#fff}
+.bar-edges{position:absolute;right:0;top:-18px;display:flex;gap:4px;pointer-events:none;z-index:2}
+.bar-edges span{font-size:9px;color:var(--muted2)}
+.empty-chart{color:var(--muted);text-align:center;padding:60px 0;font-size:13px}
+/* スケジュール全表示トグル */
+.sched-filter-row{display:flex;gap:6px;margin-bottom:10px;align-items:center}
+.sched-filter-btn{border:0;border-radius:7px;padding:5px 10px;background:var(--panel);color:var(--muted);font-size:11px}
+.sched-filter-btn.active{background:rgba(255,234,0,.15);color:var(--accent);font-weight:700}
+/* TODO */
+.load-bar{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:10px;padding:12px 14px;margin-bottom:12px;flex-wrap:wrap}
+.load-label{font-size:12px;color:var(--muted)}
+.load-badge{padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700}
+.load-stats{margin-left:auto;display:flex;gap:8px;font-size:11px;color:var(--muted)}
+.todo-mode-btns{display:flex;gap:6px;margin-bottom:12px}
+.todo-mode-btn{flex:1;border:0;border-radius:8px;padding:8px 0;background:var(--panel);color:var(--muted);font-size:12px}
+.todo-mode-btn.active{background:rgba(255,255,255,.12);color:#fff;font-weight:600}
+.todo-item{background:var(--panel);border-radius:12px;padding:12px 14px;margin-bottom:8px;border-left:3px solid transparent}
+.todo-item.overdue{border-color:var(--red)}
+.todo-item.today-dl{border-color:var(--orange)}
+.todo-item.important{border-color:var(--accent)}
+.todo-path{font-size:10px;color:var(--muted);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.todo-url-btn{font-size:10px;color:var(--blue);text-decoration:none;border:0;background:transparent;padding:0;cursor:pointer}
+.todo-name{font-size:14px;font-weight:600;margin-bottom:6px}
+.todo-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.todo-check-row{display:flex;gap:6px;margin-top:10px}
+.todo-check-btn{flex:1;border:0;border-radius:8px;padding:7px 0;background:rgba(255,255,255,.07);font-size:16px}
+.todo-actions-row{display:flex;gap:6px;margin-bottom:12px;align-items:center}
+.today-is-hard{border:0;border-radius:10px;padding:8px 14px;background:rgba(255,59,48,.1);color:var(--red);font-size:12px;font-weight:600}
+/* ステータス凡例 */
+.status-legend{display:flex;gap:12px;background:var(--panel);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--muted)}
+.status-legend span{display:flex;align-items:center;gap:4px}
+/* SETTING */
+.setting-row{display:flex;align-items:center;padding:13px 0;border-bottom:1px solid var(--border)}
+.setting-label{flex:1;font-size:14px}
+.toggle{width:44px;height:26px;border-radius:13px;background:rgba(255,255,255,.15);border:0;position:relative;transition:background .2s}
+.toggle.on{background:var(--green)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}
+.toggle.on::after{transform:translateX(18px)}
+/* SHEET */
+.sheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:100}
+.sheet-backdrop.open{display:flex}
+.sheet{width:100%;max-width:760px;background:#1c1c1c;border-radius:20px 20px 0 0;padding:20px 16px calc(var(--safe-b) + 20px);max-height:92vh;overflow-y:auto}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sheet-title{font-size:17px;font-weight:700}
+.sheet-close{border:0;background:transparent;color:var(--muted);font-size:26px;line-height:1}
+.colors{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.color-dot{width:32px;height:32px;border-radius:50%;border:0}
+.color-dot.sel{outline:2.5px solid #fff;outline-offset:3px}
+.date-row{display:flex;gap:8px}
+.date-row .field{flex:1}
+.sheet-label{color:var(--muted);font-size:12px;margin-bottom:6px;display:block}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="screens">
+    <!-- HOME -->
+    <div id="screen-home" class="screen active">
+      <div class="page-title">すけDO</div>
+      <div id="statsRow" class="stats-row"></div>
+      <div class="section-label">ディレクトリ</div>
+      <div id="dirList" class="dir-list"></div>
+      <button class="btn secondary" id="btnAddDir" style="margin-top:10px">＋ ディレクトリ追加</button>
+      <div class="gap2"></div>
+      <div class="io-row">
+        <button class="io-btn" id="btnExportJSON">📤 JSON</button>
+        <button class="io-btn" id="btnImportJSON">📥 JSON読込</button>
+      </div>
+      <div class="io-row" style="margin-top:8px">
+        <button class="io-btn" id="btnExportCSV">📋 CSV書出</button>
+        <button class="io-btn" id="btnImportCSV">📋 CSV読込</button>
+      </div>
+      <input id="importFileInput" type="file" accept=".json" style="display:none"/>
+      <input id="importCSVInput" type="file" accept=".csv" style="display:none"/>
+    </div>
+    <!-- EVENT -->
+    <div id="screen-event" class="screen">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="page-title" style="margin:0">イベント</div>
+        <button class="btn primary" id="btnAddFile" style="width:auto;padding:8px 14px;font-size:13px">＋ 会社追加</button>
+      </div>
+      <div id="eventList"></div>
+    </div>
+    <!-- SCHEDULE -->
+    <div id="screen-schedule" class="screen">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="page-title" style="margin:0">スケジュール</div>
+        <button class="sched-add-btn" id="btnSchedAdd">＋ 作業追加</button>
+      </div>
+      <div class="unit-btns">
+        <button class="unit-btn active" data-unit="month">月</button>
+        <button class="unit-btn" data-unit="year">年度</button>
+      </div>
+      <div class="sched-filter-row">
+        <button class="sched-filter-btn active" id="btnSchedFilterActive">選択中のみ</button>
+        <button class="sched-filter-btn" id="btnSchedFilterAll">全ディレクトリ</button>
+      </div>
+      <div id="schedContent"></div>
+    </div>
+    <!-- TODO -->
+    <div id="screen-todo" class="screen">
+      <div class="page-title">TODO</div>
+      <div id="loadBar" class="load-bar"></div>
+      <div class="todo-mode-btns">
+        <button class="todo-mode-btn active" data-mode="today">今日</button>
+        <button class="todo-mode-btn" data-mode="overdue">期限切れ</button>
+        <button class="todo-mode-btn" data-mode="important">重要</button>
+      </div>
+      <div class="status-legend">
+        <span>⭕ 完了</span>
+        <span>🔺 対応中</span>
+        <span>❌ 未対応</span>
+      </div>
+      <div class="todo-actions-row">
+        <button class="today-is-hard" id="btnTodayHard">😮‍💨 今日は無理（全件翌日送り）</button>
+      </div>
+      <div id="todoList"></div>
+    </div>
+    <!-- SETTING -->
+    <div id="screen-setting" class="screen">
+      <div class="page-title">設定</div>
+      <div class="card">
+        <div class="setting-row">
+          <div class="setting-label">データ初期化</div>
+          <button class="io-btn" id="btnReset" style="width:auto;padding:6px 12px;color:var(--red)">初期化</button>
+        </div>
+      </div>
+      <div class="section-label">階層名カスタマイズ</div>
+      <div class="card" id="hierNames"></div>
+    </div>
+  </div>
+  <nav id="nav">
+    <button class="nav-btn active" data-screen="home">
+      <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1z"/><path d="M9 21V12h6v9"/></svg>HOME
+    </button>
+    <button class="nav-btn" data-screen="event">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>EVENT
+    </button>
+    <button class="nav-btn" data-screen="schedule">
+      <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h12"/></svg>SCHED
+    </button>
+    <button class="nav-btn" data-screen="todo">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>TODO
+    </button>
+    <button class="nav-btn" data-screen="setting">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>SETTING
+    </button>
+  </nav>
+</div>
+
+<!-- Sheet: Dir -->
+<div id="sheetDir" class="sheet-backdrop">
+  <div class="sheet">
+    <div class="sheet-head"><div class="sheet-title" id="sheetDirTitle">ディレクトリ追加</div><button class="sheet-close" id="sheetDirClose">×</button></div>
+    <label class="sheet-label">名前</label>
+    <input id="dirNameInput" class="field" placeholder="就活" style="margin-bottom:12px"/>
+    <label class="sheet-label">アイコン</label>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px" id="dirIconPicker">
+      <span style="font-size:24px;cursor:pointer;padding:4px" data-icon="💼">💼</span>
+      <span style="font-size:24px;cursor:pointer;padding:4px" data-icon="🎮">🎮</span>
+      <span style="font-size:24px;cursor:pointer;padding:4px" data-icon="📚">📚</span>
+      <span style="font-size:24px;cursor:pointer;padding:4px" data-icon="🎨">🎨</span>
+      <span style="font-size:24px;cursor:pointer;padding:4px" data-icon="🏃">🏃</span>
+      <span style="font-size:24px;cursor:pointer;padding:4px" data-icon="💡">💡</span>
+      <span style="font-size:24px;cursor:pointer;padding:4px" data-icon="🔧">🔧</span>
+      <span style="font-size:24px;cursor:pointer;padding:4px" data-icon="⭐">⭐</span>
+    </div>
+    <div id="dirIconSelected" style="font-size:13px;color:var(--muted);margin-bottom:14px">選択中：💼</div>
+    <label class="sheet-label">カラー</label>
+    <div class="colors" id="dirColorPicker"></div>
+    <div class="gap"></div>
+    <button class="btn primary" id="sheetDirSave">保存する</button>
+    <div class="gap"></div>
+    <button class="btn danger" id="sheetDirDelete" style="display:none">削除する</button>
+  </div>
+</div>
+
+<!-- Sheet: File -->
+<div id="sheetFile" class="sheet-backdrop">
+  <div class="sheet">
+    <div class="sheet-head"><div class="sheet-title" id="sheetFileTitle">会社追加</div><button class="sheet-close" id="sheetFileClose">×</button></div>
+    <label class="sheet-label">名前</label>
+    <input id="fileNameInput" class="field" placeholder="任天堂" style="margin-bottom:12px"/>
+    <label class="sheet-label">カラー</label>
+    <div class="colors" id="fileColorPicker"></div>
+    <div class="gap"></div>
+    <button class="btn primary" id="sheetFileSave">保存する</button>
+    <div class="gap"></div>
+    <button class="btn danger" id="sheetFileDelete" style="display:none">削除する</button>
+  </div>
+</div>
+
+<!-- Sheet: Label -->
+<div id="sheetLabel" class="sheet-backdrop">
+  <div class="sheet">
+    <div class="sheet-head"><div class="sheet-title" id="sheetLabelTitle">選考追加</div><button class="sheet-close" id="sheetLabelClose">×</button></div>
+    <label class="sheet-label">名前</label>
+    <input id="labelNameInput" class="field" placeholder="ES" style="margin-bottom:12px"/>
+    <label class="sheet-label">期間</label>
+    <div class="date-row" style="margin-bottom:14px">
+      <input id="labelStart" class="field" type="date"/>
+      <input id="labelEnd" class="field" type="date"/>
+    </div>
+    <button class="btn primary" id="sheetLabelSave">保存する</button>
+    <div class="gap"></div>
+    <button class="btn danger" id="sheetLabelDelete" style="display:none">削除する</button>
+  </div>
+</div>
+
+<!-- Sheet: Text -->
+<div id="sheetText" class="sheet-backdrop">
+  <div class="sheet">
+    <div class="sheet-head"><div class="sheet-title" id="sheetTextTitle">作業追加</div><button class="sheet-close" id="sheetTextClose">×</button></div>
+    <label class="sheet-label">所属（会社 / 選考）</label>
+    <div id="textParentInfo" style="font-size:12px;color:var(--muted);background:var(--panel2);border-radius:8px;padding:8px 12px;margin-bottom:12px">未選択</div>
+    <label class="sheet-label">作業名</label>
+    <input id="textNameInput" class="field" placeholder="ES制作" style="margin-bottom:12px"/>
+    <label class="sheet-label">期間</label>
+    <div class="date-row" style="margin-bottom:12px">
+      <input id="textStart" class="field" type="date"/>
+      <input id="textEnd" class="field" type="date"/>
+    </div>
+    <label class="sheet-label">重要度</label>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn secondary" id="impNormal" style="padding:8px">通常</button>
+      <button class="btn secondary" id="impHigh" style="padding:8px">⭐ 重要</button>
+    </div>
+    <label class="sheet-label">詳細URL（任意）</label>
+    <input id="textUrl" class="field" placeholder="https://..." style="margin-bottom:12px"/>
+    <label class="sheet-label">メモ</label>
+    <textarea id="textDetail" class="field" placeholder="メモ..." style="margin-bottom:14px"></textarea>
+    <button class="btn primary" id="sheetTextSave">保存する</button>
+    <div class="gap"></div>
+    <button class="btn danger" id="sheetTextDelete" style="display:none">削除する</button>
+  </div>
+</div>
+
+<!-- Sheet: Schedule Quick Add -->
+<div id="sheetSchedAdd" class="sheet-backdrop">
+  <div class="sheet">
+    <div class="sheet-head"><div class="sheet-title">作業をすばやく追加</div><button class="sheet-close" id="sheetSchedAddClose">×</button></div>
+    <label class="sheet-label">会社を選択</label>
+    <select id="schedAddFile" class="field" style="margin-bottom:12px"></select>
+    <label class="sheet-label">選考を選択</label>
+    <select id="schedAddLabel" class="field" style="margin-bottom:12px"></select>
+    <label class="sheet-label">作業名</label>
+    <input id="schedAddName" class="field" placeholder="ES制作" style="margin-bottom:12px"/>
+    <label class="sheet-label">期間</label>
+    <div class="date-row" style="margin-bottom:12px">
+      <input id="schedAddStart" class="field" type="date"/>
+      <input id="schedAddEnd" class="field" type="date"/>
+    </div>
+    <label class="sheet-label">重要度</label>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn secondary" id="schedImpNormal" style="padding:8px">通常</button>
+      <button class="btn secondary" id="schedImpHigh" style="padding:8px">⭐ 重要</button>
+    </div>
+    <div id="schedAddNoData" style="display:none;color:var(--red);font-size:13px;margin-bottom:10px">
+      ※ まずEVENTタブで会社・選考を追加してください
+    </div>
+    <button class="btn primary" id="sheetSchedAddSave">追加する</button>
+  </div>
+</div>
+
+<!-- Sheet: Delay -->
+<div id="sheetDelay" class="sheet-backdrop">
+  <div class="sheet">
+    <div class="sheet-head"><div class="sheet-title">今日は無理</div><button class="sheet-close" id="sheetDelayClose">×</button></div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:14px">今日の未完了作業を明日に送ります。</div>
+    <label class="sheet-label">理由（任意）</label>
+    <textarea id="delayReason" class="field" placeholder="SPI優先のため" style="margin-bottom:14px"></textarea>
+    <button class="btn danger" id="sheetDelayConfirm">未完了を明日に送る</button>
+  </div>
+</div>
+
+<script>
+// ═══ DATA ═══
+const KEY='sukedo_v2';
+const COLORS=['#FFD54F','#4DD0E1','#FF5252','#66BB6A','#FF9800','#AB47BC','#2979FF','#FF4081'];
+const ZOOM_STEPS=[0.5,0.75,1,1.25,1.5,2,3];
+
+let state={
+  dirs:[],files:[],labels:[],texts:[],
+  activeDirId:null,
+  zoomMonth:1,zoomYear:1,
+  schedViewYear:new Date().getFullYear(),
+  schedViewMonth:new Date().getMonth()+1,
+  hierNames:{dir:'カテゴリ',file:'会社',label:'選考',text:'作業'},
+  splitCompanyId:null,
+  selectedGroups:{},
+  schedShowAll:false,
+  theme:'dark',
+};
+let schedUnit='month';
+let todoMode='today';
+
+// ═══ UTILS ═══
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>{if(!d)return '';const dt=d instanceof Date?d:new Date(d);if(isNaN(dt))return '';return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`};
+const parseD=s=>{if(!s)return null;if(s instanceof Date)return new Date(s.getFullYear(),s.getMonth(),s.getDate());const m=String(s).match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return null;return new Date(+m[1],+m[2]-1,+m[3])};
+const today=()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate())};
+const diffDays=(a,b)=>Math.round((new Date(b)-new Date(a))/86400000);
+const daysInMonth=(y,m)=>new Date(y,m,0).getDate();
+
+// ═══ SAVE/LOAD ═══
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){console.warn(e);}
+}
+function load(){
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(!raw)return;
+    const d=JSON.parse(raw);
+    Object.assign(state,d);
+    state.schedViewYear=state.schedViewYear??new Date().getFullYear();
+    state.schedViewMonth=state.schedViewMonth??new Date().getMonth()+1;
+    state.schedShowAll=state.schedShowAll??false;
+    state.theme=state.theme??'dark';
+  }catch(e){console.warn(e);}
+}
+
+// ═══ NAV ═══
+let currentScreen='home';
+function goScreen(name){
+  currentScreen=name;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id==='screen-'+name));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));
+  renderScreen(name);
+}
+function renderScreen(n){
+  if(n==='home')renderHome();
+  else if(n==='event')renderEvent();
+  else if(n==='schedule')renderSchedule();
+  else if(n==='todo')renderTodo();
+  else if(n==='setting')renderSetting();
+}
+document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>goScreen(b.dataset.screen)));
+
+// ═══ HOME ═══
+function renderHome(){
+  const td=today();
+  const all=state.texts;
+  const active=all.filter(t=>t.start&&t.end&&parseD(t.start)<=td&&parseD(t.end)>=td);
+  const overdue=all.filter(t=>t.end&&parseD(t.end)<td&&!t.done);
+  const done=all.filter(t=>t.done);
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-box"><div class="stat-num">${all.length}</div><div class="stat-label">全作業</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--accent)">${active.length}</div><div class="stat-label">進行中</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--red)">${overdue.length}</div><div class="stat-label">期限切れ</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--green)">${done.length}</div><div class="stat-label">完了</div></div>`;
+  const el=document.getElementById('dirList');
+  if(!state.dirs.length){
+    el.innerHTML=`<div class="onboarding">
+      <div class="onboarding-icon">📋</div>
+      <div class="onboarding-title">すけDOへようこそ</div>
+      <div class="onboarding-desc">まず「ディレクトリ追加」で<br>カテゴリ（例：就活）を作りましょう。<br>その後EVENTで会社・選考・作業を追加できます。</div>
+    </div>`;
+  }else{
+    el.innerHTML=state.dirs.map(d=>{
+      const cnt=getTextsForDir(d.id).length;
+      return `<div class="dir-card ${state.activeDirId===d.id?'active-dir':''}" data-dirid="${d.id}">
+        <div class="dir-icon">${d.icon||'📁'}</div>
+        <div style="flex:1"><div class="dir-name">${esc(d.name)}</div><div class="dir-count">${cnt}件${state.activeDirId===d.id?' · 選択中':''}</div></div>
+        <button class="file-edit" data-action="editdir" data-id="${d.id}" style="font-size:18px;padding:6px">✏️</button>
+      </div>`;
+    }).join('');
+  }
+}
+function getTextsForDir(dirId){
+  const fids=state.files.filter(f=>f.dirId===dirId).map(f=>f.id);
+  const lids=state.labels.filter(l=>fids.includes(l.fileId)).map(l=>l.id);
+  return state.texts.filter(t=>lids.includes(t.labelId));
+}
+document.getElementById('dirList').addEventListener('click',e=>{
+  const actionEl=e.target.closest('[data-action]');
+  const act=actionEl?.dataset.action;
+  if(act==='editdir'){e.stopPropagation();openSheetDir(actionEl.dataset.id);return;}
+  const dc=e.target.closest('.dir-card');
+  if(dc&&!act){state.activeDirId=dc.dataset.dirid;save();goScreen('event');}
+});
+document.getElementById('btnAddDir').addEventListener('click',()=>openSheetDir(null));
+document.getElementById('btnExportJSON').addEventListener('click',()=>{
+  const a=document.createElement('a');
+  a.href='data:application/json,'+encodeURIComponent(JSON.stringify(state,null,2));
+  a.download='sukedo.json';a.click();
+});
+document.getElementById('btnExportCSV').addEventListener('click',()=>{
+  const rows=[['カテゴリ','会社','選考','作業','開始','終了','重要度','完了']];
+  state.texts.forEach(t=>{
+    const lb=state.labels.find(l=>l.id===t.labelId)||{};
+    const fi=state.files.find(f=>f.id===lb.fileId)||{};
+    const di=state.dirs.find(d=>d.id===fi.dirId)||{};
+    rows.push([di.name||'',fi.name||'',lb.name||'',t.name||'',t.start||'',t.end||'',t.importance||50,t.done?'完了':'']);
+  });
+  const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download='sukedo.csv';a.click();
+});
+document.getElementById('btnImportJSON').addEventListener('click',()=>document.getElementById('importFileInput').click());
+document.getElementById('btnImportCSV').addEventListener('click',()=>document.getElementById('importCSVInput').click());
+
+document.getElementById('importCSVInput').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const lines=ev.target.result.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim());
+      function parseCSVLine(line){
+        const cols=[];let cur='',inQ=false;
+        for(let i=0;i<line.length;i++){
+          const c=line[i];
+          if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+          else if(c===','&&!inQ){cols.push(cur);cur='';}
+          else cur+=c;
+        }
+        cols.push(cur);
+        return cols.map(s=>s.trim());
+      }
+      const startIdx=lines[0]&&/^[^\d]/.test(parseCSVLine(lines[0])[0])?1:0;
+      let added=0,skipped=0;
+      for(let i=startIdx;i<lines.length;i++){
+        const cols=parseCSVLine(lines[i]);
+        if(cols.length<4)continue;
+        const [dirName,fileName,labelName,textName,startDate,endDate,impRaw,doneRaw]=cols;
+        if(!textName)continue;
+        let dir=state.dirs.find(d=>d.name===dirName);
+        if(!dir&&dirName){dir={id:uid(),name:dirName,icon:'📁',color:COLORS[state.dirs.length%COLORS.length]};state.dirs.push(dir);}
+        let file=state.files.find(f=>f.name===fileName&&f.dirId===(dir?dir.id:null));
+        if(!file&&fileName){file={id:uid(),dirId:dir?dir.id:null,name:fileName,color:COLORS[state.files.length%COLORS.length],open:false};state.files.push(file);}
+        let label=state.labels.find(l=>l.name===labelName&&l.fileId===(file?file.id:null));
+        if(!label&&labelName){label={id:uid(),fileId:file?file.id:null,name:labelName,start:'',end:'',open:false};state.labels.push(label);}
+        const already=state.texts.find(t=>t.labelId===(label?label.id:null)&&t.name===textName&&t.start===(startDate||'')&&t.end===(endDate||''));
+        if(already){skipped++;continue;}
+        const imp=impRaw?parseInt(impRaw)||50:50;
+        const done=doneRaw==='完了'||doneRaw==='true'||doneRaw==='1';
+        state.texts.push({id:uid(),labelId:label?label.id:null,name:textName,start:startDate||'',end:endDate||'',importance:imp,url:'',detail:'',status:done?'⭕':'❌',done,history:[]});
+        added++;
+      }
+      save();renderScreen(currentScreen);
+      alert('CSV読込完了：'+added+'件追加、'+skipped+'件スキップ（重複）');
+    }catch(err){alert('CSV読み込み失敗：'+err.message);}
+  };
+  r.readAsText(f,'UTF-8');e.target.value='';
+});
+
+document.getElementById('importFileInput').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{const d=JSON.parse(ev.target.result);Object.assign(state,d);save();renderScreen(currentScreen);alert('読み込み完了');}
+    catch(err){alert('読み込み失敗');}
+  };
+  r.readAsText(f);e.target.value='';
+});
+
+// ═══ EVENT ═══
+function renderEvent(){
+  const dirId=state.activeDirId;
+  const el=document.getElementById('eventList');
+  if(!dirId){
+    el.innerHTML=`<div class="onboarding">
+      <div class="onboarding-icon">👈</div>
+      <div class="onboarding-title">ディレクトリを選択してください</div>
+      <div class="onboarding-desc">HOMEタブでカテゴリをタップすると<br>ここに会社・選考・作業を追加できます。</div>
+      <button class="btn secondary" style="width:auto;padding:8px 20px" onclick="goScreen('home')">HOMEへ戻る</button>
+    </div>`;
+    return;
+  }
+  const dir=state.dirs.find(d=>d.id===dirId);
+  const files=state.files.filter(f=>f.dirId===dirId);
+  let html=`<div style="color:var(--muted);font-size:12px;margin-bottom:10px">${dir?.icon||''} ${esc(dir?.name||'')}</div>`;
+  if(!files.length){
+    html+=`<div style="text-align:center;padding:30px 0;color:var(--muted);font-size:13px">「＋ 会社追加」で会社を追加してください</div>`;
+  }
+  html+=files.map(fi=>{
+    const labels=state.labels.filter(l=>l.fileId===fi.id);
+    let labelsHtml='';
+    if(fi.open){
+      labelsHtml=labels.map(lb=>{
+        const texts=state.texts.filter(t=>t.labelId===lb.id);
+        let textsHtml='';
+        if(lb.open){
+          textsHtml=texts.map(tx=>`
+            <div class="text-block">
+              <div class="text-item">
+                <div class="text-status">${tx.status||'❌'}</div>
+                <div style="flex:1">
+                  <div class="text-name">${esc(tx.name)}</div>
+                  <div class="text-dates">${tx.start||''}〜${tx.end||''}${tx.url?` <a href="${esc(tx.url)}" target="_blank" style="color:var(--blue);font-size:10px">🔗</a>`:''}</div>
+                </div>
+                <button class="text-edit" data-action="edittext" data-id="${tx.id}">›</button>
+              </div>
+            </div>`).join('');
+          textsHtml+=`<button class="add-child" data-action="addtext" data-labelid="${lb.id}">＋ 作業追加</button>`;
+        }
+        return `<div class="label-block">
+          <div class="label-header">
+            <button class="label-toggle" data-action="togglelabel" data-id="${lb.id}">${lb.open?'▾':'▸'}</button>
+            <div class="label-name">${esc(lb.name)} <span style="color:var(--muted2);font-size:10px">${lb.start||''}〜${lb.end||''}</span></div>
+            <button class="label-edit" data-action="editlabel" data-id="${lb.id}">✏️</button>
+          </div>
+          ${textsHtml}
+        </div>`;
+      }).join('');
+      labelsHtml+=`<button class="add-child" data-action="addlabel" data-fileid="${fi.id}" style="margin-left:20px">＋ 選考追加</button>`;
+    }
+    return `<div class="file-block">
+      <div class="file-header">
+        <button class="file-toggle" data-action="togglefile" data-id="${fi.id}">${fi.open?'▾':'▸'}</button>
+        <div class="file-color" style="background:${fi.color||COLORS[0]}"></div>
+        <div class="file-name">${esc(fi.name)}</div>
+        <button class="file-edit" data-action="editfile" data-id="${fi.id}">✏️</button>
+      </div>
+      ${labelsHtml}
+    </div>`;
+  }).join('');
+  el.innerHTML=html;
+}
+document.getElementById('eventList').addEventListener('click',e=>{
+  const act=e.target.dataset.action||e.target.closest('[data-action]')?.dataset.action;
+  const id=e.target.dataset.id||e.target.closest('[data-action]')?.dataset.id;
+  if(!act)return;
+  if(act==='togglefile'){const f=state.files.find(x=>x.id===id);if(f){f.open=!f.open;save();renderEvent();}return;}
+  if(act==='togglelabel'){const l=state.labels.find(x=>x.id===id);if(l){l.open=!l.open;save();renderEvent();}return;}
+  if(act==='editfile'){openSheetFile(id);return;}
+  if(act==='editlabel'){openSheetLabel(id);return;}
+  if(act==='edittext'){openSheetText(id);return;}
+  if(act==='addlabel'){const fid=e.target.dataset.fileid||e.target.closest('[data-action]').dataset.fileid;openSheetLabel(null,fid);return;}
+  if(act==='addtext'){const lid=e.target.dataset.labelid||e.target.closest('[data-action]').dataset.labelid;openSheetText(null,lid);return;}
+});
+document.getElementById('btnAddFile').addEventListener('click',()=>openSheetFile(null));
+
+// ═══ SCHEDULE ═══
+document.querySelectorAll('.unit-btn').forEach(b=>b.addEventListener('click',()=>{
+  schedUnit=b.dataset.unit;
+  document.querySelectorAll('.unit-btn').forEach(x=>x.classList.toggle('active',x.dataset.unit===schedUnit));
+  renderSchedule();
+}));
+
+// FIX: 全ディレクトリ表示トグル
+document.getElementById('btnSchedFilterActive').addEventListener('click',()=>{
+  state.schedShowAll=false;save();
+  document.getElementById('btnSchedFilterActive').classList.add('active');
+  document.getElementById('btnSchedFilterAll').classList.remove('active');
+  renderSchedule();
+});
+document.getElementById('btnSchedFilterAll').addEventListener('click',()=>{
+  state.schedShowAll=true;save();
+  document.getElementById('btnSchedFilterAll').classList.add('active');
+  document.getElementById('btnSchedFilterActive').classList.remove('active');
+  renderSchedule();
+});
+
+document.getElementById('schedContent').addEventListener('click',e=>{
+  const compEl=e.target.closest('.company-name-col');
+  if(compEl&&!e.target.closest('[data-action]')){
+    const fid=compEl.dataset.fileid;
+    state.splitCompanyId=state.splitCompanyId===fid?null:fid;
+    save();renderSchedule();
+    return;
+  }
+  const act=e.target.dataset.action||e.target.closest('[data-action]')?.dataset.action;
+  const id=e.target.dataset.id||e.target.closest('[data-action]')?.dataset.id;
+  if(act==='edittext'&&id)openSheetText(id);
+  if(act==='selecttab'&&id){
+    const group=e.target.dataset.group||e.target.closest('[data-group]')?.dataset.group;
+    if(group){state.selectedGroups[group]=id;save();renderSchedule();}
+    return;
+  }
+  if(act==='togglefile'){const f=state.files.find(x=>x.id===id);if(f){f.open=!f.open;save();renderSchedule();}}
+});
+
+document.getElementById('screen-schedule').addEventListener('click',e=>{
+  const tid=e.target.id;
+  if(tid==='schedPrev'){
+    if(schedUnit==='month'){state.schedViewMonth--;if(state.schedViewMonth<1){state.schedViewMonth=12;state.schedViewYear--;}}
+    else state.schedViewYear--;
+    save();renderSchedule();
+  }
+  if(tid==='schedNext'){
+    if(schedUnit==='month'){state.schedViewMonth++;if(state.schedViewMonth>12){state.schedViewMonth=1;state.schedViewYear++;}}
+    else state.schedViewYear++;
+    save();renderSchedule();
+  }
+  if(tid==='zoomMinus'){
+    const arr=schedUnit==='month'?'zoomMonth':'zoomYear';
+    const i=ZOOM_STEPS.indexOf(state[arr]);if(i>0){state[arr]=ZOOM_STEPS[i-1];save();renderSchedule();}
+  }
+  if(tid==='zoomPlus'){
+    const arr=schedUnit==='month'?'zoomMonth':'zoomYear';
+    const i=ZOOM_STEPS.indexOf(state[arr]);if(i<ZOOM_STEPS.length-1){state[arr]=ZOOM_STEPS[i+1];save();renderSchedule();}
+  }
+});
+
+// long-press: edit, tap: select
+let _lpTimer=null;
+document.getElementById('schedContent').addEventListener('pointerdown',e=>{
+  const el=e.target.closest('.tab-chip');
+  if(!el)return;
+  _lpTimer=setTimeout(()=>{const id=el.dataset.id;if(id)openSheetText(id);_lpTimer=null;},600);
+});
+['pointerup','pointercancel'].forEach(ev=>
+  document.getElementById('schedContent').addEventListener(ev,()=>{if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null;}})
+);
+
+function renderSchedule(){
+  // sync filter buttons UI
+  document.getElementById('btnSchedFilterActive').classList.toggle('active',!state.schedShowAll);
+  document.getElementById('btnSchedFilterAll').classList.toggle('active',!!state.schedShowAll);
+  const el=document.getElementById('schedContent');
+  el.innerHTML=schedUnit==='month'?buildMonthChart():buildYearChart();
+}
+
+function getActiveFiles(){
+  // FIX: 全表示 or アクティブディレクトリのみ
+  if(state.schedShowAll)return state.files;
+  const dirId=state.activeDirId;
+  return dirId?state.files.filter(f=>f.dirId===dirId):state.files;
+}
+
+function buildMonthChart(){
+  const total=daysInMonth(state.schedViewYear,state.schedViewMonth);
+  const ms=new Date(state.schedViewYear,state.schedViewMonth-1,1);
+  const me=new Date(state.schedViewYear,state.schedViewMonth-1,total);
+  const td=today();
+  const showToday=td.getFullYear()===ms.getFullYear()&&td.getMonth()===ms.getMonth();
+  const todayPct=(td.getDate()-.5)/total;
+
+  const rulerMarks=[1,5,10,15,20,25,total].filter((n,i,a)=>n<=total&&a.indexOf(n)===i);
+  const rulerHtml=rulerMarks.map(n=>`<span class="ruler-mark" style="left:${((n-1)/total*100).toFixed(2)}%">${n}</span>`).join('')
+    +(showToday?`<div class="today-vline" style="left:${(todayPct*100).toFixed(2)}%"></div>`:'');
+
+  const files=getActiveFiles();
+  if(!files.length)return`<div class="empty-chart">予定がありません<br><small style="color:var(--muted2)">${state.schedShowAll?'EVENTで追加してください':'HOMEでディレクトリを選択するか「全ディレクトリ」を選択してください'}</small></div>`;
+
+  let rows='';
+  files.forEach(fi=>{
+    const allLabels=state.labels.filter(l=>l.fileId===fi.id);
+    const allTexts=allLabels.flatMap(l=>state.texts.filter(t=>t.labelId===l.id));
+    const inMonth=allTexts.filter(t=>t.start&&t.end&&!(parseD(t.end)<ms)&&!(parseD(t.start)>me));
+    rows+=`<div class="company-name-col" data-fileid="${fi.id}">
+      <div class="company-dot" style="background:${fi.color||COLORS[0]}"></div>
+      <div class="company-label">${esc(fi.name)}</div>
+      <div class="company-toggle">${state.splitCompanyId===fi.id?'◉':fi.open?'▾':'▸'}</div>
+    </div>`;
+    if(state.splitCompanyId===fi.id){
+      allLabels.forEach(lb=>{
+        const lbTexts=state.texts.filter(t=>t.labelId===lb.id&&t.start&&t.end&&!(parseD(t.end)<ms)&&!(parseD(t.start)>me));
+        lbTexts.forEach(tx=>{
+          rows+=buildBarRow([tx],ms,me,total,td,showToday,todayPct,tx.name,{hideTabs:true});
+        });
+      });
+    }else{
+      if(!fi.open){
+        if(inMonth.length)rows+=buildBarRow(inMonth,ms,me,total,td,showToday,todayPct,'');
+      }else{
+        allLabels.forEach(lb=>{
+          const lbTexts=state.texts.filter(t=>t.labelId===lb.id&&t.start&&t.end&&!(parseD(t.end)<ms)&&!(parseD(t.start)>me));
+          if(!lbTexts.length)return;
+          rows+=buildBarRow(lbTexts,ms,me,total,td,showToday,todayPct,lb.name);
+        });
+      }
+    }
+  });
+
+  return `
+    <div class="sched-top-row">
+      <div class="sched-nav" style="flex:1;margin:0">
+        <button class="sched-nav-btn" id="schedPrev">‹</button>
+        <div class="sched-title">${state.schedViewYear}年 ${state.schedViewMonth}月</div>
+        <button class="sched-nav-btn" id="schedNext">›</button>
+      </div>
+      <div class="zoom-row">
+        <button class="zoom-btn" id="zoomMinus">−</button>
+        <div class="zoom-label">${Math.round(state.zoomMonth*100)}%</div>
+        <button class="zoom-btn" id="zoomPlus">＋</button>
+      </div>
+    </div>
+    <div class="ruler-wrap">
+      <div class="ruler-spacer"></div>
+      <div class="ruler" style="flex:1">${rulerHtml}</div>
+    </div>
+    <div class="chart-scroll">
+      <div class="chart-inner" style="width:100%">${rows}</div>
+    </div>`;
+}
+
+// FIX: buildBarRow - bar-track は flex:1 で % 指定バーと整合。trackW 引数を削除
+function buildBarRow(texts,ms,me,total,td,showToday,todayPct,labelName,options={}){
+  const todayVline=showToday?`<div class="today-vline" style="left:${(todayPct*100).toFixed(2)}%"></div>`:'';
+  const bars=texts.map(t=>{
+    const s=parseD(t.start)<ms?ms:parseD(t.start);
+    const e=parseD(t.end)>me?me:parseD(t.end);
+    const left=(s.getDate()-1)/total;
+    const wid=Math.max((diffDays(s,e)+1)/total,1/total);
+    const fi=getFileForText(t);
+    const col=fi?fi.color:COLORS[0];
+    return {t,left,wid,col,s,e,imp:t.importance||50};
+  });
+
+  const hasOverlap=bars.some((b,i)=>bars.some((b2,j)=>j>i&&b.left<b2.left+b2.wid&&b.left+b.wid>b2.left));
+  const groupKey=bars.map(b=>b.t.id).sort().join('_');
+
+  let inner='';
+  if(hasOverlap&&!options.hideTabs){
+    // density heatmap
+    const slots=new Array(total).fill(0);
+    bars.forEach(b=>{
+      const sd=Math.floor(b.left*total);
+      const ed=Math.min(total-1,Math.ceil((b.left+b.wid)*total)-1);
+      for(let i=sd;i<=ed;i++)slots[i]+=b.imp/100;
+    });
+    let di=0;
+    while(di<total){
+      const v=Math.min(1,slots[di]/1.5);
+      let dj=di+1;
+      while(dj<total&&Math.abs(slots[dj]-slots[di])<0.15)dj++;
+      if(v>0.05){
+        inner+=`<div style="position:absolute;top:3px;bottom:3px;left:${(di/total*100).toFixed(2)}%;width:${((dj-di)/total*100).toFixed(2)}%;background:${bars[0].col};opacity:${(v*0.85).toFixed(2)};border-radius:3px"></div>`;
+      }
+      di=dj;
+    }
+    // tab chips (タップ=選択、長押し=編集)
+    bars.forEach(b=>{
+      const sel=state.selectedGroups[groupKey]===b.t.id?' sel':'';
+      inner+=`<div class="tab-chip${sel}" style="background:${b.col};left:${(b.left*100).toFixed(3)}%" data-action="selecttab" data-group="${groupKey}" data-id="${b.t.id}" title="長押しで編集">${esc(b.t.name.slice(0,6))}</div>`;
+    });
+    // selected bar
+    const selId=state.selectedGroups[groupKey];
+    if(selId){
+      const sb=bars.find(b=>b.t.id===selId);
+      if(sb){
+        const len=diffDays(sb.s,sb.e)+1;
+        let lbl='';
+        if((sb.wid*100)>25)lbl=`${sb.s.getDate()} ${esc(sb.t.name.slice(0,8))} ${len}d`;
+        else if((sb.wid*100)>12)lbl=`${sb.s.getDate()}-${len}d`;
+        else if((sb.wid*100)>4)lbl=`${len}d`;
+        inner+=`<div class="gantt-bar sel" style="left:${(sb.left*100).toFixed(3)}%;width:${(sb.wid*100).toFixed(3)}%;background:${sb.col};opacity:0.95;z-index:5" data-action="edittext" data-id="${sb.t.id}">${lbl}</div>`;
+      }
+    }
+    inner+=todayVline;
+    const rowStart=new Date(Math.min(...bars.map(b=>b.s.getTime())));
+    const rowEnd=new Date(Math.max(...bars.map(b=>b.e.getTime())));
+    return `<div class="bar-row" data-group="${groupKey}">
+      <div class="bar-label-col">${esc(labelName)}</div>
+      <div style="flex:1;position:relative">
+        <div class="bar-edges"><span>${ymd(rowStart)}</span><span>〜${ymd(rowEnd)}</span></div>
+        <div class="bar-track" style="height:44px;margin-top:22px">${inner}</div>
+      </div>
+    </div>`;
+  }else{
+    bars.forEach(b=>{
+      const len=diffDays(b.s,b.e)+1;
+      let lbl='';
+      if((b.wid*100)>25)lbl=`${b.s.getDate()} ${esc(b.t.name.slice(0,8))} ${len}d`;
+      else if((b.wid*100)>12)lbl=`${b.s.getDate()}-${len}d`;
+      else if((b.wid*100)>4)lbl=`${len}d`;
+      inner+=`<div class="gantt-bar ${b.t.done?'done':''}" style="left:${(b.left*100).toFixed(3)}%;width:${(b.wid*100).toFixed(3)}%;background:${b.col};opacity:${b.t.done?0.3:0.85}" data-action="edittext" data-id="${b.t.id}">${lbl}</div>`;
+    });
+    inner+=todayVline;
+    if(!bars.length)return'';
+    const rowStart=new Date(Math.min(...bars.map(b=>b.s.getTime())));
+    const rowEnd=new Date(Math.max(...bars.map(b=>b.e.getTime())));
+    return `<div class="bar-row">
+      <div class="bar-label-col">${esc(labelName)}</div>
+      <div style="flex:1;position:relative">
+        <div class="bar-edges"><span>${ymd(rowStart)}</span><span>〜${ymd(rowEnd)}</span></div>
+        <div class="bar-track">${inner}</div>
+      </div>
+    </div>`;
+  }
+}
+
+// FIX: buildYearChart - totalW を正しく計算
+function buildYearChart(){
+  const units=48;
+  const fs=new Date(state.schedViewYear,3,1),fe=new Date(state.schedViewYear+1,2,31);
+  const mi=d=>d.getMonth()>=3?d.getMonth()-3:d.getMonth()+9;
+  const wi=d=>Math.max(0,Math.min(3,Math.floor((d.getDate()-1)/7)));
+  const files=getActiveFiles();
+  const mLabels=['4','5','6','7','8','9','10','11','12','1','2','3'];
+  let rows='';
+  files.forEach(fi=>{
+    const txs=state.labels.filter(l=>l.fileId===fi.id).flatMap(l=>state.texts.filter(t=>t.labelId===l.id));
+    const inY=txs.filter(t=>t.start&&t.end&&!(parseD(t.end)<fs)&&!(parseD(t.start)>fe));
+    if(!inY.length)return;
+    rows+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+      <div style="width:60px;flex:0 0 60px;font-size:11px;font-weight:600;color:rgba(255,255,255,.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(fi.name)}</div>
+      <div style="position:relative;flex:1;height:22px;background:rgba(255,255,255,.04);border-radius:4px">
+        ${inY.map(t=>{
+          const s=parseD(t.start)<fs?fs:parseD(t.start);
+          const e=parseD(t.end)>fe?fe:parseD(t.end);
+          const a=mi(s)*4+wi(s),b=mi(e)*4+wi(e);
+          const len=Math.max(1,b-a+1);
+          return `<div class="gantt-bar ${t.done?'done':''}" style="left:${(a/units*100).toFixed(3)}%;width:${(Math.max(1,len)/units*100).toFixed(3)}%;top:2px;bottom:2px;background:${fi.color||COLORS[0]};opacity:${t.done?0.3:0.82}" data-action="edittext" data-id="${t.id}"></div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+
+  return `
+    <div class="sched-top-row">
+      <div class="sched-nav" style="flex:1;margin:0">
+        <button class="sched-nav-btn" id="schedPrev">‹</button>
+        <div class="sched-title">${state.schedViewYear}/4〜${state.schedViewYear+1}/3</div>
+        <button class="sched-nav-btn" id="schedNext">›</button>
+      </div>
+      <div class="zoom-row">
+        <button class="zoom-btn" id="zoomMinus">−</button>
+        <div class="zoom-label">${Math.round(state.zoomYear*100)}%</div>
+        <button class="zoom-btn" id="zoomPlus">＋</button>
+      </div>
+    </div>
+    <div class="chart-scroll">
+      <div style="width:100%">
+        <div style="display:flex;margin-left:66px;margin-bottom:4px">${mLabels.map(m=>`<div style="flex:1;text-align:center;color:var(--muted);font-size:10px">${m}月</div>`).join('')}</div>
+        ${rows||'<div class="empty-chart">この年度に予定はありません</div>'}
+      </div>
+    </div>`;
+}
+
+function getFileForText(t){
+  const lb=state.labels.find(l=>l.id===t.labelId);
+  return lb?state.files.find(f=>f.id===lb.fileId)||null:null;
+}
+
+// Schedule quick add
+document.getElementById('btnSchedAdd').addEventListener('click',()=>openSheetSchedAdd());
+function openSheetSchedAdd(){
+  const files=getActiveFiles();
+  const sel=document.getElementById('schedAddFile');
+  sel.innerHTML=files.map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join('');
+  const noData=!files.length;
+  document.getElementById('schedAddNoData').style.display=noData?'block':'none';
+  updateSchedAddLabels();
+  const td=today();
+  document.getElementById('schedAddName').value='';
+  document.getElementById('schedAddStart').value=ymd(td);
+  document.getElementById('schedAddEnd').value=ymd(td);
+  schedAddImp=50;updateSchedAddImpBtns();
+  document.getElementById('sheetSchedAdd').classList.add('open');
+}
+document.getElementById('schedAddFile').addEventListener('change',updateSchedAddLabels);
+function updateSchedAddLabels(){
+  const fid=document.getElementById('schedAddFile').value;
+  const labels=state.labels.filter(l=>l.fileId===fid);
+  document.getElementById('schedAddLabel').innerHTML=labels.map(l=>`<option value="${l.id}">${esc(l.name)}</option>`).join('');
+}
+let schedAddImp=50;
+function updateSchedAddImpBtns(){
+  document.getElementById('schedImpNormal').style.background=schedAddImp===50?'rgba(255,255,255,.3)':'rgba(255,255,255,.1)';
+  document.getElementById('schedImpHigh').style.background=schedAddImp===100?'rgba(255,234,0,.4)':'rgba(255,255,255,.1)';
+}
+document.getElementById('schedImpNormal').addEventListener('click',()=>{schedAddImp=50;updateSchedAddImpBtns();});
+document.getElementById('schedImpHigh').addEventListener('click',()=>{schedAddImp=100;updateSchedAddImpBtns();});
+document.getElementById('sheetSchedAddClose').addEventListener('click',()=>document.getElementById('sheetSchedAdd').classList.remove('open'));
+document.getElementById('sheetSchedAddSave').addEventListener('click',()=>{
+  const lid=document.getElementById('schedAddLabel').value;
+  const name=document.getElementById('schedAddName').value.trim();
+  if(!lid||!name)return;
+  const s=document.getElementById('schedAddStart').value;
+  const e=document.getElementById('schedAddEnd').value;
+  state.texts.push({id:uid(),labelId:lid,name,start:s,end:e,importance:schedAddImp,url:'',detail:'',status:'❌',done:false,history:[]});
+  save();
+  document.getElementById('sheetSchedAdd').classList.remove('open');
+  renderSchedule();renderHome();
+});
+
+// ═══ TODO ═══
+document.querySelectorAll('.todo-mode-btn').forEach(b=>b.addEventListener('click',()=>{
+  todoMode=b.dataset.mode;
+  document.querySelectorAll('.todo-mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.mode===todoMode));
+  renderTodo();
+}));
+function renderTodo(){
+  const td=today();
+  let items=state.texts.filter(t=>t.start&&t.end);
+  if(todoMode==='today')items=items.filter(t=>parseD(t.start)<=td&&parseD(t.end)>=td);
+  else if(todoMode==='overdue')items=items.filter(t=>parseD(t.end)<td&&!t.done);
+  else if(todoMode==='important')items=items.filter(t=>(t.importance||50)>=100);
+  items.sort((a,b)=>{
+    const adl=diffDays(td,parseD(a.end)),bdl=diffDays(td,parseD(b.end));
+    if(adl<0&&bdl>=0)return -1;if(bdl<0&&adl>=0)return 1;
+    if(adl===0&&bdl!==0)return -1;if(bdl===0&&adl!==0)return 1;
+    const ai=a.importance||50,bi=b.importance||50;
+    if(ai!==bi)return bi-ai;
+    return adl-bdl;
+  });
+  const cnt=items.length;
+  const imp=items.filter(t=>(t.importance||50)>=100).length;
+  const od=state.texts.filter(t=>t.end&&parseD(t.end)<td&&!t.done).length;
+  let ll='なし',lc='var(--muted)';
+  if(od>0){ll='危険';lc='var(--red)';}
+  else if(cnt>=6){ll='重い';lc='var(--orange)';}
+  else if(cnt>=3){ll='普通';lc='var(--accent)';}
+  else if(cnt>=1){ll='軽い';lc='var(--green)';}
+  document.getElementById('loadBar').innerHTML=`
+    <div class="load-label">今日の負荷</div>
+    <span class="load-badge" style="background:${lc};color:#000">${ll}</span>
+    <div class="load-stats"><span>作業${cnt}件</span><span>重要${imp}件</span><span style="color:var(--red)">期限切れ${od}件</span></div>`;
+  if(!items.length){
+    document.getElementById('todoList').innerHTML=`<div class="empty-chart" style="padding:40px 0">${todoMode==='today'?'今日の作業はありません':'該当なし'}</div>`;
+    return;
+  }
+  document.getElementById('todoList').innerHTML=items.map(t=>{
+    const lb=state.labels.find(l=>l.id===t.labelId)||{};
+    const fi=state.files.find(f=>f.id===lb.fileId)||{};
+    const di=state.dirs.find(d=>d.id===fi.dirId)||{};
+    const dl=diffDays(td,parseD(t.end));
+    const totalD=diffDays(parseD(t.start),parseD(t.end))+1;
+    const dayN=Math.max(1,diffDays(parseD(t.start),td)+1);
+    let cls='';
+    if(dl<0)cls='overdue';else if(dl===0)cls='today-dl';else if((t.importance||50)>=100)cls='important';
+    let badge='';
+    if(dl<0)badge=`<span class="chip" style="background:var(--red);color:#fff">期限切れ${Math.abs(dl)}日</span>`;
+    else if(dl===0)badge=`<span class="chip" style="background:var(--orange);color:#fff">今日締切</span>`;
+    else if(dl<=3)badge=`<span class="chip" style="background:rgba(255,149,0,.25);color:var(--orange)">残${dl}日</span>`;
+    // FIX: URLリンクボタン
+    const urlBtn=t.url?`<a class="todo-url-btn" href="${esc(t.url)}" target="_blank">🔗 開く</a>`:'';
+    return `<div class="todo-item ${cls}">
+      <div class="todo-path">${esc(di.name||'')} / ${esc(fi.name||'')} / ${esc(lb.name||'')}${urlBtn}</div>
+      <div class="todo-name">${esc(t.name)}</div>
+      <div class="todo-meta">
+        <span style="font-size:11px;color:var(--muted)">${dayN}日目/${totalD}日　残${Math.max(0,dl)}日</span>
+        ${badge}${(t.importance||50)>=100?'<span class="chip" style="background:rgba(255,234,0,.2);color:var(--accent)">重要</span>':''}
+      </div>
+      <div class="todo-check-row">
+        <button class="todo-check-btn" data-action="status" data-id="${t.id}" data-st="⭕">⭕</button>
+        <button class="todo-check-btn" data-action="status" data-id="${t.id}" data-st="🔺">🔺</button>
+        <button class="todo-check-btn" data-action="status" data-id="${t.id}" data-st="❌">❌</button>
+        <button class="todo-check-btn" data-action="delay1" data-id="${t.id}" style="flex:0.6;font-size:11px;color:var(--muted)">翌日</button>
+        <button class="todo-check-btn" data-action="edittext" data-id="${t.id}" style="flex:0.5;font-size:14px">›</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+document.getElementById('todoList').addEventListener('click',e=>{
+  const act=e.target.dataset.action||e.target.closest('[data-action]')?.dataset.action;
+  const id=e.target.dataset.id||e.target.closest('[data-action]')?.dataset.id;
+  if(act==='status'){
+    const st=e.target.dataset.st;
+    const t=state.texts.find(x=>x.id===id);
+    if(t){t.status=st;t.done=(st==='⭕');if(!t.history)t.history=[];t.history.push({date:ymd(today()),status:st});save();renderTodo();}
+    return;
+  }
+  // FIX: 個別翌日送り
+  if(act==='delay1'){
+    const t=state.texts.find(x=>x.id===id);
+    if(t&&t.end){
+      const d=parseD(t.end);d.setDate(d.getDate()+1);t.end=ymd(d);
+      if(!t.history)t.history=[];t.history.push({date:ymd(today()),status:'翌日送り'});
+      save();renderTodo();
+    }
+    return;
+  }
+  if(act==='edittext'&&id)openSheetText(id);
+});
+document.getElementById('btnTodayHard').addEventListener('click',()=>{
+  document.getElementById('delayReason').value='';
+  document.getElementById('sheetDelay').classList.add('open');
+});
+document.getElementById('sheetDelayClose').addEventListener('click',()=>document.getElementById('sheetDelay').classList.remove('open'));
+document.getElementById('sheetDelayConfirm').addEventListener('click',()=>{
+  const td=today();
+  const reason=document.getElementById('delayReason').value.trim();
+  const tmr=new Date(td);tmr.setDate(tmr.getDate()+1);
+  const tmrStr=ymd(tmr);
+  state.texts.forEach(t=>{
+    if(!t.done&&t.start&&t.end&&parseD(t.start)<=td&&parseD(t.end)>=td){
+      t.end=tmrStr;
+      if(!t.history)t.history=[];
+      t.history.push({date:ymd(td),status:'今日は無理',reason});
+    }
+  });
+  save();document.getElementById('sheetDelay').classList.remove('open');renderTodo();
+});
+
+// ═══ SETTING ═══
+function renderSetting(){
+  const h=state.hierNames;
+  const keys=['dir','file','label','text'];
+  const labels={dir:'ディレクトリ',file:'親ファイル（会社）',label:'子ファイル（選考）',text:'作業'};
+  document.getElementById('hierNames').innerHTML=keys.map(k=>`
+    <div class="setting-row">
+      <div class="setting-label">${labels[k]}</div>
+      <input class="field" style="width:120px;padding:6px 10px;font-size:13px" data-hierkey="${k}" value="${esc(h[k]||'')}"/>
+    </div>`).join('')+`
+    <div style="margin-top:12px">
+      <div class="setting-label" style="margin-bottom:8px">テーマ</div>
+      <div style="display:flex;gap:8px">
+        <button class="io-btn" id="themeDark">Dark</button>
+        <button class="io-btn" id="themeHigh">High Contrast</button>
+        <button class="io-btn" id="themeSoft">Soft</button>
+      </div>
+    </div>`;
+}
+document.getElementById('hierNames').addEventListener('change',e=>{
+  const key=e.target.dataset.hierkey;
+  if(!key)return;
+  state.hierNames[key]=e.target.value;save();
+});
+document.getElementById('hierNames').addEventListener('click',e=>{
+  if(e.target.id==='themeDark')applyTheme('dark');
+  if(e.target.id==='themeHigh')applyTheme('high');
+  if(e.target.id==='themeSoft')applyTheme('soft');
+});
+function applyTheme(name){
+  const root=document.documentElement.style;
+  if(name==='high'){
+    root.setProperty('--bg','#000');root.setProperty('--panel','#0b0b0b');root.setProperty('--panel2','#0f0f10');root.setProperty('--muted','rgba(255,255,255,.9)');root.setProperty('--muted2','rgba(255,255,255,.7)');
+    state.theme='high';
+  }else if(name==='soft'){
+    root.setProperty('--bg','#0f1416');root.setProperty('--panel','#1a2224');root.setProperty('--panel2','#162021');root.setProperty('--muted','rgba(255,255,255,.75)');root.setProperty('--muted2','rgba(255,255,255,.55)');
+    state.theme='soft';
+  }else{
+    root.setProperty('--bg','#050506');root.setProperty('--panel','#0f1112');root.setProperty('--panel2','#141617');root.setProperty('--muted','rgba(255,255,255,.65)');root.setProperty('--muted2','rgba(255,255,255,.42)');
+    state.theme='dark';
+  }
+  save();
+}
+document.getElementById('btnReset').addEventListener('click',()=>{
+  if(confirm('全データを初期化しますか？')){
+    state.dirs=[];state.files=[];state.labels=[];state.texts=[];state.activeDirId=null;
+    save();renderScreen(currentScreen);
+  }
+});
+
+// ═══ SHEETS ═══
+let eDirId=null,eDirIcon='💼',eDirColor=COLORS[0];
+function openSheetDir(id){
+  eDirId=id;
+  const d=id?state.dirs.find(x=>x.id===id):null;
+  eDirIcon=d?.icon||'💼';eDirColor=d?.color||COLORS[0];
+  document.getElementById('sheetDirTitle').textContent=id?'ディレクトリ編集':'ディレクトリ追加';
+  document.getElementById('dirNameInput').value=d?.name||'';
+  document.getElementById('dirIconSelected').textContent='選択中：'+eDirIcon;
+  document.getElementById('dirColorPicker').innerHTML=COLORS.map(c=>`<button class="color-dot ${c===eDirColor?'sel':''}" data-color="${c}" style="background:${c}"></button>`).join('');
+  document.getElementById('sheetDirDelete').style.display=id?'':'none';
+  document.getElementById('sheetDir').classList.add('open');
+}
+document.getElementById('sheetDirClose').addEventListener('click',()=>document.getElementById('sheetDir').classList.remove('open'));
+document.getElementById('dirIconPicker').addEventListener('click',e=>{
+  const ic=e.target.dataset.icon;if(!ic)return;
+  eDirIcon=ic;document.getElementById('dirIconSelected').textContent='選択中：'+ic;
+});
+document.getElementById('dirColorPicker').addEventListener('click',e=>{
+  const c=e.target.dataset.color;if(!c)return;
+  eDirColor=c;document.querySelectorAll('#dirColorPicker .color-dot').forEach(x=>x.classList.toggle('sel',x.dataset.color===c));
+});
+document.getElementById('sheetDirSave').addEventListener('click',()=>{
+  const name=document.getElementById('dirNameInput').value.trim();if(!name)return;
+  if(eDirId){const d=state.dirs.find(x=>x.id===eDirId);d.name=name;d.icon=eDirIcon;d.color=eDirColor;}
+  else state.dirs.push({id:uid(),name,icon:eDirIcon,color:eDirColor});
+  save();document.getElementById('sheetDir').classList.remove('open');renderHome();
+});
+document.getElementById('sheetDirDelete').addEventListener('click',()=>{
+  if(!confirm('削除しますか？'))return;
+  const fids=state.files.filter(f=>f.dirId===eDirId).map(f=>f.id);
+  const lids=state.labels.filter(l=>fids.includes(l.fileId)).map(l=>l.id);
+  state.dirs=state.dirs.filter(x=>x.id!==eDirId);
+  state.files=state.files.filter(f=>f.dirId!==eDirId);
+  state.labels=state.labels.filter(l=>!fids.includes(l.fileId));
+  state.texts=state.texts.filter(t=>!lids.includes(t.labelId));
+  if(state.activeDirId===eDirId)state.activeDirId=null;
+  save();document.getElementById('sheetDir').classList.remove('open');renderHome();
+});
+
+let eFileId=null,eFileColor=COLORS[0];
+function openSheetFile(id){
+  eFileId=id;
+  const f=id?state.files.find(x=>x.id===id):null;
+  eFileColor=f?.color||COLORS[0];
+  document.getElementById('sheetFileTitle').textContent=id?'会社編集':'会社追加';
+  document.getElementById('fileNameInput').value=f?.name||'';
+  document.getElementById('fileColorPicker').innerHTML=COLORS.map(c=>`<button class="color-dot ${c===eFileColor?'sel':''}" data-color="${c}" style="background:${c}"></button>`).join('');
+  document.getElementById('sheetFileDelete').style.display=id?'':'none';
+  document.getElementById('sheetFile').classList.add('open');
+}
+document.getElementById('sheetFileClose').addEventListener('click',()=>document.getElementById('sheetFile').classList.remove('open'));
+document.getElementById('fileColorPicker').addEventListener('click',e=>{
+  const c=e.target.dataset.color;if(!c)return;
+  eFileColor=c;document.querySelectorAll('#fileColorPicker .color-dot').forEach(x=>x.classList.toggle('sel',x.dataset.color===c));
+});
+document.getElementById('sheetFileSave').addEventListener('click',()=>{
+  const name=document.getElementById('fileNameInput').value.trim();if(!name)return;
+  if(eFileId){const f=state.files.find(x=>x.id===eFileId);f.name=name;f.color=eFileColor;}
+  else state.files.push({id:uid(),dirId:state.activeDirId,name,color:eFileColor,open:false});
+  save();document.getElementById('sheetFile').classList.remove('open');renderEvent();
+});
+document.getElementById('sheetFileDelete').addEventListener('click',()=>{
+  if(!confirm('削除しますか？'))return;
+  const lids=state.labels.filter(l=>l.fileId===eFileId).map(l=>l.id);
+  state.files=state.files.filter(x=>x.id!==eFileId);
+  state.labels=state.labels.filter(l=>l.fileId!==eFileId);
+  state.texts=state.texts.filter(t=>!lids.includes(t.labelId));
+  save();document.getElementById('sheetFile').classList.remove('open');renderEvent();
+});
+
+let eLabelId=null,eLabelFileId=null;
+function openSheetLabel(id,fileId){
+  eLabelId=id;eLabelFileId=fileId||null;
+  const l=id?state.labels.find(x=>x.id===id):null;
+  document.getElementById('sheetLabelTitle').textContent=id?'選考編集':'選考追加';
+  document.getElementById('labelNameInput').value=l?.name||'';
+  document.getElementById('labelStart').value=l?.start||'';
+  document.getElementById('labelEnd').value=l?.end||'';
+  document.getElementById('sheetLabelDelete').style.display=id?'':'none';
+  document.getElementById('sheetLabel').classList.add('open');
+}
+document.getElementById('sheetLabelClose').addEventListener('click',()=>document.getElementById('sheetLabel').classList.remove('open'));
+document.getElementById('sheetLabelSave').addEventListener('click',()=>{
+  const name=document.getElementById('labelNameInput').value.trim();if(!name)return;
+  const s=document.getElementById('labelStart').value;
+  const e=document.getElementById('labelEnd').value;
+  if(eLabelId){const l=state.labels.find(x=>x.id===eLabelId);l.name=name;l.start=s;l.end=e;}
+  else state.labels.push({id:uid(),fileId:eLabelFileId,name,start:s,end:e,open:false});
+  save();document.getElementById('sheetLabel').classList.remove('open');renderEvent();
+});
+document.getElementById('sheetLabelDelete').addEventListener('click',()=>{
+  if(!confirm('削除しますか？'))return;
+  state.labels=state.labels.filter(x=>x.id!==eLabelId);
+  state.texts=state.texts.filter(t=>t.labelId!==eLabelId);
+  save();document.getElementById('sheetLabel').classList.remove('open');renderEvent();
+});
+
+let eTextId=null,eTextLabelId=null,eTextImp=50;
+function openSheetText(id,labelId){
+  eTextId=id;eTextLabelId=labelId||null;
+  const t=id?state.texts.find(x=>x.id===id):null;
+  eTextImp=t?.importance||50;
+  document.getElementById('sheetTextTitle').textContent=id?'作業編集':'作業追加';
+  document.getElementById('textNameInput').value=t?.name||'';
+  document.getElementById('textStart').value=t?.start||'';
+  document.getElementById('textEnd').value=t?.end||'';
+  document.getElementById('textUrl').value=t?.url||'';
+  document.getElementById('textDetail').value=t?.detail||'';
+  document.getElementById('sheetTextDelete').style.display=id?'':'none';
+  const lid=labelId||(t?t.labelId:null);
+  const lb=lid?state.labels.find(l=>l.id===lid):null;
+  const fi=lb?state.files.find(f=>f.id===lb.fileId):null;
+  document.getElementById('textParentInfo').textContent=fi&&lb?`${fi.name} / ${lb.name}`:'未選択';
+  updateTextImpBtns();
+  document.getElementById('sheetText').classList.add('open');
+}
+function updateTextImpBtns(){
+  document.getElementById('impNormal').style.background=eTextImp===50?'rgba(255,255,255,.3)':'rgba(255,255,255,.1)';
+  document.getElementById('impHigh').style.background=eTextImp===100?'rgba(255,234,0,.4)':'rgba(255,255,255,.1)';
+}
+document.getElementById('impNormal').addEventListener('click',()=>{eTextImp=50;updateTextImpBtns();});
+document.getElementById('impHigh').addEventListener('click',()=>{eTextImp=100;updateTextImpBtns();});
+document.getElementById('sheetTextClose').addEventListener('click',()=>document.getElementById('sheetText').classList.remove('open'));
+document.getElementById('sheetTextSave').addEventListener('click',()=>{
+  const name=document.getElementById('textNameInput').value.trim();if(!name)return;
+  const s=document.getElementById('textStart').value;
+  const e=document.getElementById('textEnd').value;
+  const url=document.getElementById('textUrl').value.trim();
+  const detail=document.getElementById('textDetail').value.trim();
+  if(eTextId){
+    const t=state.texts.find(x=>x.id===eTextId);
+    t.name=name;t.start=s;t.end=e;t.importance=eTextImp;t.url=url;t.detail=detail;
+  }else{
+    state.texts.push({id:uid(),labelId:eTextLabelId,name,start:s,end:e,importance:eTextImp,url,detail,status:'❌',done:false,history:[]});
+  }
+  save();
+  document.getElementById('sheetText').classList.remove('open');
+  renderHome();renderEvent();
+  if(currentScreen==='schedule')renderSchedule();
+  if(currentScreen==='todo')renderTodo();
+});
+document.getElementById('sheetTextDelete').addEventListener('click',()=>{
+  if(!confirm('削除しますか？'))return;
+  state.texts=state.texts.filter(x=>x.id!==eTextId);
+  save();
+  document.getElementById('sheetText').classList.remove('open');
+  renderHome();renderEvent();
+  if(currentScreen==='schedule')renderSchedule();
+  if(currentScreen==='todo')renderTodo();
+});
+
+document.querySelectorAll('.sheet-backdrop').forEach(bd=>{
+  bd.addEventListener('click',e=>{if(e.target===bd)bd.classList.remove('open');});
+});
+
+// ═══ INIT ═══
+load();
+// FIX: テーマ復元
+if(state.theme&&state.theme!=='dark')applyTheme(state.theme);
+renderHome();
+</script>
+</body>
+</html>
