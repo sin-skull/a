@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>本棚</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wood-dark:#241609;
+    --wood-mid:#5c3a21;
+    --wood-light:#8a5a34;
+    --paper:#ede3d0;
+    --paper-dim:#ddd0b6;
+    --ink:#241c14;
+    --brass:#a87c3f;
+    --brass-light:#c99a5b;
+    --moss:#445c42;
+    --danger:#7b3f3f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 6px),
+      linear-gradient(180deg,#1b1108,#241609 40%,#1b1108);
+    min-height:100vh;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    color:var(--paper);
+    -webkit-tap-highlight-color:transparent;
+  }
+  #app{max-width:1040px;margin:0 auto;padding:14px 12px 60px;}
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    background:var(--paper);
+    color:var(--ink);
+    border:1px solid var(--brass);
+    border-radius:6px;
+    padding:12px 14px;
+    box-shadow:0 8px 18px -8px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.25);
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 16px;
+    align-items:center;
+    margin-bottom:22px;
+  }
+  .toolbar h1{
+    font-family:'Shippori Mincho',serif;
+    font-weight:800;
+    font-size:20px;
+    margin:0 8px 0 0;
+    letter-spacing:.05em;
+    flex:0 0 auto;
+  }
+  .search-row{display:flex;gap:6px;align-items:center;flex:1 1 260px;min-width:0;}
+  .search-row input{
+    flex:1 1 auto;min-width:0;
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    font-size:14px;padding:8px 10px;
+    border:1px solid var(--brass);border-radius:4px;
+    background:#fbf7ee;color:var(--ink);
+  }
+  .search-row input:focus-visible, button:focus-visible, .book:focus-visible{
+    outline:2px solid var(--moss);outline-offset:2px;
+  }
+  button{
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    cursor:pointer;border:none;border-radius:4px;
+    font-size:13px;font-weight:700;
+    padding:8px 12px;
+    background:var(--wood-mid);color:var(--paper);
+    box-shadow:0 2px 0 rgba(0,0,0,.25);
+    transition:transform .08s ease;
+  }
+  button:active{transform:translateY(1px);}
+  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--brass);box-shadow:none;}
+  button:disabled{opacity:.5;cursor:default;}
+  .toggle-group{display:flex;border:1px solid var(--brass);border-radius:20px;overflow:hidden;flex:0 0 auto;}
+  .toggle-group button{
+    background:transparent;color:var(--ink);box-shadow:none;border-radius:0;
+    padding:6px 12px;font-size:12px;
+  }
+  .toggle-group button.active{background:var(--moss);color:var(--paper);}
+  .toolbar-label{font-size:11px;color:#6b5b45;margin-right:-8px;}
+  .spinner{
+    width:14px;height:14px;border-radius:50%;
+    border:2px solid rgba(36,28,20,.25);border-top-color:var(--ink);
+    animation:spin .7s linear infinite;display:inline-block;vertical-align:-2px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .status-msg{font-size:12px;color:var(--danger);flex-basis:100%;}
+
+  /* ---------- bookcase ---------- */
+  .bookcase{display:flex;flex-direction:column;gap:0;}
+  .shelf-block{position:relative;margin-bottom:34px;}
+  .author-plate{
+    position:absolute;left:2px;top:-15px;z-index:3;
+    background:linear-gradient(180deg,var(--brass-light),var(--brass));
+    color:#2b1b0c;font-family:'Shippori Mincho',serif;font-weight:800;
+    font-size:13px;padding:4px 12px 4px 16px;
+    clip-path:polygon(0 50%,10px 0,100% 0,100% 100%,10px 100%);
+    box-shadow:0 3px 6px rgba(0,0,0,.5);
+    transform:rotate(-1.5deg);
+  }
+  .shelf-books{
+    display:flex;align-items:flex-end;gap:0;
+    min-height:190px;
+    padding:14px 10px 0;
+    overflow-x:auto;overflow-y:visible;
+    scrollbar-width:thin;scrollbar-color:var(--brass) transparent;
+    touch-action:pan-x;
+  }
+  .shelf-books::-webkit-scrollbar{height:6px;}
+  .shelf-books::-webkit-scrollbar-thumb{background:var(--brass);border-radius:3px;}
+  .shelf-books.empty::after{
+    content:'まだ本がありません';
+    color:#a08a63;font-size:13px;padding:0 6px 20px;
+  }
+  .shelf-plank{
+    height:20px;position:relative;z-index:2;
+    background:linear-gradient(180deg,var(--wood-light),var(--wood-mid) 45%,var(--wood-dark));
+    border-radius:2px;
+    box-shadow:0 10px 14px -6px rgba(0,0,0,.7), inset 0 2px 0 rgba(255,255,255,.18);
+  }
+  .shelf-plank::after{
+    content:'';position:absolute;inset:0;
+    background:repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 1px, transparent 1px 14px);
+    mix-blend-mode:multiply;
+  }
+  .shelf-controls{
+    position:absolute;right:6px;top:-15px;z-index:3;display:flex;gap:4px;
+  }
+  .shelf-controls button{
+    font-size:11px;padding:4px 8px;background:rgba(36,22,9,.7);color:var(--paper-dim);
+    border:1px solid var(--brass);
+  }
+  .add-shelf-wrap{display:flex;justify-content:center;margin-top:6px;}
+
+  /* ---------- book ---------- */
+  .book{
+    position:relative;flex:0 0 auto;cursor:grab;user-select:none;touch-action:none;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    box-shadow:0 3px 6px rgba(0,0,0,.45), inset -3px 0 6px rgba(0,0,0,.35), inset 2px 0 0 rgba(255,255,255,.12);
+    border-radius:1px 3px 3px 1px;
+    transition:box-shadow .15s ease;
+  }
+  .book.is-dragging{opacity:.2;}
+  .book.new-item{animation:pop .35s ease;}
+  @keyframes pop{from{transform:scale(.85) translateY(6px);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .book--spine{
+    writing-mode:vertical-rl;text-orientation:mixed;
+    font-family:'Shippori Mincho',serif;font-weight:600;
+    font-size:12.5px;line-height:1.4;letter-spacing:.03em;
+    padding:10px 4px;color:rgba(255,250,238,.94);
+    text-shadow:0 1px 1px rgba(0,0,0,.4);
+    overflow:hidden;
+  }
+  .book--spine .book-title{max-height:100%;overflow:hidden;}
+  .book--cover{
+    width:104px;height:156px;margin:0 3px;
+    background-size:cover;background-position:center;
+    flex-direction:column;
+    background-color:#4a4038;
+  }
+  .book--cover .cover-fallback{
+    font-family:'Shippori Mincho',serif;font-weight:700;font-size:12px;
+    color:var(--paper);padding:10px;line-height:1.5;
+  }
+  .book-ghost{position:fixed;pointer-events:none;z-index:9999;opacity:.92;filter:drop-shadow(0 10px 14px rgba(0,0,0,.6));}
+
+  /* ---------- empty state ---------- */
+  .empty-hint{
+    text-align:center;color:#a08a63;font-size:13px;padding:30px 10px;
+    border:1px dashed var(--brass);border-radius:6px;
+  }
+
+  /* ---------- modal ---------- */
+  .modal{
+    position:fixed;inset:0;background:rgba(10,6,2,.6);
+    display:flex;align-items:flex-end;justify-content:center;z-index:1000;
+    padding:0;
+  }
+  @media (min-width:560px){.modal{align-items:center;}}
+  .modal.hidden{display:none;}
+  .modal-card{
+    background:var(--paper);color:var(--ink);width:100%;max-width:420px;
+    border-radius:10px 10px 0 0;padding:18px 18px 22px;
+    box-shadow:0 -10px 30px rgba(0,0,0,.5);
+    max-height:88vh;overflow-y:auto;
+  }
+  @media (min-width:560px){.modal-card{border-radius:10px;}}
+  .modal-card h2{font-family:'Shippori Mincho',serif;font-size:17px;margin:0 0 12px;}
+  .modal-cover{
+    width:120px;height:172px;object-fit:cover;border-radius:2px;
+    box-shadow:0 4px 10px rgba(0,0,0,.4);margin-bottom:10px;background:#ddd;
+  }
+  .field{margin-bottom:10px;}
+  .field label{display:block;font-size:11px;color:#6b5b45;margin-bottom:3px;}
+  .field input{width:100%;padding:8px 9px;border:1px solid var(--brass);border-radius:4px;font-size:14px;background:#fbf7ee;color:var(--ink);}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
+  .modal-actions .danger{background:var(--danger);}
+  .meta-line{font-size:12.5px;color:#4b4030;margin:2px 0;}
+
+  .scan-wrap{position:relative;border-radius:8px;overflow:hidden;background:#000;min-height:220px;}
+  .scan-wrap video, .scan-wrap canvas{width:100% !important;height:auto !important;display:block;max-height:52vh;object-fit:cover;}
+  .scan-wrap canvas.drawingBuffer{position:absolute !important;top:0;left:0;}
+  .scan-guide{
+    position:absolute;left:8%;right:8%;top:42%;height:16%;
+    border:2px solid var(--brass-light);border-radius:6px;
+    box-shadow:0 0 0 999px rgba(0,0,0,.35);
+    pointer-events:none;
+  }
+
+  .toast{
+    position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+    background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:20px;
+    font-size:13px;box-shadow:0 6px 16px rgba(0,0,0,.5);z-index:1200;
+  }
+  .toast.hidden{display:none;}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important;transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="toolbar">
+    <h1>本棚</h1>
+    <div class="search-row">
+      <input id="isbnInput" inputmode="numeric" placeholder="JANコード / ISBNを入力" aria-label="JANコードまたはISBN">
+      <button id="searchBtn">検索</button>
+      <button class="ghost" id="scanBtn" type="button" title="カメラでバーコードを読み取る">📷 読み取る</button>
+    </div>
+    <button class="ghost" id="manualAddBtn">手動で追加</button>
+    <div class="toggle-group" id="viewToggle" role="group" aria-label="表示切替">
+      <button data-view="spine" class="active">背表紙</button>
+      <button data-view="cover">表紙</button>
+    </div>
+    <div class="toggle-group" id="sortToggle" role="group" aria-label="並び替え">
+      <button data-sort="free" class="active">自由配置</button>
+      <button data-sort="author">著者で並べる</button>
+    </div>
+    <div id="statusMsg" class="status-msg" hidden></div>
+  </div>
+
+  <main class="bookcase" id="bookcase"></main>
+  <div class="add-shelf-wrap"><button class="ghost" id="addShelfBtn">＋ 棚を追加</button></div>
+</div>
+
+<div class="modal hidden" id="bookModal">
+  <div class="modal-card">
+    <h2 id="bm-title">本の詳細</h2>
+    <img id="bm-cover" class="modal-cover" alt="">
+    <p class="meta-line" id="bm-author"></p>
+    <p class="meta-line" id="bm-publisher"></p>
+    <p class="meta-line" id="bm-isbn"></p>
+    <div class="modal-actions">
+      <button class="ghost" id="bm-close">閉じる</button>
+      <button class="danger" id="bm-delete">削除</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="addModal">
+  <div class="modal-card">
+    <h2>本を手動で追加</h2>
+    <div class="field"><label>タイトル *</label><input id="am-title"></div>
+    <div class="field"><label>著者</label><input id="am-author"></div>
+    <div class="field"><label>出版社</label><input id="am-publisher"></div>
+    <div class="field"><label>ISBN / JANコード</label><input id="am-isbn"></div>
+    <div class="field"><label>表紙画像URL（任意）</label><input id="am-cover"></div>
+    <div class="modal-actions">
+      <button class="ghost" id="am-cancel">キャンセル</button>
+      <button id="am-save">追加する</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="scanModal">
+  <div class="modal-card">
+    <h2>バーコードを読み取る</h2>
+    <div class="scan-wrap" id="scanContainer">
+      <div class="scan-guide"></div>
+    </div>
+    <p class="meta-line" id="scanHint">本の裏表紙のバーコードをフレーム内に収めてください</p>
+    <div class="modal-actions">
+      <button class="ghost" id="scan-cancel">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- state ----------
+  var state = {
+    shelves: [ { id: 's1' } ],   // ordered list of shelves (id only; books hold shelfId + order)
+    books: [],                    // {id, isbn, title, author, publisher, cover, shelfId, order}
+    view: 'spine',                // 'spine' | 'cover'
+    sort: 'free'                  // 'free' | 'author'
+  };
+  var nextShelfNum = 2;
+  var STORAGE_KEY = 'bookshelf-state-v1';
+
+  var SPINE_COLORS = ['#7b3f3f','#3e5c55','#3a4e6e','#6b5b3e','#4b3b57','#5c6b3e','#7a4b2e','#39424e','#8b5e3c','#4e4b7b'];
+
+  function hashStr(str){
+    var h = 5381;
+    for (var i=0;i<str.length;i++){ h = ((h<<5)+h) + str.charCodeAt(i); h |= 0; }
+    return Math.abs(h);
+  }
+  function uid(){ return 'b'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+  // ---------- persistence ----------
+  async function loadState(){
+    try{
+      var res = await window.storage.get('bookshelf-data');
+      if (res && res.value){
+        var parsed = JSON.parse(res.value);
+        if (parsed && parsed.books){
+          state.shelves = (parsed.shelves && parsed.shelves.length) ? parsed.shelves : state.shelves;
+          state.books = parsed.books;
+          state.view = parsed.view || 'spine';
+          state.sort = parsed.sort || 'free';
+          var maxN = 0;
+          state.shelves.forEach(function(s){
+            var m = /^s(\d+)$/.exec(s.id);
+            if (m) maxN = Math.max(maxN, parseInt(m[1],10));
+          });
+          nextShelfNum = maxN + 1;
+        }
+      }
+    }catch(e){ /* no saved data yet */ }
+  }
+  var saveTimer = null;
+  function persist(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async function(){
+      try{
+        await window.storage.set('bookshelf-data', JSON.stringify({
+          shelves: state.shelves, books: state.books, view: state.view, sort: state.sort
+        }));
+      }catch(e){ showToast('保存に失敗しました'); }
+    }, 250);
+  }
+
+  // ---------- toast / status ----------
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.remove('hidden');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.add('hidden'); }, 2600);
+  }
+  var statusEl = document.getElementById('statusMsg');
+  function setStatus(msg){
+    if (!msg){ statusEl.hidden = true; statusEl.textContent=''; return; }
+    statusEl.hidden = false; statusEl.textContent = msg;
+  }
+
+  // ---------- book helpers ----------
+  function booksOnShelf(shelfId){
+    return state.books.filter(function(b){ return b.shelfId === shelfId; })
+      .sort(function(a,b){ return a.order - b.order; });
+  }
+  function nextOrder(shelfId){
+    var arr = booksOnShelf(shelfId);
+    return arr.length ? arr[arr.length-1].order + 1 : 0;
+  }
+  function addBook(data){
+    var shelfId = state.shelves[state.shelves.length-1].id;
+    var book = {
+      id: uid(),
+      isbn: data.isbn || '',
+      title: data.title || '(無題)',
+      author: data.author || '',
+      publisher: data.publisher || '',
+      cover: data.cover || '',
+      shelfId: shelfId,
+      order: nextOrder(shelfId)
+    };
+    state.books.push(book);
+    persist();
+    render(book.id);
+  }
+  function deleteBook(id){
+    state.books = state.books.filter(function(b){ return b.id !== id; });
+    persist();
+    render();
+  }
+
+  // ---------- openBD search ----------
+  async function searchByIsbn(raw){
+    var isbn = raw.replace(/[^0-9Xx]/g,'');
+    if (!isbn){ setStatus('JANコード／ISBNを入力してください'); return; }
+    var btn = document.getElementById('searchBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 検索中';
+    setStatus('');
+    try{
+      var res = await fetch('https://api.openbd.jp/v1/get?isbn=' + encodeURIComponent(isbn));
+      if (!res.ok) throw new Error('network');
+      var data = await res.json();
+      if (!data || !data[0] || !data[0].summary){
+        setStatus('見つかりませんでした。手動で追加できます。');
+        openAddModal({ isbn: isbn });
+        return;
+      }
+      var s = data[0].summary;
+      addBook({
+        isbn: isbn,
+        title: s.title || '(無題)',
+        author: (s.author||'').replace(/\/+$/,''),
+        publisher: s.publisher || '',
+        cover: s.cover || ''
+      });
+      document.getElementById('isbnInput').value = '';
+      showToast('「' + (s.title||'') + '」を追加しました');
+    }catch(err){
+      setStatus('検索に失敗しました（通信環境をご確認ください）。手動で追加できます。');
+      openAddModal({ isbn: isbn });
+    }finally{
+      btn.disabled = false;
+      btn.textContent = '検索して追加';
+    }
+  }
+
+  // ---------- manual add modal ----------
+  var addModal = document.getElementById('addModal');
+  function openAddModal(prefill){
+    prefill = prefill || {};
+    document.getElementById('am-title').value = prefill.title || '';
+    document.getElementById('am-author').value = prefill.author || '';
+    document.getElementById('am-publisher').value = prefill.publisher || '';
+    document.getElementById('am-isbn').value = prefill.isbn || '';
+    document.getElementById('am-cover').value = prefill.cover || '';
+    addModal.classList.remove('hidden');
+    document.getElementById('am-title').focus();
+  }
+  document.getElementById('manualAddBtn').addEventListener('click', function(){ openAddModal(); });
+  document.getElementById('am-cancel').addEventListener('click', function(){ addModal.classList.add('hidden'); });
+  document.getElementById('am-save').addEventListener('click', function(){
+    var title = document.getElementById('am-title').value.trim();
+    if (!title){ document.getElementById('am-title').focus(); return; }
+    addBook({
+      title: title,
+      author: document.getElementById('am-author').value.trim(),
+      publisher: document.getElementById('am-publisher').value.trim(),
+      isbn: document.getElementById('am-isbn').value.trim(),
+      cover: document.getElementById('am-cover').value.trim()
+    });
+    addModal.classList.add('hidden');
+    showToast('「' + title + '」を追加しました');
+  });
+
+  // ---------- detail modal ----------
+  var bookModal = document.getElementById('bookModal');
+  var currentDetailId = null;
+  function openDetail(book){
+    currentDetailId = book.id;
+    document.getElementById('bm-title').textContent = book.title;
+    var img = document.getElementById('bm-cover');
+    if (book.cover){ img.src = book.cover; img.style.display='block'; } else { img.style.display='none'; }
+    document.getElementById('bm-author').textContent = book.author ? '著者: ' + book.author : '';
+    document.getElementById('bm-publisher').textContent = book.publisher ? '出版社: ' + book.publisher : '';
+    document.getElementById('bm-isbn').textContent = book.isbn ? 'ISBN: ' + book.isbn : '';
+    bookModal.classList.remove('hidden');
+  }
+  document.getElementById('bm-close').addEventListener('click', function(){ bookModal.classList.add('hidden'); });
+  document.getElementById('bm-delete').addEventListener('click', function(){
+    if (currentDetailId) deleteBook(currentDetailId);
+    bookModal.classList.add('hidden');
+  });
+
+  // ---------- toolbar wiring ----------
+  document.getElementById('searchBtn').addEventListener('click', function(){
+    searchByIsbn(document.getElementById('isbnInput').value);
+  });
+  document.getElementById('isbnInput').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') searchByIsbn(this.value);
+  });
+
+  // ---------- camera barcode scan ----------
+  var scanModal = document.getElementById('scanModal');
+  var scanContainer = document.getElementById('scanContainer');
+  var scanHint = document.getElementById('scanHint');
+  var scanStream = null;
+  var scanLoopId = null;
+  var scanning = false;
+  var quaggaRunning = false;
+  var quaggaLoadPromise = null;
+
+  document.getElementById('scanBtn').addEventListener('click', startScan);
+  document.getElementById('scan-cancel').addEventListener('click', stopScan);
+
+  function isValidEAN13(code){
+    if (!/^\d{13}$/.test(code)) return false;
+    var sum = 0;
+    for (var i=0;i<12;i++){
+      var d = parseInt(code[i],10);
+      sum += (i % 2 === 0) ? d : d*3;
+    }
+    var check = (10 - (sum % 10)) % 10;
+    return check === parseInt(code[12],10);
+  }
+
+  function loadQuagga(){
+    if (window.Quagga) return Promise.resolve();
+    if (quaggaLoadPromise) return quaggaLoadPromise;
+    quaggaLoadPromise = new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js';
+      s.onload = function(){ resolve(); };
+      s.onerror = function(){ reject(new Error('quagga load failed')); };
+      document.head.appendChild(s);
+    });
+    return quaggaLoadPromise;
+  }
+
+  async function startScan(){
+    scanContainer.innerHTML = '<div class="scan-guide"></div>';
+    scanModal.classList.remove('hidden');
+    scanHint.textContent = 'カメラを起動しています…';
+
+    if ('BarcodeDetector' in window){
+      startNativeScan();
+    } else {
+      startQuaggaScan();
+    }
+  }
+
+  async function startNativeScan(){
+    var supported = [];
+    try{ supported = await BarcodeDetector.getSupportedFormats(); }catch(e){}
+    var formats = ['ean_13','ean_8','upc_a','upc_e'].filter(function(f){
+      return supported.length === 0 || supported.indexOf(f) !== -1;
+    });
+    if (formats.length === 0) formats = ['ean_13'];
+
+    var video = document.createElement('video');
+    video.setAttribute('playsinline','');
+    video.muted = true;
+    scanContainer.insertBefore(video, scanContainer.firstChild);
+
+    try{
+      scanStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } }
+      });
+    }catch(err){
+      scanHint.textContent = 'カメラを使用できませんでした（権限をご確認ください）';
+      showToast('カメラへのアクセスが許可されませんでした');
+      return;
+    }
+    video.srcObject = scanStream;
+    await video.play();
+    scanHint.textContent = '本の裏表紙のバーコードをフレーム内に収めてください';
+
+    var detector = new BarcodeDetector({ formats: formats });
+    scanning = true;
+
+    async function loop(){
+      if (!scanning) return;
+      try{
+        var codes = await detector.detect(video);
+        if (codes && codes.length > 0){
+          var value = codes[0].rawValue;
+          if (codes[0].format !== 'ean_13' || isValidEAN13(value)){
+            stopScan();
+            document.getElementById('isbnInput').value = value;
+            searchByIsbn(value);
+            return;
+          }
+        }
+      }catch(e){ /* detection hiccup, keep trying */ }
+      scanLoopId = requestAnimationFrame(loop);
+    }
+    scanLoopId = requestAnimationFrame(loop);
+  }
+
+  async function startQuaggaScan(){
+    try{
+      await loadQuagga();
+    }catch(e){
+      scanHint.textContent = '読み取り機能を読み込めませんでした（通信環境をご確認ください）';
+      showToast('カメラ読み取りを初期化できませんでした。コードを入力してください。');
+      return;
+    }
+    Quagga.init({
+      inputStream: {
+        type: 'LiveStream',
+        target: scanContainer,
+        constraints: { facingMode: 'environment' }
+      },
+      locate: true,
+      decoder: { readers: ['ean_reader'] }
+    }, function(err){
+      if (err){
+        scanHint.textContent = 'カメラを使用できませんでした（権限をご確認ください）';
+        showToast('カメラへのアクセスが許可されませんでした');
+        return;
+      }
+      quaggaRunning = true;
+      Quagga.start();
+      scanHint.textContent = '本の裏表紙のバーコードをフレーム内に収めてください';
+    });
+
+    Quagga.onDetected(function(result){
+      var code = result && result.codeResult && result.codeResult.code;
+      if (code && isValidEAN13(code)){
+        stopScan();
+        document.getElementById('isbnInput').value = code;
+        searchByIsbn(code);
+      }
+    });
+  }
+
+  function stopScan(){
+    scanning = false;
+    if (scanLoopId) cancelAnimationFrame(scanLoopId);
+    scanLoopId = null;
+    if (scanStream){
+      scanStream.getTracks().forEach(function(t){ t.stop(); });
+      scanStream = null;
+    }
+    if (quaggaRunning && window.Quagga){
+      try{ Quagga.offDetected(); Quagga.stop(); }catch(e){}
+      quaggaRunning = false;
+    }
+    scanContainer.innerHTML = '';
+    scanModal.classList.add('hidden');
+  }
+  document.getElementById('viewToggle').addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-view]');
+    if (!btn) return;
+    state.view = btn.dataset.view;
+    [].forEach.call(this.querySelectorAll('button'), function(b){ b.classList.toggle('active', b===btn); });
+    persist(); render();
+  });
+  document.getElementById('sortToggle').addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-sort]');
+    if (!btn) return;
+    state.sort = btn.dataset.sort;
+    [].forEach.call(this.querySelectorAll('button'), function(b){ b.classList.toggle('active', b===btn); });
+    persist(); render();
+  });
+  document.getElementById('addShelfBtn').addEventListener('click', function(){
+    state.shelves.push({ id: 's'+(nextShelfNum++) });
+    persist(); render();
+  });
+
+  // ---------- rendering ----------
+  var bookcaseEl = document.getElementById('bookcase');
+
+  function spineStyle(book){
+    var h1 = hashStr(book.id+'w'), h2 = hashStr(book.id+'h'), h3 = hashStr(book.id+'r'), h4 = hashStr(book.title||book.id);
+    var width = 34 + (h1 % 20);           // 34-53px
+    var height = 176 + (h2 % 34);         // 176-209px
+    var rot = ((h3 % 61) - 30) / 10;      // -3.0 .. 3.0 deg
+    var color = SPINE_COLORS[h4 % SPINE_COLORS.length];
+    return { width: width, height: height, rot: rot, color: color };
+  }
+  function coverStyle(book){
+    var h3 = hashStr(book.id+'rc');
+    var rot = ((h3 % 31) - 15) / 10;      // -1.5 .. 1.5 deg
+    return { rot: rot };
+  }
+
+  function buildBookEl(book, opts){
+    opts = opts || {};
+    var el = document.createElement('div');
+    el.className = 'book';
+    el.dataset.id = book.id;
+    el.tabIndex = 0;
+    el.setAttribute('role','button');
+    el.setAttribute('aria-label', book.title);
+
+    if (state.view === 'spine'){
+      var sp = spineStyle(book);
+      el.classList.add('book--spine');
+      el.style.width = sp.width+'px';
+      el.style.height = sp.height+'px';
+      el.style.background = 'linear-gradient(90deg, rgba(0,0,0,.18), transparent 30%), ' + sp.color;
+      el.style.transform = 'rotate(' + sp.rot + 'deg)';
+      el.style.transformOrigin = 'bottom center';
+      el.style.marginLeft = '-1px';
+      var t = document.createElement('span');
+      t.className = 'book-title';
+      t.textContent = book.title;
+      el.appendChild(t);
+    } else {
+      var cs = coverStyle(book);
+      el.classList.add('book--cover');
+      el.style.transform = 'rotate(' + cs.rot + 'deg)';
+      el.style.transformOrigin = 'bottom center';
+      if (book.cover){
+        el.style.backgroundImage = 'url("'+book.cover+'")';
+      } else {
+        var sp2 = spineStyle(book);
+        el.style.backgroundColor = sp2.color;
+        var fb = document.createElement('div');
+        fb.className = 'cover-fallback';
+        fb.textContent = book.title;
+        el.appendChild(fb);
+      }
+    }
+    if (opts.isNew) el.classList.add('new-item');
+    return el;
+  }
+
+  var newlyAddedId = null;
+
+  function render(highlightId){
+    newlyAddedId = highlightId || null;
+    bookcaseEl.innerHTML = '';
+
+    if (state.sort === 'author'){
+      renderByAuthor();
+    } else {
+      renderFree();
+    }
+
+    if (state.books.length === 0){
+      var hint = document.createElement('div');
+      hint.className = 'empty-hint';
+      hint.textContent = 'JANコード（ISBN）を入力するか、「手動で追加」から本を登録してください。';
+      bookcaseEl.appendChild(hint);
+    }
+  }
+
+  function renderFree(){
+    document.getElementById('addShelfBtn').parentElement.style.display = '';
+    state.shelves.forEach(function(shelf){
+      var block = document.createElement('div');
+      block.className = 'shelf-block';
+      block.dataset.shelfId = shelf.id;
+
+      var controls = document.createElement('div');
+      controls.className = 'shelf-controls';
+      var books = booksOnShelf(shelf.id);
+      if (state.shelves.length > 1 && books.length === 0){
+        var delBtn = document.createElement('button');
+        delBtn.textContent = 'この棚を削除';
+        delBtn.addEventListener('click', function(){
+          state.shelves = state.shelves.filter(function(s){ return s.id !== shelf.id; });
+          persist(); render();
+        });
+        controls.appendChild(delBtn);
+      }
+      block.appendChild(controls);
+
+      var booksWrap = document.createElement('div');
+      booksWrap.className = 'shelf-books' + (books.length===0 ? ' empty' : '');
+      booksWrap.dataset.shelfId = shelf.id;
+      books.forEach(function(book){
+        var el = buildBookEl(book, { isNew: book.id === newlyAddedId });
+        attachBookEvents(el, book);
+        booksWrap.appendChild(el);
+      });
+      block.appendChild(booksWrap);
+
+      var plank = document.createElement('div');
+      plank.className = 'shelf-plank';
+      block.appendChild(plank);
+
+      bookcaseEl.appendChild(block);
+    });
+  }
+
+  function renderByAuthor(){
+    document.getElementById('addShelfBtn').parentElement.style.display = 'none';
+    var groups = {};
+    var order = [];
+    state.books.forEach(function(b){
+      var key = b.author && b.author.trim() ? b.author.trim() : '著者不明';
+      if (!groups[key]){ groups[key] = []; order.push(key); }
+      groups[key].push(b);
+    });
+    order.sort(function(a,b){ return a.localeCompare(b,'ja'); });
+    if (order.length === 0) return;
+
+    order.forEach(function(author){
+      var block = document.createElement('div');
+      block.className = 'shelf-block';
+
+      var plate = document.createElement('div');
+      plate.className = 'author-plate';
+      plate.textContent = author;
+      block.appendChild(plate);
+
+      var booksWrap = document.createElement('div');
+      booksWrap.className = 'shelf-books';
+      groups[author].forEach(function(book){
+        var el = buildBookEl(book, { isNew: book.id === newlyAddedId });
+        el.style.cursor = 'pointer';
+        attachBookEvents(el, book, { draggable: false });
+        booksWrap.appendChild(el);
+      });
+      block.appendChild(booksWrap);
+
+      var plank = document.createElement('div');
+      plank.className = 'shelf-plank';
+      block.appendChild(plank);
+
+      bookcaseEl.appendChild(block);
+    });
+  }
+
+  // ---------- pointer-based drag & drop (touch + mouse) ----------
+  var DRAG_THRESHOLD = 6;
+  function attachBookEvents(el, book, opts){
+    opts = opts || { draggable: true };
+    var dragState = null;
+
+    el.addEventListener('pointerdown', function(e){
+      if (opts.draggable === false) return;
+      if (e.button !== undefined && e.button !== 0) return;
+      var rect = el.getBoundingClientRect();
+      dragState = {
+        pointerId: e.pointerId,
+        startX: e.clientX, startY: e.clientY,
+        offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
+        rect: rect,
+        dragging: false,
+        ghost: null
+      };
+    });
+
+    el.addEventListener('pointermove', function(e){
+      if (!dragState || dragState.pointerId !== e.pointerId) return;
+      var dx = e.clientX - dragState.startX, dy = e.clientY - dragState.startY;
+      if (!dragState.dragging){
+        if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
+        dragState.dragging = true;
+        try{ el.setPointerCapture(e.pointerId); }catch(err){}
+        var ghost = el.cloneNode(true);
+        ghost.classList.add('book-ghost');
+        ghost.style.width = dragState.rect.width + 'px';
+        ghost.style.height = dragState.rect.height + 'px';
+        ghost.style.left = dragState.rect.left + 'px';
+        ghost.style.top = dragState.rect.top + 'px';
+        document.body.appendChild(ghost);
+        dragState.ghost = ghost;
+        el.classList.add('is-dragging');
+      }
+      if (dragState.ghost){
+        dragState.ghost.style.left = (e.clientX - dragState.offsetX) + 'px';
+        dragState.ghost.style.top = (e.clientY - dragState.offsetY) + 'px';
+      }
+      updateDropTarget(book, e.clientX, e.clientY);
+    });
+
+    function finishDrag(e){
+      if (!dragState) return;
+      if (dragState.ghost){ dragState.ghost.remove(); }
+      var wasDragging = dragState.dragging;
+      try{ el.releasePointerCapture(dragState.pointerId); }catch(err){}
+      dragState = null;
+      if (wasDragging){
+        persist();
+        render();
+      } else {
+        openDetail(book);
+      }
+    }
+    el.addEventListener('pointerup', finishDrag);
+    el.addEventListener('pointercancel', finishDrag);
+
+    el.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openDetail(book); }
+    });
+  }
+
+  function updateDropTarget(book, x, y){
+    var shelves = [].slice.call(bookcaseEl.querySelectorAll('.shelf-books'));
+    if (!shelves.length) return;
+    var target = shelves[0];
+    var best = Infinity;
+    shelves.forEach(function(s){
+      var r = s.getBoundingClientRect();
+      var midY = r.top + r.height/2;
+      var d = Math.abs(y - midY);
+      if (y >= r.top - 40 && y <= r.bottom + 40 && d < best){ best = d; target = s; }
+    });
+    var shelfId = target.dataset.shelfId;
+    var siblings = [].slice.call(target.querySelectorAll('.book')).filter(function(b){ return b.dataset.id !== book.id; });
+    var insertBeforeId = null;
+    for (var i=0;i<siblings.length;i++){
+      var r = siblings[i].getBoundingClientRect();
+      if (x < r.left + r.width/2){ insertBeforeId = siblings[i].dataset.id; break; }
+    }
+    var targetOrder;
+    var arr = booksOnShelf(shelfId).filter(function(b){ return b.id !== book.id; });
+    if (insertBeforeId){
+      var idx = arr.findIndex(function(b){ return b.id === insertBeforeId; });
+      var prevOrder = idx > 0 ? arr[idx-1].order : (arr[idx].order - 1);
+      targetOrder = (prevOrder + arr[idx].order) / 2;
+    } else {
+      targetOrder = arr.length ? arr[arr.length-1].order + 1 : 0;
+    }
+    var b = state.books.find(function(bb){ return bb.id === book.id; });
+    if (b.shelfId !== shelfId || b.order !== targetOrder){
+      b.shelfId = shelfId;
+      b.order = targetOrder;
+      render();
+      // re-mark dragging state on new element since render rebuilt DOM
+      var newEl = bookcaseEl.querySelector('.book[data-id="'+book.id+'"]');
+      if (newEl) newEl.classList.add('is-dragging');
+    }
+  }
+
+  // ---------- init ----------
+  (async function init(){
+    await loadState();
+    // reflect loaded toggle states in UI
+    document.querySelectorAll('#viewToggle button').forEach(function(b){
+      b.classList.toggle('active', b.dataset.view === state.view);
+    });
+    document.querySelectorAll('#sortToggle button').forEach(function(b){
+      b.classList.toggle('active', b.dataset.sort === state.sort);
+    });
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
