@@ -551,6 +551,7 @@
     <button class="theme-btn" id="importDataBtn" type="button" style="margin-bottom:16px;">📥 データを復元 (読込)</button>
     <input type="file" id="importFileInput" accept=".json" hidden>
     
+    <button class="theme-btn" id="refetchAllBtn" type="button" style="margin-bottom:8px;">🔄 発売日など情報を一括再取得</button>
     <button class="theme-btn" id="clearHistoryBtn" type="button">🗑 スタンプ・サイン履歴を消去</button>
   </div>
 </div>
@@ -638,6 +639,7 @@
       <p class="meta-line" id="bm-publisher"></p>
       <p class="meta-line" id="bm-pubdate"></p>
       <p class="meta-line" id="bm-isbn"></p>
+      <button class="btn ghost edit-only" id="bm-refetch-btn" type="button" style="margin-top:6px; font-size:12px;">🔄 情報を再取得（発売日など足りない項目だけ埋めます）</button>
     </div>
 
     <div class="field edit-only">
@@ -1899,6 +1901,7 @@
   document.addEventListener('pointerdown', function(e) {
       let freeItemNode = e.target.closest('.free-item');
       if (freeItemNode && !e.target.closest('.resize-handle, .rotate-handle')) {
+          if (!moveMode && !editMode) return; // 閲覧中は何もしない
           e.stopPropagation(); 
           
           if (activeFreeItemNode && activeFreeItemNode !== freeItemNode) {
@@ -1913,23 +1916,26 @@
           activeFreeItemData.z = globalStampZ;
           activeFreeItemNode.style.zIndex = globalStampZ;
 
-          if (freeItemNode.classList.contains('active')) {
-              isDraggingFreeItem = true;
+          if (!moveMode) {
+              // 編集モードのみ：誤タップ防止のためドラッグは始めない。
+              // 指を離した時にタップ扱いにして、編集・削除の確認だけ出す。
+              isDraggingFreeItem = false;
               hasMovedFreeItem = false;
-              let rect = freeItemNode.getBoundingClientRect();
-              dragOffsetX = e.clientX - rect.left;
-              dragOffsetY = e.clientY - rect.top;
-              dragStartX = e.clientX;
-              dragStartY = e.clientY;
-              // ★修正：ドラッグ中はドロップ削除を促すテキストに
-              trashArea.textContent = 'ここにドロップして削除';
-              trashArea.classList.add('show');
-              freeItemNode.setPointerCapture(e.pointerId);
-          } else {
-              freeItemNode.classList.add('active');
-              trashArea.textContent = 'ドラッグ移動・ここにドロップで削除';
-              trashArea.classList.add('show');
+              return;
           }
+
+          // ✥（移動モード）中は、押した瞬間からそのまま掴んで動かせる
+          freeItemNode.classList.add('active');
+          isDraggingFreeItem = true;
+          hasMovedFreeItem = false;
+          let rect = freeItemNode.getBoundingClientRect();
+          dragOffsetX = e.clientX - rect.left;
+          dragOffsetY = e.clientY - rect.top;
+          dragStartX = e.clientX;
+          dragStartY = e.clientY;
+          trashArea.textContent = 'ここにドロップして削除';
+          trashArea.classList.add('show');
+          freeItemNode.setPointerCapture(e.pointerId);
       } else {
           // 背景などを触って解除した時
           if (activeFreeItemNode && !e.target.closest('#trash-area')) {
@@ -2033,6 +2039,33 @@
               }
           }
           isDraggingFreeItem = false;
+      } else if (activeFreeItemNode && !moveMode && editMode) {
+          // 編集モードのみでのタップ：テキストは編集、スタンプは削除確認
+          if (activeFreeItemData && activeFreeItemData.isText) {
+              let next = prompt('テキストを編集（空にすると削除）', activeFreeItemData.title || '');
+              if (next !== null) {
+                  if (!next.trim()) {
+                      state.books = state.books.filter(b => b.id !== activeFreeItemData.id);
+                      if (activeFreeItemNode) activeFreeItemNode.remove();
+                  } else {
+                      activeFreeItemData.title = next.trim();
+                      activeFreeItemData.color = tagColor(activeFreeItemData.title);
+                      let sticker = activeFreeItemNode && activeFreeItemNode.querySelector('.text-sticker');
+                      if (sticker) { sticker.textContent = activeFreeItemData.title; sticker.style.background = activeFreeItemData.color; }
+                  }
+                  persist();
+              }
+          } else if (activeFreeItemData && activeFreeItemData.isStamp) {
+              if (confirm('このスタンプを削除しますか？')) {
+                  state.books = state.books.filter(b => b.id !== activeFreeItemData.id);
+                  if (activeFreeItemNode) activeFreeItemNode.remove();
+                  persist();
+              }
+          }
+          if (activeFreeItemNode) activeFreeItemNode.classList.remove('active');
+          activeFreeItemNode = null;
+          activeFreeItemData = null;
+          trashArea.classList.remove('show');
       }
   });
 
@@ -2368,6 +2401,38 @@
       return resObj;
     }
   }
+
+  // 既存の本のうち、ISBNが分かっているものだけ、足りない情報（発売日など）を
+  // 一括で埋め直す。タイトルや自分で入力したメモ・タグ・状態などは上書きしない。
+  document.getElementById('refetchAllBtn').addEventListener('click', async function(){
+    var targets = state.books.filter(function(b){
+      return !b.isStamp && !b.isText && !b.isSign && b.isbn;
+    });
+    if (!targets.length){
+      showToast('ISBN登録済みの本がありません');
+      return;
+    }
+    if (!confirm(targets.length + '冊の情報を再取得します。時間がかかる場合があります。よろしいですか？')) return;
+    sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
+    var updated = 0;
+    for (var i=0; i<targets.length; i++){
+      var b = targets[i];
+      showToast('情報を再取得中… (' + (i+1) + '/' + targets.length + ')');
+      try{
+        var info = await fetchBookInfo(b.isbn);
+        var changed = false;
+        if (!b.pubdate && info.pubdate){ b.pubdate = info.pubdate; changed = true; }
+        if (!b.cover && info.cover){ b.cover = info.cover; changed = true; }
+        if (!b.description && info.description){ b.description = info.description; changed = true; }
+        if (!b.publisher && info.publisher){ b.publisher = info.publisher; changed = true; }
+        if (changed) updated++;
+      }catch(e){}
+      await new Promise(function(r){ setTimeout(r, 300); }); // API に優しく、少し間隔を空ける
+    }
+    persist(); renderShelf();
+    showToast(updated + '冊の情報を更新しました');
+  });
+
 
   document.getElementById('manualSearchBtn').addEventListener('click', async function(){
     var val = document.getElementById('manualIsbn').value.trim();
