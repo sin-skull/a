@@ -231,7 +231,7 @@ button, input, select, textarea { font-family:'Zen Kaku Gothic New',sans-serif; 
 .bookcase-unit.is-editing-rows .shelf-controls { display:none; }
 .row-corner-btn.add{ left:-10px; top:-10px; background:var(--accent); color:#111; }
 .row-corner-btn.remove{ right:-10px; top:-10px; background:#d32f2f; color:#fff; }
-.row-corner-btn.edit{ left:50%; margin-left:-13px; top:-15px; background:#1e88e5; color:#fff; font-size:13px; }
+.row-corner-btn.edit{ left:50%; margin-left:-13px; top:-10px; background:#1e88e5; color:#fff; font-size:13px; }
 
 /* テキストステッカー */
 .text-sticker{
