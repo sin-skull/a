@@ -180,6 +180,10 @@
     content:''; position:absolute; top:0; bottom:0; width:12px;
     background:linear-gradient(90deg, rgba(0,0,0,.3), rgba(255,255,255,.05) 40%, rgba(0,0,0,.3));
   }
+  @media (orientation:landscape){
+    .cases-row{ padding-left:10px; padding-right:10px; }
+    .bookcase-unit{ width: calc(100vw - 20px); }
+  }
   .bookcase-unit::before{left:0; border-radius:5px 0 0 5px;}
   .bookcase-unit::after{right:0; border-radius:0 5px 5px 0;}
   
@@ -434,8 +438,9 @@
   .search-container { padding: 16px; }
   .scan-mode-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
   .scan-mode-toggle button { flex: 1; padding: 10px; font-size: 14px; }
-  .scan-wrap { position:relative; border-radius:8px; overflow:hidden; background:#000; min-height:180px; margin-bottom: 16px; }
-  .scan-wrap video { width:100% !important; height:auto !important; display:block; max-height:40vh; object-fit:cover; }
+  .scan-wrap { position:relative; border-radius:8px; overflow:hidden; background:#000; height:42vh; max-height:340px; margin-bottom: 16px; }
+  .scan-wrap video { width:100% !important; height:100% !important; display:block; object-fit:cover; }
+  .scan-wrap canvas { position:absolute !important; top:0; left:0; width:100% !important; height:100% !important; object-fit:cover; }
   .scan-guide { position:absolute; left:8%; right:8%; top:42%; height:16%; border:2px solid #00ff00; border-radius:6px; box-shadow:0 0 0 999px rgba(0,0,0,.35); pointer-events:none; }
   .manual-input-wrap { display: flex; gap: 8px; margin-bottom: 16px; }
   .manual-input-wrap input { flex: 1; padding: 10px; font-size: 14px; border-radius: 4px; border: 1px solid var(--accent); color: #222;}
@@ -535,6 +540,7 @@
   </div>
 
   <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">表示サイズ (横に並ぶ数)</div>
+  <p style="padding:0 20px; font-size:11px; opacity:.75; margin:0 0 4px;" id="sizeOrientationLabel">今の画面の向き（縦）に対する設定です。縦・横で別々に持てます。</p>
   <div class="sidebar-settings">
     <label><span>表紙の数:</span><span id="lblCoverCount">4 冊</span></label>
     <input type="range" id="inpCoverCount" min="2" max="8" value="4">
@@ -812,8 +818,10 @@
     cases: [ { id:'c1', rows:1 } ],
     books: [],   
     theme: 'default',
-    coverCount: 4, 
-    spineCount: 12, 
+    coverCount: 4,  // 縦画面での基準値
+    spineCount: 12, // 縦画面での基準値
+    coverCountLandscape: 6, // 横画面専用（縦とは独立）
+    spineCountLandscape: 18,
     tagColors: {}, 
     signHistory: [], 
     shelfSigns: {}, 
@@ -890,6 +898,8 @@
         state.theme = p.theme || 'default';
         state.coverCount = p.coverCount || 4;
         state.spineCount = p.spineCount || 12;
+        state.coverCountLandscape = p.coverCountLandscape || state.coverCount + 2;
+        state.spineCountLandscape = p.spineCountLandscape || state.spineCount + 6;
         state.tagColors = p.tagColors || {};
         state.signHistory = p.signHistory || [];
         state.shelfSigns = p.shelfSigns || {};
@@ -897,6 +907,13 @@
         state.tagHistory = p.tagHistory || []; 
         state.genreHistory = p.genreHistory || []; // ジャンル履歴復元
         state.shelfSizes = p.shelfSizes || {};
+        // 旧形式（{coverCount,spineCount} を直接持つ）は縦向きの設定として移行する
+        Object.keys(state.shelfSizes).forEach(function(k){
+          var entry = state.shelfSizes[k];
+          if (entry && entry.coverCount !== undefined && !entry.portrait && !entry.landscape){
+            state.shelfSizes[k] = { portrait: { coverCount: entry.coverCount, spineCount: entry.spineCount } };
+          }
+        });
         state.autoCenter = (p.autoCenter !== false);
         
         state.books = state.books.filter(function(b){
@@ -924,11 +941,7 @@
     }catch(e){}
     applyTheme(state.theme);
     
-    document.getElementById('inpCoverCount').value = state.coverCount;
-    document.getElementById('lblCoverCount').textContent = state.coverCount + ' 冊';
-    document.getElementById('inpSpineCount').value = state.spineCount;
-    document.getElementById('lblSpineCount').textContent = state.spineCount + ' 冊';
-    
+    refreshGlobalSizeSliders();
     updateBookSizes();
   }
   function persist(){
@@ -939,7 +952,10 @@
   // Reusable: turns a (coverCount, spineCount) pair into actual pixel sizes.
   // Used both for the global default and for any per-row override.
   function computeSizes(coverCount, spineCount){
-    var shelfW = Math.min(window.innerWidth * 0.92, 560) - 24 - 20;
+    // 横画面は本棚が画面いっぱいになる（bookcase-unit の landscape 用CSSと合わせる）
+    var shelfW = isLandscape()
+      ? (window.innerWidth - 20 - 24 - 20)
+      : (Math.min(window.innerWidth * 0.92, 560) - 24 - 20);
     if (shelfW < 200) shelfW = 300;
     var coverW = Math.max(30, Math.floor(shelfW / coverCount));
     var spineW = Math.max(10, Math.floor(shelfW / spineCount));
@@ -947,37 +963,62 @@
     var spineH = coverH;
     return { coverW: coverW, coverH: coverH, spineW: spineW, spineH: spineH, stampW: Math.floor(coverW * 0.7) };
   }
+  // 縦・横で別々の全体デフォルトを持つ
+  function currentGlobalCounts(){
+    return isLandscape()
+      ? { coverCount: state.coverCountLandscape, spineCount: state.spineCountLandscape }
+      : { coverCount: state.coverCount, spineCount: state.spineCount };
+  }
   // A row with no override just follows the global default (from the sidebar
-  // sliders) — that's how "bulk-edit every row that hasn't been customized"
-  // works, with no special-case code needed.
+  // sliders) for whichever orientation is active right now — that's how
+  // "bulk-edit every row that hasn't been customized" works, with no
+  // special-case code needed. Rows can additionally have their own override
+  // per orientation, independent of the other orientation's override.
   function shelfSizeCounts(shelfId){
-    return state.shelfSizes[shelfId] || { coverCount: state.coverCount, spineCount: state.spineCount };
+    var entry = state.shelfSizes[shelfId];
+    var key = isLandscape() ? 'landscape' : 'portrait';
+    if (entry && entry[key]) return entry[key];
+    return currentGlobalCounts();
   }
   function shelfSizesFor(shelfId){
     var c = shelfSizeCounts(shelfId);
     return computeSizes(c.coverCount, c.spineCount);
   }
   function updateBookSizes() {
-    currentSizes = computeSizes(state.coverCount, state.spineCount);
+    var counts = currentGlobalCounts();
+    currentSizes = computeSizes(counts.coverCount, counts.spineCount);
     var styleEl = document.getElementById('dynamicStyles');
     styleEl.textContent = `
       :root { --stamp-w: ${currentSizes.stampW}px; }
       .book--stamp { width: var(--stamp-w); height: var(--stamp-w); }
     `;
   }
+  // サイドバーのスライダーは、今の向き（縦／横）に応じた値を出し入れする
+  function refreshGlobalSizeSliders(){
+    var counts = currentGlobalCounts();
+    document.getElementById('inpCoverCount').value = counts.coverCount;
+    document.getElementById('lblCoverCount').textContent = counts.coverCount + ' 冊';
+    document.getElementById('inpSpineCount').value = counts.spineCount;
+    document.getElementById('lblSpineCount').textContent = counts.spineCount + ' 冊';
+    document.getElementById('sizeOrientationLabel').textContent =
+      '今の画面の向き（' + (isLandscape() ? '横' : '縦') + '）に対する設定です。縦・横で別々に持てます。';
+  }
 
   // ---- ⚙️ 段ごとのサイズ設定モーダル ----
   var rowSizeTarget = null;
   function refreshRowSizeModalUI(){
     var counts = shelfSizeCounts(rowSizeTarget);
-    var isCustom = !!state.shelfSizes[rowSizeTarget];
+    var entry = state.shelfSizes[rowSizeTarget];
+    var key = isLandscape() ? 'landscape' : 'portrait';
+    var isCustom = !!(entry && entry[key]);
     document.getElementById('rowSizeCoverInput').value = counts.coverCount;
     document.getElementById('rowSizeSpineInput').value = counts.spineCount;
     document.getElementById('rowSizeCoverLabel').textContent = counts.coverCount + ' 冊';
     document.getElementById('rowSizeSpineLabel').textContent = counts.spineCount + ' 冊';
-    document.getElementById('rowSizeStatus').textContent = isCustom
+    document.getElementById('rowSizeStatus').textContent = (isCustom
       ? 'この段だけ個別のサイズです（全体設定の変更を受けません）'
-      : '今は全体設定に従っています（動かすとこの段だけ固定されます）';
+      : '今は全体設定に従っています（動かすとこの段だけ固定されます）')
+      + ' ／ 今の向き：' + (isLandscape() ? '横画面' : '縦画面') + '（縦横別々に設定できます）';
     document.getElementById('rowSizeResetBtn').disabled = !isCustom;
   }
   function openRowSizeModal(shelfId){
@@ -987,10 +1028,12 @@
   }
   function setRowSizeOverride(field, value){
     if (!rowSizeTarget) return;
-    var counts = shelfSizeCounts(rowSizeTarget); // current effective values (custom or global)
+    var counts = shelfSizeCounts(rowSizeTarget); // current effective values (custom or global) for this orientation
     var next = { coverCount: counts.coverCount, spineCount: counts.spineCount };
     next[field] = value;
-    state.shelfSizes[rowSizeTarget] = next;
+    var key = isLandscape() ? 'landscape' : 'portrait';
+    if (!state.shelfSizes[rowSizeTarget]) state.shelfSizes[rowSizeTarget] = {};
+    state.shelfSizes[rowSizeTarget][key] = next;
     persist(); renderShelf(); refreshRowSizeModalUI();
   }
   document.getElementById('rowSizeCoverInput').addEventListener('input', function(){
@@ -1001,7 +1044,11 @@
   });
   document.getElementById('rowSizeResetBtn').addEventListener('click', function(){
     if (!rowSizeTarget) return;
-    delete state.shelfSizes[rowSizeTarget];
+    var key = isLandscape() ? 'landscape' : 'portrait';
+    if (state.shelfSizes[rowSizeTarget]){
+      delete state.shelfSizes[rowSizeTarget][key];
+      if (Object.keys(state.shelfSizes[rowSizeTarget]).length === 0) delete state.shelfSizes[rowSizeTarget];
+    }
     persist(); renderShelf(); refreshRowSizeModalUI();
   });
   document.getElementById('rowSizeCloseBtn').addEventListener('click', function(){
@@ -1009,17 +1056,19 @@
   });
 
   document.getElementById('inpCoverCount').addEventListener('input', function(){
-    state.coverCount = parseInt(this.value, 10);
-    document.getElementById('lblCoverCount').textContent = state.coverCount + ' 冊';
+    var v = parseInt(this.value, 10);
+    if (isLandscape()) state.coverCountLandscape = v; else state.coverCount = v;
+    document.getElementById('lblCoverCount').textContent = v + ' 冊';
     updateBookSizes(); renderShelf(); persist();
   });
   document.getElementById('inpSpineCount').addEventListener('input', function(){
-    state.spineCount = parseInt(this.value, 10);
-    document.getElementById('lblSpineCount').textContent = state.spineCount + ' 冊';
+    var v = parseInt(this.value, 10);
+    if (isLandscape()) state.spineCountLandscape = v; else state.spineCount = v;
+    document.getElementById('lblSpineCount').textContent = v + ' 冊';
     updateBookSizes(); renderShelf(); persist();
   });
   window.addEventListener('resize', function(){
-    updateBookSizes(); renderShelf();
+    updateBookSizes(); refreshGlobalSizeSliders(); renderShelf();
   });
 
   // ========== UI制御 ==========
@@ -1039,6 +1088,7 @@
   var sidebarMenu = document.getElementById('sidebarMenu');
   
   document.getElementById('menuBtn').addEventListener('click', function(){
+    refreshGlobalSizeSliders();
     sidebarOverlay.classList.add('open'); sidebarMenu.classList.add('open');
   });
   sidebarOverlay.addEventListener('click', function(){
