@@ -576,7 +576,7 @@
     <button id="toggleFilterBtn" title="本棚内を検索">🔎</button>
     <button id="togglePopBtn" title="サイン・スタンプ表示（タップで4段階切替）">👀</button>
     <button id="toggleMoveBtn" title="本を移動（タップで持ち上げ→タップで置く）">✥</button>
-    <button id="autoCenterBtn" title="段の中身を触らずに5秒経つと中央に自動で戻します">🎯</button>
+    <button id="autoCenterBtn" title="段の中身を触らずに5秒経つと左端に自動で戻します">🎯</button>
     <button id="toggleEditBtn" title="編集モード">✏️</button>
   </div>
   <div class="header-icons" id="searchIcons" style="display:none;">
@@ -1210,8 +1210,8 @@
     var el = e.target;
     if (recenterTimers.has(el)) clearTimeout(recenterTimers.get(el));
     var t = setTimeout(function(){
-      var center = (el.scrollWidth - el.clientWidth) / 2;
-      if (center > 0) el.scrollTo({ left: center, behavior: 'smooth' });
+      // 本は棚の中で常に左詰めなので、戻す先も中央ではなく左端にする
+      el.scrollTo({ left: 0, behavior: 'smooth' });
     }, 5000);
     recenterTimers.set(el, t);
   }, true);
