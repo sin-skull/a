@@ -130,6 +130,8 @@
     padding:8px 12px; background:var(--accent); color:#fff; box-shadow:0 2px 0 rgba(0,0,0,.25);
   }
   .btn.ghost { background:transparent; color:var(--text-main); border:1px solid var(--accent); box-shadow:none; }
+  .filter-chip{ font-size:12px; padding:6px 10px; }
+  .filter-chip.active-filter{ background:var(--accent); color:#111; }
   .btn:active { transform:translateY(1px); }
   .btn.danger-outline { border: 1px solid #d32f2f; color: #d32f2f; }
   
@@ -580,6 +582,16 @@
 
     <div id="filterBar" style="display: none; padding: 10px 16px; background: rgba(0,0,0,0.1); border-bottom: 1px solid var(--accent);">
       <input type="text" id="filterInput" placeholder="タイトル、ジャンル、タグで検索..." style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--accent); background: var(--case-bg); color: var(--text-main); font-size: 14px;">
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; align-items:center;">
+        <button class="btn ghost filter-chip" type="button" data-status="want">欲しい</button>
+        <button class="btn ghost filter-chip" type="button" data-status="owned">購入済み</button>
+        <button class="btn ghost filter-chip" type="button" data-status="reading">読み中</button>
+        <button class="btn ghost filter-chip" type="button" data-status="done">済</button>
+        <select id="filterGenreSelect" style="padding:7px 8px; font-size:12.5px; border-radius:4px; border:1px solid var(--accent); background:var(--case-bg); color:var(--text-main);">
+          <option value="">ジャンル: すべて</option>
+        </select>
+        <button class="btn ghost" type="button" id="filterClearBtn" style="margin-left:auto;">クリア</button>
+      </div>
     </div>
     
     <div class="edit-tools" id="editTools" style="display: none;">
@@ -1136,21 +1148,58 @@
 
   var filterBar = document.getElementById('filterBar');
   var filterInput = document.getElementById('filterInput');
+  var filterGenreSelect = document.getElementById('filterGenreSelect');
   document.getElementById('toggleFilterBtn').addEventListener('click', function(){
     var isHidden = filterBar.style.display === 'none';
     filterBar.style.display = isHidden ? 'block' : 'none';
     this.classList.toggle('active', !isHidden);
     if(isHidden) {
+      refreshGenreFilterOptions();
       filterInput.focus();
     } else {
-      filterInput.value = '';
-      applyFilter();
+      clearAllFilters();
     }
   });
+  document.getElementById('filterClearBtn').addEventListener('click', clearAllFilters);
+  function clearAllFilters(){
+    filterInput.value = '';
+    filterGenreSelect.value = '';
+    document.querySelectorAll('.filter-chip').forEach(function(b){ b.classList.remove('active-filter'); });
+    applyFilter();
+  }
+  document.querySelectorAll('.filter-chip').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      this.classList.toggle('active-filter');
+      applyFilter();
+    });
+  });
+  filterGenreSelect.addEventListener('change', applyFilter);
   filterInput.addEventListener('input', applyFilter);
+  function activeStatusFilters(){
+    return Array.from(document.querySelectorAll('.filter-chip.active-filter')).map(function(b){ return b.dataset.status; });
+  }
+  // Keeps the genre dropdown in sync with genres actually in use, without
+  // losing the current selection if it's still valid.
+  function refreshGenreFilterOptions(){
+    var current = filterGenreSelect.value;
+    var genresInUse = {};
+    state.books.forEach(function(b){
+      if (b.isStamp || b.isText || b.isSign || !b.genres) return;
+      b.genres.forEach(function(g){ genresInUse[g] = true; });
+    });
+    var names = Object.keys(genresInUse).sort(function(a,b){ return a.localeCompare(b,'ja'); });
+    filterGenreSelect.innerHTML = '<option value="">ジャンル: すべて</option>';
+    names.forEach(function(g){
+      var opt = document.createElement('option'); opt.value = g; opt.textContent = g;
+      filterGenreSelect.appendChild(opt);
+    });
+    if (names.indexOf(current) !== -1) filterGenreSelect.value = current;
+  }
   function applyFilter(){
     var q = filterInput.value.trim().toLowerCase();
-    if(!q){
+    var statuses = activeStatusFilters();
+    var genre = filterGenreSelect.value;
+    if(!q && !statuses.length && !genre){
       casesRow.classList.remove('is-filtered');
       casesRow.querySelectorAll('.book').forEach(function(el){ el.classList.remove('matched'); });
       return;
@@ -1162,7 +1211,10 @@
       if(!el) return;
       // ジャンルも検索対象に含める
       var textToSearch = (b.title + ' ' + (b.author||'') + ' ' + (b.genres?b.genres.join(' '):'') + ' ' + (b.tags?b.tags.join(' '):'')).toLowerCase();
-      if(textToSearch.indexOf(q) !== -1){
+      var matchesText = !q || textToSearch.indexOf(q) !== -1;
+      var matchesStatus = !statuses.length || statuses.indexOf(b.status || 'owned') !== -1;
+      var matchesGenre = !genre || (b.genres && b.genres.indexOf(genre) !== -1);
+      if(matchesText && matchesStatus && matchesGenre){
         el.classList.add('matched');
       } else {
         el.classList.remove('matched');
@@ -1759,7 +1811,7 @@
 
     finalizeGrids();
     updateStats(); 
-    if(filterInput.value) applyFilter(); 
+    if (casesRow.classList.contains('is-filtered')) applyFilter(); 
   }
 
   function finalizeGrids(){
