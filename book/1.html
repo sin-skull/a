@@ -2298,6 +2298,20 @@
     });
   }
 
+  // Google Books' anonymous quota is easy to hit (429). A short retry
+  // often succeeds on the second try since these are usually brief bursts.
+  async function fetchJsonWithRetry(url, tries){
+    tries = tries || 2;
+    for (var i=0; i<tries; i++){
+      try{
+        var res = await fetch(url);
+        if (res.ok) return await res.json();
+        if (res.status !== 429) return null; // non-rate-limit error, don't bother retrying
+      }catch(e){}
+      if (i < tries-1) await new Promise(function(r){ setTimeout(r, 600); });
+    }
+    return null;
+  }
   function formatPubdate(raw){
     if (!raw) return '';
     var s = String(raw).trim();
@@ -2324,9 +2338,8 @@
 
       if(!resObj.cover || !resObj.title || !resObj.pubdate){
         try{
-           var gRes = await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn);
-           var gData = await gRes.json();
-           var info = gData.items?.[0]?.volumeInfo;
+           var gData = await fetchJsonWithRetry('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn);
+           var info = gData?.items?.[0]?.volumeInfo;
            if(info){
               if(!resObj.title) resObj.title = info.title;
               if(!resObj.author) resObj.author = info.authors?.join(', ');
@@ -2341,9 +2354,8 @@
       return resObj;
     } else {
       try {
-        var gRes2 = await fetch('https://www.googleapis.com/books/v1/volumes?q=intitle:' + encodeURIComponent(query));
-        var gData2 = await gRes2.json();
-        if(gData2.items && gData2.items.length > 0){
+        var gData2 = await fetchJsonWithRetry('https://www.googleapis.com/books/v1/volumes?q=intitle:' + encodeURIComponent(query));
+        if(gData2?.items && gData2.items.length > 0){
           var info2 = gData2.items[0].volumeInfo;
           resObj.title = info2.title || query;
           resObj.author = info2.authors?.join(', ') || '';
