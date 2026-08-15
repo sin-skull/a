@@ -636,6 +636,7 @@
     <div class="meta-group">
       <p class="meta-line" id="bm-author"></p>
       <p class="meta-line" id="bm-publisher"></p>
+      <p class="meta-line" id="bm-pubdate"></p>
       <p class="meta-line" id="bm-isbn"></p>
     </div>
 
@@ -673,6 +674,13 @@
         <div style="margin-top: 6px;">
           <a id="bm-google-img" href="#" target="_blank" rel="noopener" class="google-img-link">Google画像検索で探す ↗</a>
           <a id="bm-hanmoto-link" href="#" target="_blank" rel="noopener" class="google-img-link" style="margin-left: 12px;">版元ドットコムで開く ↗</a>
+        </div>
+      </div>
+      <div class="field">
+        <label>本の色</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="color" id="bm-spine-color" style="width:44px; padding:2px;">
+          <button class="btn ghost" id="bm-spine-color-reset" type="button">自動に戻す</button>
         </div>
       </div>
       <div class="field">
@@ -738,10 +746,14 @@
 
 <div class="modal hidden" id="signModal">
   <div class="modal-card">
-    <h2 style="margin-top:0; font-size:16px;">サインの文字</h2>
+    <h2 style="margin-top:0; font-size:16px;">サインの文字（空欄でも作れます）</h2>
     <div class="field">
-      <input id="signTextInput" list="signHistoryList" placeholder="例：社会 政治">
+      <input id="signTextInput" list="signHistoryList" placeholder="例：社会 政治（空欄で色帯だけにできます）">
       <datalist id="signHistoryList"></datalist>
+    </div>
+    <div class="field">
+      <label>色</label>
+      <input type="color" id="signColorInput">
     </div>
     <div class="modal-actions">
       <button class="btn ghost" id="signCancelBtn">キャンセル</button>
@@ -815,6 +827,10 @@
   }, true);
 
   var SPINE_COLORS = ['#7b3f3f','#3e5c55','#3a4e6e','#6b5b3e','#4b3b57','#5c6b3e','#7a4b2e','#39424e','#8b5e3c','#4e4b7b'];
+  function defaultSpineColor(book){
+    var authorKey = (book.author && book.author.trim()) ? book.author.trim() : (book.title || book.id);
+    return SPINE_COLORS[hashStr(authorKey) % SPINE_COLORS.length];
+  }
   var TAG_PALETTE = ['#c0392b','#2d6a4f','#5b3a8e','#1f5f9e','#b5651d','#2f6f62','#8e3a5c','#39546e'];
   function tagColor(tag){
     return (state.tagColors && state.tagColors[tag]) || TAG_PALETTE[hashStr(tag) % TAG_PALETTE.length];
@@ -1384,6 +1400,7 @@
     signEditorTarget = shelfId;
     var existing = state.shelfSigns[shelfId];
     document.getElementById('signTextInput').value = existing ? existing.text : '';
+    document.getElementById('signColorInput').value = existing ? existing.color : '#445c42';
     document.getElementById('signDeleteBtn').hidden = !existing;
     refreshSignHistoryList();
     document.getElementById('signModal').classList.remove('hidden');
@@ -1398,10 +1415,12 @@
     document.getElementById('signModal').classList.add('hidden');
   });
   document.getElementById('signSaveBtn').addEventListener('click', function(){
+    // blank text is allowed on purpose — a plain colored band with no
+    // wording is a valid "sign" too
     var text = document.getElementById('signTextInput').value.trim();
-    if (!text) return;
+    var color = document.getElementById('signColorInput').value;
     registerSignHistory(text);
-    state.shelfSigns[signEditorTarget] = { text: text, color: tagColor(text) };
+    state.shelfSigns[signEditorTarget] = { text: text, color: color };
     persist(); renderShelf();
     document.getElementById('signModal').classList.add('hidden');
   });
@@ -1479,8 +1498,7 @@
     el.style.gridColumn = (book.slot + 1);
     if (selectedItem && selectedItem.id === book.id) el.classList.add('book--picked');
 
-    var authorKey = (book.author && book.author.trim()) ? book.author.trim() : (book.title || book.id);
-    var color = SPINE_COLORS[hashStr(authorKey) % SPINE_COLORS.length];
+    var color = book.spineColor || defaultSpineColor(book);
     var sd = statusDef(book.status);
 
     var bgColor = null, bgLabel = null;
@@ -2112,6 +2130,7 @@
 
     document.getElementById('bm-author').textContent = item.author ? '著者: ' + item.author : '著者: （情報なし）';
     document.getElementById('bm-publisher').textContent = item.publisher ? '出版社: ' + item.publisher : '出版社: （情報なし）';
+    document.getElementById('bm-pubdate').textContent = item.pubdate ? '発売日: ' + formatPubdate(item.pubdate) : '発売日: （情報なし）';
     document.getElementById('bm-isbn').textContent = item.isbn ? 'ISBN: ' + item.isbn : 'ISBN: （情報なし）';
 
     document.getElementById('bm-memo').value = item.memo || '';
@@ -2119,12 +2138,25 @@
 
     var statusEl = document.getElementById('bm-status');
     if(statusEl) statusEl.value = item.status || 'owned';
+
+    document.getElementById('bm-spine-color').value = item.spineColor || defaultSpineColor(item);
     
     updateTagSelects(); // ★修正：履歴をセレクトボックスに反映
     
     refreshTagUI(item);
     modal.classList.remove('hidden');
   }
+  document.getElementById('bm-spine-color').addEventListener('input', function(){
+    if (!curItem) return;
+    curItem.spineColor = this.value;
+    persist(); renderShelf();
+  });
+  document.getElementById('bm-spine-color-reset').addEventListener('click', function(){
+    if (!curItem) return;
+    delete curItem.spineColor;
+    persist(); renderShelf();
+    document.getElementById('bm-spine-color').value = defaultSpineColor(curItem);
+  });
 
   function renderDetailTags(item){
     var wrap = document.getElementById('bm-tags'); wrap.innerHTML = '';
@@ -2266,9 +2298,16 @@
     });
   }
 
+  function formatPubdate(raw){
+    if (!raw) return '';
+    var s = String(raw).trim();
+    if (/^\d{8}$/.test(s)) return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);
+    if (/^\d{6}$/.test(s)) return s.slice(0,4)+'-'+s.slice(4,6);
+    return s; // already YYYY-MM-DD / YYYY-MM / YYYY or some other readable form
+  }
   async function fetchBookInfo(query){
     var isIsbn = /^[0-9Xx]+$/.test(query.replace(/-/g,''));
-    var resObj = { title: '', author: '', publisher: '', cover: '', description: '', displayMode: 'cover', size: 'm', tags: [], genres: [], status: 'owned', bgTag: null };
+    var resObj = { title: '', author: '', publisher: '', cover: '', description: '', pubdate: '', displayMode: 'cover', size: 'm', tags: [], genres: [], status: 'owned', bgTag: null };
     
     if (isIsbn) {
       var isbn = query.replace(/-/g,''); resObj.isbn = isbn;
@@ -2279,10 +2318,11 @@
           var s = data[0].summary;
           resObj.title = s.title; resObj.author = (s.author||'').replace(/\/+$/,'');
           resObj.publisher = s.publisher; resObj.cover = s.cover;
+          resObj.pubdate = s.pubdate || '';
         }
       } catch(e) {}
 
-      if(!resObj.cover || !resObj.title){
+      if(!resObj.cover || !resObj.title || !resObj.pubdate){
         try{
            var gRes = await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn);
            var gData = await gRes.json();
@@ -2292,6 +2332,7 @@
               if(!resObj.author) resObj.author = info.authors?.join(', ');
               if(!resObj.cover) resObj.cover = info.imageLinks?.thumbnail?.replace('http:','https:');
               if(!resObj.description) resObj.description = info.description;
+              if(!resObj.pubdate) resObj.pubdate = info.publishedDate || '';
            }
         }catch(e){}
       }
@@ -2309,6 +2350,7 @@
           resObj.publisher = info2.publisher || '';
           resObj.cover = info2.imageLinks?.thumbnail?.replace('http:','https:') || '';
           resObj.description = info2.description || '';
+          resObj.pubdate = info2.publishedDate || '';
         } else resObj.title = query + ' (情報なし)';
       } catch(e) { resObj.title = query; }
       return resObj;
