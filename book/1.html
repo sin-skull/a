@@ -501,6 +501,23 @@
   .graph-bar-track{ flex:1; background:rgba(128,128,128,.2); border-radius:3px; height:14px; position:relative; }
   .graph-bar-fill{ background:var(--accent); height:100%; border-radius:3px; }
   .graph-bar-value{ flex:0 0 auto; font-size:11px; opacity:.85; }
+  .graph-metric-select{
+    width:100%; padding:8px; margin-bottom:14px; border-radius:4px;
+    border:1px solid var(--accent); background:var(--case-bg); color:var(--text-main); font-size:13px;
+  }
+  .graph-section{ margin-bottom:22px; }
+  .graph-section-title{ font-size:12px; font-weight:bold; opacity:.8; margin-bottom:8px; }
+  .pie-wrap{ display:flex; align-items:center; gap:16px; }
+  .pie-circle{ width:120px; height:120px; border-radius:50%; flex:0 0 auto; }
+  .pie-legend{ flex:1; min-width:0; font-size:11.5px; }
+  .pie-legend-row{ display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+  .pie-legend-swatch{ width:10px; height:10px; border-radius:2px; flex:0 0 auto; }
+  .line-chart-svg{ width:100%; height:140px; display:block; }
+  .compare-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .compare-chip{
+    display:inline-flex; align-items:center; gap:5px; font-size:12px; padding:5px 10px;
+    border-radius:12px; color:#fff;
+  }
 
   /* ---------- 設定ビュー ---------- */
   .settings-container { padding: 20px; }
@@ -711,14 +728,30 @@
       </div>
 
       <div id="timerSubGraph" hidden>
-        <div class="scan-mode-toggle" style="margin-bottom:16px;">
+        <div class="scan-mode-toggle" style="margin-bottom:12px;">
           <button class="btn" id="graphModeAvgBtn">平均</button>
           <button class="btn ghost" id="graphModePerBookBtn">本単品</button>
+          <button class="btn ghost" id="graphModeCompareBtn">比較</button>
         </div>
-        <div id="graphAvgPanel"></div>
+
+        <div id="graphAvgPanel">
+          <select id="graphAvgMetricSelect" class="graph-metric-select"></select>
+          <div id="graphAvgCharts"></div>
+        </div>
+
         <div id="graphPerBookPanel" hidden>
-          <select id="graphBookSelect" style="width:100%; padding:8px; margin-bottom:12px; border-radius:4px; border:1px solid var(--accent); background:var(--case-bg); color:var(--text-main);"></select>
+          <select id="graphBookSelect" class="graph-metric-select"></select>
           <div id="graphBookDetail"></div>
+        </div>
+
+        <div id="graphComparePanel" hidden>
+          <div id="compareChips" class="compare-chips"></div>
+          <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <button class="btn ghost" id="compareAddBtn" style="flex:1;">＋ 本を追加</button>
+            <button class="btn ghost" id="compareRemoveBtn" style="flex:1;">－ 追加した順に削除</button>
+          </div>
+          <select id="graphCompareMetricSelect" class="graph-metric-select"></select>
+          <div id="graphCompareCharts"></div>
         </div>
       </div>
 
@@ -1943,62 +1976,207 @@
     });
   }
 
-  // ---- グラフ（平均／本単品） ----
+  // ---- グラフ（平均／本単品／比較） ----
   var graphMode = 'avg';
-  document.getElementById('graphModeAvgBtn').addEventListener('click', function(){
-    graphMode = 'avg';
-    this.classList.remove('ghost'); document.getElementById('graphModePerBookBtn').classList.add('ghost');
-    document.getElementById('graphAvgPanel').hidden = false;
-    document.getElementById('graphPerBookPanel').hidden = true;
-    renderGraphAvg();
-  });
-  document.getElementById('graphModePerBookBtn').addEventListener('click', function(){
-    graphMode = 'perbook';
-    this.classList.remove('ghost'); document.getElementById('graphModeAvgBtn').classList.add('ghost');
-    document.getElementById('graphAvgPanel').hidden = true;
-    document.getElementById('graphPerBookPanel').hidden = false;
-    renderGraphPerBookSelect();
-  });
-  function renderTimerGraph(){
-    if (graphMode === 'avg') renderGraphAvg(); else renderGraphPerBookSelect();
+  var COMPARE_PALETTE = ['#c0392b','#2d6a4f','#5b3a8e','#1f5f9e','#b5651d','#2f6f62'];
+  function switchGraphMode(mode){
+    graphMode = mode;
+    document.getElementById('graphModeAvgBtn').classList.toggle('ghost', mode !== 'avg');
+    document.getElementById('graphModePerBookBtn').classList.toggle('ghost', mode !== 'perbook');
+    document.getElementById('graphModeCompareBtn').classList.toggle('ghost', mode !== 'compare');
+    document.getElementById('graphAvgPanel').hidden = (mode !== 'avg');
+    document.getElementById('graphPerBookPanel').hidden = (mode !== 'perbook');
+    document.getElementById('graphComparePanel').hidden = (mode !== 'compare');
+    renderTimerGraph();
   }
-  function barRow(label, value, maxValue, valueText){
+  document.getElementById('graphModeAvgBtn').addEventListener('click', function(){ switchGraphMode('avg'); });
+  document.getElementById('graphModePerBookBtn').addEventListener('click', function(){ switchGraphMode('perbook'); });
+  document.getElementById('graphModeCompareBtn').addEventListener('click', function(){ switchGraphMode('compare'); });
+  function renderTimerGraph(){
+    if (graphMode === 'avg') renderGraphAvg();
+    else if (graphMode === 'perbook') renderGraphPerBookSelect();
+    else renderGraphCompare();
+  }
+
+  // ---- 汎用チャート部品 ----
+  function barRow(label, value, maxValue, valueText, color){
     var row = document.createElement('div'); row.className = 'graph-bar-row';
     var lab = document.createElement('div'); lab.className = 'graph-bar-label'; lab.textContent = label; lab.title = label;
     var track = document.createElement('div'); track.className = 'graph-bar-track';
     var fill = document.createElement('div'); fill.className = 'graph-bar-fill';
     fill.style.width = (maxValue > 0 ? Math.max(2, (value/maxValue)*100) : 0) + '%';
+    if (color) fill.style.background = color;
     track.appendChild(fill);
     var val = document.createElement('div'); val.className = 'graph-bar-value'; val.textContent = valueText;
     row.appendChild(lab); row.appendChild(track); row.appendChild(val);
     return row;
   }
-  function renderGraphAvg(){
-    var panel = document.getElementById('graphAvgPanel');
-    panel.innerHTML = '';
-    var doneBooks = state.books.filter(function(b){ return !b.isStamp && !b.isText && !b.isSign && b.status === 'done' && b.totalReadingSeconds; });
-    if (!doneBooks.length){
-      panel.innerHTML = '<p class="edit-hint">読了して時間が記録された本がまだありません</p>';
+  // 複数系列を同じトラックに重ねて半透明で表示する棒グラフ（比較用）
+  function overlaidBarTrack(seriesAtThisIndex, maxValue){
+    var track = document.createElement('div'); track.className = 'graph-bar-track';
+    track.style.position = 'relative';
+    seriesAtThisIndex.forEach(function(s){
+      var fill = document.createElement('div');
+      fill.style.position = 'absolute'; fill.style.left = 0; fill.style.top = 0; fill.style.bottom = 0;
+      fill.style.borderRadius = '3px';
+      fill.style.width = (maxValue > 0 ? Math.max(2, (s.value/maxValue)*100) : 0) + '%';
+      fill.style.background = s.color;
+      fill.style.opacity = '0.55';
+      track.appendChild(fill);
+    });
+    return track;
+  }
+  function renderSection(container, title){
+    var sec = document.createElement('div'); sec.className = 'graph-section';
+    var h = document.createElement('div'); h.className = 'graph-section-title'; h.textContent = title;
+    sec.appendChild(h);
+    container.appendChild(sec);
+    return sec;
+  }
+  // 円グラフ：conic-gradientで作る（外部ライブラリ不要）
+  function renderPieChart(container, items){
+    var total = items.reduce(function(s,i){ return s + i.value; }, 0);
+    var wrap = document.createElement('div'); wrap.className = 'pie-wrap';
+    var circle = document.createElement('div'); circle.className = 'pie-circle';
+    if (total <= 0){
+      circle.style.background = 'rgba(128,128,128,.3)';
+    } else {
+      var gradientParts = []; var acc = 0;
+      items.forEach(function(i){
+        var start = (acc/total)*360; acc += i.value; var end = (acc/total)*360;
+        gradientParts.push(i.color + ' ' + start.toFixed(1) + 'deg ' + end.toFixed(1) + 'deg');
+      });
+      circle.style.background = 'conic-gradient(' + gradientParts.join(', ') + ')';
+    }
+    var legend = document.createElement('div'); legend.className = 'pie-legend';
+    items.forEach(function(i){
+      var row = document.createElement('div'); row.className = 'pie-legend-row';
+      var sw = document.createElement('span'); sw.className = 'pie-legend-swatch'; sw.style.background = i.color;
+      var txt = document.createElement('span');
+      var pct = total > 0 ? Math.round((i.value/total)*100) : 0;
+      txt.textContent = i.label + '（' + pct + '%）';
+      row.appendChild(sw); row.appendChild(txt);
+      legend.appendChild(row);
+    });
+    wrap.appendChild(circle); wrap.appendChild(legend);
+    container.appendChild(wrap);
+  }
+  // 折れ線グラフ：SVGのpolylineで作る。series: [{label,color,points:[{x,y}]}] （x,yは0〜1に正規化済み）
+  function renderLineChart(container, series){
+    var W = 300, H = 120, PAD = 8;
+    var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('class', 'line-chart-svg');
+    var hasAny = series.some(function(s){ return s.points.length > 1; });
+    if (!hasAny){
+      container.appendChild(Object.assign(document.createElement('p'), {className:'edit-hint', textContent:'折れ線を描くにはデータが足りません'}));
       return;
     }
-    var totalTime = doneBooks.reduce(function(s,b){ return s + b.totalReadingSeconds; }, 0);
-    var avgTime = totalTime / doneBooks.length;
-    var totalSessions = doneBooks.reduce(function(s,b){ return s + (b.readingSessions?b.readingSessions.length:0); }, 0);
-    var avgSessions = totalSessions / doneBooks.length;
+    series.forEach(function(s){
+      if (s.points.length < 2) return;
+      var pts = s.points.map(function(p){
+        return (PAD + p.x*(W-2*PAD)).toFixed(1) + ',' + (H-PAD - p.y*(H-2*PAD)).toFixed(1);
+      }).join(' ');
+      var poly = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+      poly.setAttribute('points', pts);
+      poly.setAttribute('fill', 'none');
+      poly.setAttribute('stroke', s.color);
+      poly.setAttribute('stroke-width', '2');
+      poly.setAttribute('opacity', s.opacity || '1');
+      svg.appendChild(poly);
+    });
+    container.appendChild(svg);
+    if (series.length > 1){
+      var legend = document.createElement('div'); legend.className = 'pie-legend';
+      series.forEach(function(s){
+        var row = document.createElement('div'); row.className = 'pie-legend-row';
+        var sw = document.createElement('span'); sw.className = 'pie-legend-swatch'; sw.style.background = s.color;
+        var txt = document.createElement('span'); txt.textContent = s.label;
+        row.appendChild(sw); row.appendChild(txt);
+        legend.appendChild(row);
+      });
+      container.appendChild(legend);
+    }
+  }
+  // 本の累積読書時間の推移（セッションを時系列で積み上げ）。x=0〜1はセッション番号の割合、y=0〜1は累積時間の割合
+  function cumulativeSeriesFor(book){
+    var sessions = (book.readingSessions || []).slice().sort(function(a,b){ return new Date(a.end) - new Date(b.end); });
+    if (!sessions.length) return [];
+    var acc = 0; var points = [];
+    sessions.forEach(function(sess, idx){
+      acc += (new Date(sess.end) - new Date(sess.start)) / 1000;
+      points.push({ x: idx/(sessions.length-1 || 1), y: acc, idx: idx });
+    });
+    var maxY = points[points.length-1].y || 1;
+    return points.map(function(p){ return { x: p.x, y: p.y / maxY, seconds: p.y }; });
+  }
+  var METRIC_DEFS = {
+    total: { label: '合計読書時間', get: function(b){ return bookElapsedSeconds(b); }, fmt: formatDuration },
+    sessions: { label: 'セッション数', get: function(b){ return (b.readingSessions||[]).length; }, fmt: function(v){ return v + '回'; } },
+    avgSession: { label: '平均セッション時間', get: function(b){
+      var n = (b.readingSessions||[]).length;
+      return n ? Math.round(bookElapsedSeconds(b)/n) : 0;
+    }, fmt: formatDuration }
+  };
+  function fillMetricSelect(sel){
+    sel.innerHTML = '';
+    Object.keys(METRIC_DEFS).forEach(function(k){
+      var opt = document.createElement('option'); opt.value = k; opt.textContent = METRIC_DEFS[k].label;
+      sel.appendChild(opt);
+    });
+  }
+
+  // ---- 平均ページ ----
+  fillMetricSelect(document.getElementById('graphAvgMetricSelect'));
+  document.getElementById('graphAvgMetricSelect').addEventListener('change', renderGraphAvg);
+  function renderGraphAvg(){
+    var panel = document.getElementById('graphAvgCharts');
+    panel.innerHTML = '';
+    var allBooks = state.books.filter(function(b){ return !b.isStamp && !b.isText && !b.isSign; });
+    var doneBooks = allBooks.filter(function(b){ return b.status === 'done' && b.totalReadingSeconds; });
+    var metricKey = document.getElementById('graphAvgMetricSelect').value || 'total';
+    var metric = METRIC_DEFS[metricKey];
+
+    // 円グラフ：ステータスの内訳（カテゴリ比較なので円グラフが自然）
+    var statusCounts = {};
+    STATUS_DEFS.forEach(function(sd){ statusCounts[sd.key] = 0; });
+    allBooks.forEach(function(b){ statusCounts[b.status || 'owned'] = (statusCounts[b.status || 'owned']||0) + 1; });
+    var pieSec = renderSection(panel, '🥧 ステータスの内訳');
+    renderPieChart(pieSec, STATUS_DEFS.map(function(sd){ return { label: sd.label, value: statusCounts[sd.key], color: sd.color }; }));
+
+    if (!doneBooks.length){
+      panel.appendChild(Object.assign(document.createElement('p'), {className:'edit-hint', textContent:'読了して時間が記録された本がまだないので、時間の棒・線グラフはまだ表示できません'}));
+      return;
+    }
 
     var summary = document.createElement('p'); summary.className = 'edit-hint';
-    summary.style.marginBottom = '14px';
-    summary.textContent = '読了 ' + doneBooks.length + '冊 ／ 平均読了時間 ' + formatDuration(Math.round(avgTime)) + ' ／ 平均セッション数 ' + avgSessions.toFixed(1) + '回';
-    panel.appendChild(summary);
+    var avgVal = doneBooks.reduce(function(s,b){ return s + metric.get(b); }, 0) / doneBooks.length;
+    summary.textContent = '読了 ' + doneBooks.length + '冊 ／ 平均' + metric.label + ' ' + metric.fmt(Math.round(avgVal));
+    panel.insertBefore(summary, pieSec.nextSibling);
 
-    var maxTime = Math.max.apply(null, doneBooks.map(function(b){ return b.totalReadingSeconds; }));
-    doneBooks
-      .slice()
-      .sort(function(a,b){ return b.totalReadingSeconds - a.totalReadingSeconds; })
-      .forEach(function(b){
-        panel.appendChild(barRow(b.title || '無題', b.totalReadingSeconds, maxTime, formatDuration(b.totalReadingSeconds)));
-      });
+    // 棒グラフ：本ごとの指標
+    var barSec = renderSection(panel, '📊 本ごとの' + metric.label);
+    var sorted = doneBooks.slice().sort(function(a,b){ return metric.get(b) - metric.get(a); });
+    var maxVal = Math.max.apply(null, sorted.map(metric.get));
+    sorted.forEach(function(b){
+      barSec.appendChild(barRow(b.title || '無題', metric.get(b), maxVal, metric.fmt(metric.get(b))));
+    });
+
+    // 折れ線グラフ：全体の累積読書時間の推移（読了日順）
+    var lineSec = renderSection(panel, '📈 累積読書時間の推移（読了順）');
+    var sortedByDone = doneBooks.slice().sort(function(a,b){
+      var aEnd = (a.readingSessions||[]).slice(-1)[0], bEnd = (b.readingSessions||[]).slice(-1)[0];
+      return new Date(aEnd?aEnd.end:0) - new Date(bEnd?bEnd.end:0);
+    });
+    var acc = 0; var maxAcc = sortedByDone.reduce(function(s,b){ return s + b.totalReadingSeconds; }, 0) || 1;
+    var points = sortedByDone.map(function(b, idx){
+      acc += b.totalReadingSeconds;
+      return { x: idx/(sortedByDone.length-1 || 1), y: acc/maxAcc };
+    });
+    renderLineChart(lineSec, [{ label:'累積時間', color: '#a87c3f', points: points }]);
   }
+
+  // ---- 本単品ページ ----
   function renderGraphPerBookSelect(){
     var sel = document.getElementById('graphBookSelect');
     var targets = booksWithSessions();
@@ -2029,11 +2207,87 @@
       detail.appendChild(Object.assign(document.createElement('p'), { className:'edit-hint', textContent:'この本のセッション記録はまだありません' }));
       return;
     }
+    var color = tagColor(b.title || b.id);
+
+    var pieSec = renderSection(detail, '🥧 セッションごとの時間配分');
+    renderPieChart(pieSec, sessions.map(function(sess, idx){
+      return { label: (idx+1)+'回目', value: Math.round((new Date(sess.end)-new Date(sess.start))/1000), color: COMPARE_PALETTE[idx % COMPARE_PALETTE.length] };
+    }));
+
+    var barSec = renderSection(detail, '📊 セッションごとの時間');
     var maxDur = Math.max.apply(null, sessions.map(function(s){ return (new Date(s.end)-new Date(s.start))/1000; }));
     sessions.forEach(function(sess, idx){
       var durSec = Math.round((new Date(sess.end) - new Date(sess.start))/1000);
-      detail.appendChild(barRow((idx+1) + '回目 (' + fmtDateTime(sess.start) + ')', durSec, maxDur, formatDuration(durSec)));
+      barSec.appendChild(barRow((idx+1) + '回目 (' + fmtDateTime(sess.start) + ')', durSec, maxDur, formatDuration(durSec), color));
     });
+
+    var lineSec = renderSection(detail, '📈 累積読書時間の推移');
+    renderLineChart(lineSec, [{ label: b.title, color: color, points: cumulativeSeriesFor(b) }]);
+  }
+
+  // ---- 比較ページ ----
+  var compareBookIds = [];
+  document.getElementById('compareAddBtn').addEventListener('click', function(){
+    var candidates = booksWithSessions().filter(function(b){ return compareBookIds.indexOf(b.id) === -1; });
+    if (!candidates.length){ showToast('追加できる本がありません'); return; }
+    if (compareBookIds.length >= 6){ showToast('比較できるのは6冊までです'); return; }
+    var names = candidates.map(function(b, i){ return (i+1) + ': ' + (b.title||'無題'); }).join('\n');
+    var pick = prompt('追加する本の番号を入力してください\n' + names, '1');
+    var idx = parseInt(pick, 10) - 1;
+    if (isNaN(idx) || !candidates[idx]) return;
+    compareBookIds.push(candidates[idx].id);
+    renderGraphCompare();
+  });
+  document.getElementById('compareRemoveBtn').addEventListener('click', function(){
+    if (!compareBookIds.length){ showToast('比較中の本がありません'); return; }
+    compareBookIds.shift(); // 追加した順（最初に追加したもの）から削除
+    renderGraphCompare();
+  });
+  document.getElementById('graphCompareMetricSelect').addEventListener('change', renderGraphCompare);
+  function renderGraphCompare(){
+    fillMetricSelect(document.getElementById('graphCompareMetricSelect'));
+    var chips = document.getElementById('compareChips');
+    chips.innerHTML = '';
+    var books = compareBookIds.map(function(id, i){
+      var b = state.books.find(function(x){ return x.id === id; });
+      return b ? { book: b, color: COMPARE_PALETTE[i % COMPARE_PALETTE.length] } : null;
+    }).filter(Boolean);
+    books.forEach(function(entry){
+      var chip = document.createElement('span'); chip.className = 'compare-chip';
+      chip.style.background = entry.color; chip.textContent = entry.book.title || '無題';
+      chips.appendChild(chip);
+    });
+
+    var charts = document.getElementById('graphCompareCharts');
+    charts.innerHTML = '';
+    if (!books.length){
+      charts.appendChild(Object.assign(document.createElement('p'), {className:'edit-hint', textContent:'「＋ 本を追加」で比較する本を選んでください（読書記録がある本のみ）'}));
+      return;
+    }
+    var metricKey = document.getElementById('graphCompareMetricSelect').value || 'total';
+    var metric = METRIC_DEFS[metricKey];
+
+    // 円グラフ：選んだ本の間での指標の割合
+    var pieSec = renderSection(charts, '🥧 ' + metric.label + 'の割合');
+    renderPieChart(pieSec, books.map(function(e){ return { label: e.book.title||'無題', value: metric.get(e.book), color: e.color }; }));
+
+    // 棒グラフ：指標を重ねて半透明表示
+    var barSec = renderSection(charts, '📊 ' + metric.label + '（重ねて表示）');
+    var maxVal = Math.max.apply(null, books.map(function(e){ return metric.get(e.book); }).concat([1]));
+    var overlayRow = document.createElement('div'); overlayRow.className = 'graph-bar-row';
+    var lab = document.createElement('div'); lab.className = 'graph-bar-label'; lab.textContent = metric.label;
+    var track = overlaidBarTrack(books.map(function(e){ return { value: metric.get(e.book), color: e.color }; }), maxVal);
+    overlayRow.appendChild(lab); overlayRow.appendChild(track);
+    barSec.appendChild(overlayRow);
+    books.forEach(function(e){
+      barSec.appendChild(barRow(e.book.title||'無題', metric.get(e.book), maxVal, metric.fmt(metric.get(e.book)), e.color));
+    });
+
+    // 折れ線グラフ：累積読書時間の推移を重ねて表示
+    var lineSec = renderSection(charts, '📈 累積読書時間の推移（重ねて表示）');
+    renderLineChart(lineSec, books.map(function(e){
+      return { label: e.book.title||'無題', color: e.color, opacity: '0.75', points: cumulativeSeriesFor(e.book) };
+    }));
   }
 
   // ========== 棚のロジック・描画 ==========
