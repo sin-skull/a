@@ -216,6 +216,8 @@
 
   /* 段 */
   .shelf-row-wrap{ position:relative; margin-bottom:14px; display:flex; align-items:stretch; gap:6px; }
+  .row-pair{ display:flex; gap:10px; align-items:flex-end; margin-bottom:14px; }
+  .row-pair .shelf-row-wrap{ flex:1 1 50%; min-width:0; margin-bottom:0; }
   .shelf-row-wrap, .shelf-row-wrap *{
     -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
   }
@@ -568,6 +570,7 @@
     <button id="toggleFilterBtn" title="本棚内を検索">🔎</button>
     <button id="togglePopBtn" title="サイン・スタンプ表示（タップで4段階切替）">👀</button>
     <button id="toggleMoveBtn" title="本を移動（タップで持ち上げ→タップで置く）">✥</button>
+    <button id="autoCenterBtn" title="段の中身を触らずに5秒経つと中央に自動で戻します">🎯</button>
     <button id="toggleEditBtn" title="編集モード">✏️</button>
   </div>
   <div class="header-icons" id="searchIcons" style="display:none;">
@@ -614,6 +617,7 @@
         <button class="btn" id="modeScanBtn">カメラで連続スキャン</button>
         <button class="btn ghost" id="modeInputBtn">手動・タイトル検索</button>
       </div>
+      <button class="btn ghost" id="bulkModeToggleBtn" type="button" style="width:100%; margin-bottom:16px;">🔀 追加分の表示: 表紙</button>
       
       <div id="scanArea">
         <div class="scan-wrap" id="scanContainer"></div>
@@ -816,7 +820,8 @@
     stampHistory: [],
     tagHistory: [], // タグの履歴データ
     genreHistory: [], // ジャンルの履歴データ
-    shelfSizes: {} // shelfId -> {coverCount, spineCount}（未設定の段はサイドバーの全体設定に従う）
+    shelfSizes: {}, // shelfId -> {coverCount, spineCount}（未設定の段はサイドバーの全体設定に従う）
+    autoCenter: true // 段を5秒放置すると中央へ自動で戻すかどうか
   };
   var searchQueue = []; 
   var editMode = false;
@@ -841,6 +846,19 @@
   }, true);
 
   var SPINE_COLORS = ['#7b3f3f','#3e5c55','#3a4e6e','#6b5b3e','#4b3b57','#5c6b3e','#7a4b2e','#39424e','#8b5e3c','#4e4b7b'];
+  function isLandscape(){ return window.innerWidth > window.innerHeight; }
+  // 縦・横で別々の位置を持たせる：横向き専用の座標があればそれを使い、
+  // なければ縦向き（既定）の座標にフォールバックする
+  function getFreeItemPos(fi){
+    if (isLandscape() && fi.xLandscape != null && fi.yLandscape != null){
+      return { x: fi.xLandscape, y: fi.yLandscape };
+    }
+    return { x: fi.x, y: fi.y };
+  }
+  function setFreeItemPos(fi, x, y){
+    if (isLandscape()){ fi.xLandscape = x; fi.yLandscape = y; }
+    else { fi.x = x; fi.y = y; }
+  }
   function defaultSpineColor(book){
     var authorKey = (book.author && book.author.trim()) ? book.author.trim() : (book.title || book.id);
     return SPINE_COLORS[hashStr(authorKey) % SPINE_COLORS.length];
@@ -879,6 +897,7 @@
         state.tagHistory = p.tagHistory || []; 
         state.genreHistory = p.genreHistory || []; // ジャンル履歴復元
         state.shelfSizes = p.shelfSizes || {};
+        state.autoCenter = (p.autoCenter !== false);
         
         state.books = state.books.filter(function(b){
           if (b.isSign){
@@ -1124,6 +1143,29 @@
     renderShelf();
   });
 
+  // 段（棚）を横にスクロールしたまま放っておくと、5秒後に中央へ自動で戻る。
+  // ON/OFFはこのボタンで切り替えられる。
+  var autoCenterEnabled = (state.autoCenter !== false);
+  document.getElementById('autoCenterBtn').classList.toggle('active', autoCenterEnabled);
+  document.getElementById('autoCenterBtn').addEventListener('click', function(){
+    autoCenterEnabled = !autoCenterEnabled;
+    state.autoCenter = autoCenterEnabled;
+    this.classList.toggle('active', autoCenterEnabled);
+    persist();
+  });
+  var recenterTimers = new WeakMap();
+  document.addEventListener('scroll', function(e){
+    if (!e.target.classList || !e.target.classList.contains('shelf-books')) return;
+    if (!autoCenterEnabled) return;
+    var el = e.target;
+    if (recenterTimers.has(el)) clearTimeout(recenterTimers.get(el));
+    var t = setTimeout(function(){
+      var center = (el.scrollWidth - el.clientWidth) / 2;
+      if (center > 0) el.scrollTo({ left: center, behavior: 'smooth' });
+    }, 5000);
+    recenterTimers.set(el, t);
+  }, true);
+
   var popStage = 3; 
   var POP_STAGE_OPACITY = [0.35, 0.6, 0.8, 1];
   function applyPopStage(){
@@ -1358,7 +1400,7 @@
     if (state.stampHistory.length > 24) state.stampHistory.length = 24;
   }
   function addFreeItem(data){
-    var caseId = state.cases[0].id;
+    var caseId = currentCaseId();
     var item = Object.assign({ id: uid(), caseId: caseId, x: 0.08, y: 0.05, rot: 0, z: ++globalStampZ }, data);
     state.books.push(item); persist(); renderShelf();
   }
@@ -1479,15 +1521,21 @@
     document.getElementById('signModal').classList.add('hidden');
   });
 
+  var currentCaseIndex = 0;
   casesRow.addEventListener('scroll', function() {
+    var caseWidth = casesRow.children[0] ? casesRow.children[0].offsetWidth + 30 : 1;
+    currentCaseIndex = Math.max(0, Math.round(casesRow.scrollLeft / caseWidth));
     if(state.cases.length <= 1) return;
     paginationDots.classList.add('show');
-    var caseWidth = casesRow.children[0].offsetWidth + 30; 
-    var index = Math.round(casesRow.scrollLeft / caseWidth);
-    updateDots(index);
+    updateDots(currentCaseIndex);
     clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(function() { paginationDots.classList.remove('show'); }, 1200); 
   });
+  // スタンプ・新しく登録する本は、画面に今見えている本棚（ページ）に追加する
+  function currentCaseId(){
+    var c = state.cases[currentCaseIndex];
+    return (c ? c.id : state.cases[0].id);
+  }
 
   function updateDots(activeIndex) {
     paginationDots.innerHTML = '';
@@ -1618,8 +1666,9 @@
     el.className = 'free-item';
     el.dataset.id = fi.id;
     el.dataset.kind = fi.isStamp ? 'stamp' : 'text';
-    el.style.left = (fi.x * 100) + '%';
-    el.style.top = (fi.y * 100) + '%';
+    var fiPos = getFreeItemPos(fi);
+    el.style.left = (fiPos.x * 100) + '%';
+    el.style.top = (fiPos.y * 100) + '%';
     el.style.width = fi.w + 'px';
     el.style.height = fi.h + 'px';
     el.style.transform = 'rotate(' + (fi.rot || 0) + 'deg)';
@@ -1703,6 +1752,7 @@
         unit.classList.add('is-editing-rows');
       }
 
+      var rowWraps = [];
       for (var r=0; r<c.rows; r++){
         let shelfId = c.id + '_' + r;
         let rowIndex = r;
@@ -1795,7 +1845,25 @@
           attachRowLongPress(unit, block, caseId, rowIndex, addBtn, removeBtn);
         }
 
-        unit.appendChild(rowWrap);
+        rowWraps.push(rowWrap);
+      }
+
+      // 横向きの時だけ、隣り合う2段を横に並べて1段分の見た目にまとめる
+      // （データ上は別々の段のまま — 縦に戻せば自動でそのまま元通り）
+      if (isLandscape() && rowWraps.length > 1){
+        for (var pi=0; pi<rowWraps.length; pi+=2){
+          if (rowWraps[pi+1]){
+            var pair = document.createElement('div');
+            pair.className = 'row-pair';
+            pair.appendChild(rowWraps[pi]);
+            pair.appendChild(rowWraps[pi+1]);
+            unit.appendChild(pair);
+          } else {
+            unit.appendChild(rowWraps[pi]);
+          }
+        }
+      } else {
+        rowWraps.forEach(function(rw){ unit.appendChild(rw); });
       }
 
       var freeItems = state.books.filter(b => b.caseId === c.id && (b.isStamp || b.isText));
@@ -2050,8 +2118,7 @@
                       let relY = (absTop - uRect.top) / uRect.height;
 
                       activeFreeItemData.caseId = unit.dataset.caseId;
-                      activeFreeItemData.x = relX;
-                      activeFreeItemData.y = relY;
+                      setFreeItemPos(activeFreeItemData, relX, relY);
 
                       let freeLayer = unit.querySelector('.free-layer');
                       if (!freeLayer) {
@@ -2358,6 +2425,12 @@
   var scanStream = null;
   var scanning = false;
   
+  var bulkDisplayMode = 'cover'; // これから追加する分（スキャン・検索）の初期表示
+  document.getElementById('bulkModeToggleBtn').addEventListener('click', function(){
+    bulkDisplayMode = (bulkDisplayMode === 'cover') ? 'spine' : 'cover';
+    this.textContent = '🔀 追加分の表示: ' + (bulkDisplayMode === 'cover' ? '表紙' : '背表紙');
+  });
+
   document.getElementById('modeScanBtn').addEventListener('click', function(){
     this.classList.remove('ghost'); document.getElementById('modeInputBtn').classList.add('ghost');
     document.getElementById('scanArea').hidden = false; document.getElementById('inputArea').hidden = true;
@@ -2377,9 +2450,18 @@
       var img = document.createElement('img'); img.src = q.cover || ''; img.onerror = function(){ this.style.display='none'; };
       var info = document.createElement('div'); info.className = 'queue-info';
       info.innerHTML = '<div class="queue-title">'+(q.title||'無題')+'</div><div class="queue-author">'+(q.author||'')+'</div>';
+      var modeBtn = document.createElement('button');
+      modeBtn.className = 'btn ghost';
+      modeBtn.style.cssText = 'font-size:10px; padding:4px 7px; flex:0 0 auto;';
+      modeBtn.textContent = q.displayMode === 'cover' ? '表紙' : '背表紙';
+      modeBtn.title = 'タップでこの本だけ表紙/背表紙を切り替え';
+      modeBtn.addEventListener('click', function(){
+        q.displayMode = (q.displayMode === 'cover') ? 'spine' : 'cover';
+        renderQueue();
+      });
       var del = document.createElement('button'); del.className = 'queue-del'; del.textContent = '×';
       del.onclick = function(){ searchQueue.splice(i,1); renderQueue(); };
-      d.appendChild(img); d.appendChild(info); d.appendChild(del); list.appendChild(d);
+      d.appendChild(img); d.appendChild(info); d.appendChild(modeBtn); d.appendChild(del); list.appendChild(d);
     });
   }
 
@@ -2406,7 +2488,7 @@
   }
   async function fetchBookInfo(query){
     var isIsbn = /^[0-9Xx]+$/.test(query.replace(/-/g,''));
-    var resObj = { title: '', author: '', publisher: '', cover: '', description: '', pubdate: '', displayMode: 'cover', size: 'm', tags: [], genres: [], status: 'owned', bgTag: null };
+    var resObj = { title: '', author: '', publisher: '', cover: '', description: '', pubdate: '', displayMode: bulkDisplayMode, size: 'm', tags: [], genres: [], status: 'owned', bgTag: null };
     
     if (isIsbn) {
       var isbn = query.replace(/-/g,''); resObj.isbn = isbn;
@@ -2498,18 +2580,42 @@
 
   document.getElementById('bulkAddBtn').addEventListener('click', function(){
     if(searchQueue.length === 0) return showToast('追加する本がありません');
-    var sid = state.cases[0].id + '_0'; 
+    var caseId = currentCaseId();
+    var c = state.cases.find(function(x){ return x.id === caseId; });
+    var rowIndex = c.rows - 1; // 今ある最後の段から詰めていく
+    var sid = caseId + '_' + rowIndex;
     searchQueue.forEach(function(q){
+      var counts = shelfSizeCounts(sid);
+      var capacity = (q.displayMode === 'cover') ? counts.coverCount : counts.spineCount;
       var siblings = booksOnShelf(sid);
+      if (siblings.length >= capacity){
+        // この段がいっぱいになったら、新しい段を足して続きをそこに入れる
+        rowIndex++;
+        c.rows = rowIndex + 1;
+        sid = caseId + '_' + rowIndex;
+        siblings = booksOnShelf(sid);
+      }
       var b = Object.assign({}, q, { id:uid(), shelfId:sid, slot: siblings.length });
       state.books.push(b);
     });
     persist(); searchQueue = []; renderQueue(); showToast('本棚に追加しました！');
+    renderShelf();
     document.querySelector('.nav-btn[data-target="view-bookshelf"]').click();
   });
 
   // ---------- カメラ ----------
   var lastScanned = '';
+  var lastScannedTime = 0;
+  function isValidEAN13(code){
+    if (!/^\d{13}$/.test(code)) return false;
+    var sum = 0;
+    for (var i=0;i<12;i++){
+      var d = parseInt(code[i],10);
+      sum += (i % 2 === 0) ? d : d*3;
+    }
+    var check = (10 - (sum % 10)) % 10;
+    return check === parseInt(code[12],10);
+  }
   function startScan(){
     if(scanning) return;
     scanning = true; lastScanned = '';
@@ -2522,12 +2628,16 @@
     });
     Quagga.onDetected(async function(res){
       var code = res.codeResult.code;
-      if(code !== lastScanned && /^978/.test(code)){
-        lastScanned = code; showToast(code + ' 読取完了');
-        var info = await fetchBookInfo(code);
-        searchQueue.push(info); renderQueue();
-        setTimeout(()=> { lastScanned = ''; }, 3000); 
-      }
+      // 本のJANコードらしい形（978から始まる13桁）かつチェックデジットが正しい
+      // ものだけ拾う。もう一方のバーコード（価格コードなど）の誤読みを防ぐため。
+      if (!/^978\d{10}$/.test(code) || !isValidEAN13(code)) return;
+      var now = Date.now();
+      // 同じコードは5秒以内なら無視、5秒経てば同じ本でも再度読み取れる
+      if (code === lastScanned && (now - lastScannedTime) < 5000) return;
+      lastScanned = code; lastScannedTime = now;
+      showToast(code + ' 読取完了');
+      var info = await fetchBookInfo(code);
+      searchQueue.push(info); renderQueue();
     });
   }
   function stopScan(){ if(scanning) { Quagga.stop(); scanning = false; } }
