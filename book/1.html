@@ -79,7 +79,7 @@
       <button class="btn ghost" id="stampMenuBtn" title="スタンプ追加">☻</button>
       <button class="btn ghost" id="addCaseBtnHeader" title="本棚を追加">＋</button>
       <input type="file" id="stampFileInput" accept="image/*" hidden>
-      <p class="edit-hint">段を長押しで全ての段に＋／✐／×が表示されます（段を全部消すとその本棚ごと消えます）／左の≡をタップしてから別の段の≡をタップで入れ替え</p>
+      <p class="edit-hint">いつでも段を長押しすれば全ての段に＋／⚙️（サイズ個別設定）／×が表示されます</p>
     </div>
 
     <div class="cases-row" id="casesRow"></div>
@@ -223,6 +223,7 @@
   </div>
 </div>
 
+<!-- 段の個別設定用モーダル -->
 <div class="modal hidden" id="rowSettingsModal">
   <div class="modal-card">
     <h2 style="margin-top:0; font-size:16px;">段の個別サイズ設定</h2>
@@ -247,9 +248,8 @@
 <!-- 動的に生成するCSS変数用のstyleタグ -->
 <style id="dynamicStyles"></style>
 
-<!-- 外部ライブラリ -->
+<!-- 外部ライブラリとスクリプト -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-<!-- 分割したJSファイル -->
 <script src="script.js"></script>
 </body>
 </html>
