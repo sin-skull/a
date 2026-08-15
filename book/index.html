@@ -7,926 +7,2276 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --wood-dark:#241609;
-    --wood-mid:#5c3a21;
-    --wood-light:#8a5a34;
-    --paper:#ede3d0;
-    --paper-dim:#ddd0b6;
-    --ink:#241c14;
-    --brass:#a87c3f;
-    --brass-light:#c99a5b;
-    --moss:#445c42;
-    --danger:#7b3f3f;
+  /* ---------- テーマ変数 ---------- */
+  :root {
+    --bg-color: linear-gradient(180deg,#150d06,#1c1108 40%,#120b05);
+    --case-bg: linear-gradient(180deg,#3c2716,#1a110a 92%);
+    --plank-top: #8a5a34;
+    --plank-front: #4a2e1b;
+    --text-main: #ede3d0;
+    --text-dim: #a08a63;
+    --accent: #a87c3f;
+    --header-bg: #241c14;
+    --modal-bg: #ede3d0;
+    --modal-text: #241c14;
+    --tag-bg: #445c42; 
   }
+  [data-theme="white"] {
+    --bg-color: #f0f0f0;
+    --case-bg: linear-gradient(180deg, #ffffff, #f9f9f9);
+    --plank-top: #e8e8e8;
+    --plank-front: #cccccc;
+    --text-main: #333333;
+    --text-dim: #777777;
+    --accent: #888888;
+    --header-bg: #ffffff;
+    --modal-bg: #ffffff;
+    --modal-text: #333333;
+    --tag-bg: #666666;
+  }
+  [data-theme="black"] {
+    --bg-color: #0a0a0a;
+    --case-bg: linear-gradient(180deg, #222222, #111111);
+    --plank-top: #333333;
+    --plank-front: #151515;
+    --text-main: #e0e0e0;
+    --text-dim: #888888;
+    --accent: #555555;
+    --header-bg: #1a1a1a;
+    --modal-bg: #222222;
+    --modal-text: #e0e0e0;
+    --tag-bg: #444444;
+  }
+
+  /* ---------- ベース ---------- */
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+  html,body{margin:0;padding:0; min-height: 100vh;}
   body{
-    background:
-      repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 6px),
-      linear-gradient(180deg,#1b1108,#241609 40%,#1b1108);
-    min-height:100vh;
+    background: var(--bg-color);
     font-family:'Zen Kaku Gothic New', sans-serif;
-    color:var(--paper);
+    color:var(--text-main);
     -webkit-tap-highlight-color:transparent;
   }
-  #app{max-width:1040px;margin:0 auto;padding:14px 12px 60px;}
+  #app{max-width:1200px;margin:0 auto;}
 
-  /* ---------- toolbar ---------- */
-  .toolbar{
-    background:var(--paper);
-    color:var(--ink);
-    border:1px solid var(--brass);
-    border-radius:6px;
-    padding:12px 14px;
-    box-shadow:0 8px 18px -8px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.25);
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px 16px;
-    align-items:center;
-    margin-bottom:22px;
-  }
-  .toolbar h1{
-    font-family:'Shippori Mincho',serif;
-    font-weight:800;
-    font-size:20px;
-    margin:0 8px 0 0;
-    letter-spacing:.05em;
-    flex:0 0 auto;
-  }
-  .search-row{display:flex;gap:6px;align-items:center;flex:1 1 260px;min-width:0;}
-  .search-row input{
-    flex:1 1 auto;min-width:0;
-    font-family:'Zen Kaku Gothic New',sans-serif;
-    font-size:14px;padding:8px 10px;
-    border:1px solid var(--brass);border-radius:4px;
-    background:#fbf7ee;color:var(--ink);
-  }
-  .search-row input:focus-visible, button:focus-visible, .book:focus-visible{
-    outline:2px solid var(--moss);outline-offset:2px;
-  }
-  button{
-    font-family:'Zen Kaku Gothic New',sans-serif;
-    cursor:pointer;border:none;border-radius:4px;
-    font-size:13px;font-weight:700;
-    padding:8px 12px;
-    background:var(--wood-mid);color:var(--paper);
-    box-shadow:0 2px 0 rgba(0,0,0,.25);
-    transition:transform .08s ease;
-  }
-  button:active{transform:translateY(1px);}
-  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--brass);box-shadow:none;}
-  button:disabled{opacity:.5;cursor:default;}
-  .toggle-group{display:flex;border:1px solid var(--brass);border-radius:20px;overflow:hidden;flex:0 0 auto;}
-  .toggle-group button{
-    background:transparent;color:var(--ink);box-shadow:none;border-radius:0;
-    padding:6px 12px;font-size:12px;
-  }
-  .toggle-group button.active{background:var(--moss);color:var(--paper);}
-  .toolbar-label{font-size:11px;color:#6b5b45;margin-right:-8px;}
-  .spinner{
-    width:14px;height:14px;border-radius:50%;
-    border:2px solid rgba(36,28,20,.25);border-top-color:var(--ink);
-    animation:spin .7s linear infinite;display:inline-block;vertical-align:-2px;
-  }
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .status-msg{font-size:12px;color:var(--danger);flex-basis:100%;}
+  .view { display: none; position: relative; }
+  .view.active { display: block; }
 
-  /* ---------- bookcase ---------- */
-  .bookcase{display:flex;flex-direction:column;gap:0;}
-  .shelf-block{position:relative;margin-bottom:34px;}
-  .author-plate{
-    position:absolute;left:2px;top:-15px;z-index:3;
-    background:linear-gradient(180deg,var(--brass-light),var(--brass));
-    color:#2b1b0c;font-family:'Shippori Mincho',serif;font-weight:800;
-    font-size:13px;padding:4px 12px 4px 16px;
-    clip-path:polygon(0 50%,10px 0,100% 0,100% 100%,10px 100%);
-    box-shadow:0 3px 6px rgba(0,0,0,.5);
-    transform:rotate(-1.5deg);
+  /* ---------- ヘッダー ---------- */
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px;
+    background: var(--header-bg);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    position: sticky; top: 0; z-index: 100;
   }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  header h1 {
+    font-family:'Shippori Mincho',serif; font-weight:800; font-size:18px; margin:0;
+    letter-spacing:.05em; color: var(--text-main);
+  }
+  .icon-btn {
+    background: transparent; border: none; font-size: 24px; padding: 0 4px;
+    color: var(--text-main); cursor: pointer; display: flex; align-items: center;
+  }
+  .header-icons { display: flex; gap: 6px; }
+  .header-icons button {
+    background: transparent; border: none; font-size: 20px; padding: 4px 8px;
+    color: var(--text-main); cursor: pointer; opacity: 0.8; box-shadow: none;
+  }
+  .header-icons button.active { opacity: 1; filter: drop-shadow(0 0 4px var(--accent)); }
+  #togglePopBtn{ position:relative; transition:opacity .15s ease; }
+  #togglePopBtn.pop-all-hidden::after{
+    content:''; position:absolute; left:2px; right:2px; top:50%;
+    height:2px; background:#ff5555; transform:rotate(-35deg);
+  }
+
+  /* ---------- サイドバーメニュー ---------- */
+  .sidebar-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6); z-index: 2000;
+    transition: opacity 0.3s;
+  }
+  .sidebar-menu {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 280px;
+    background: var(--modal-bg); color: var(--modal-text);
+    z-index: 2001; transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 16px rgba(0,0,0,0.5);
+    overflow-y: auto;
+  }
+  .sidebar-menu.open { transform: translateX(0); }
+  .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+  .sidebar-overlay:not(.open) { opacity: 0; pointer-events: none; }
+  
+  .sidebar-header { padding: 24px 20px; font-size: 18px; font-weight: bold; border-bottom: 1px solid var(--accent); }
+  .nav-btn {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 16px 20px;
+    background: transparent; border: none; border-bottom: 1px solid rgba(128,128,128,0.2);
+    font-size: 15px; color: var(--modal-text); cursor: pointer; font-family: inherit;
+  }
+  .nav-btn:hover { background: rgba(128,128,128,0.1); }
+  .nav-btn.active { color: var(--accent); font-weight: bold; }
+  
+  /* サイドバー内のスライダー設定群 */
+  .sidebar-settings { padding: 16px 20px; border-bottom: 1px solid rgba(128,128,128,0.2); }
+  .sidebar-settings label { font-size: 13px; display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .sidebar-settings input[type="range"] { width: 100%; margin-bottom: 16px; accent-color: var(--accent); }
+
+  /* ---------- 汎用ボタン ---------- */
+  button, input, select, textarea { font-family:'Zen Kaku Gothic New',sans-serif; }
+  .btn {
+    cursor:pointer; border:none; border-radius:4px; font-size:13px; font-weight:700;
+    padding:8px 12px; background:var(--accent); color:#fff; box-shadow:0 2px 0 rgba(0,0,0,.25);
+  }
+  .btn.ghost { background:transparent; color:var(--text-main); border:1px solid var(--accent); box-shadow:none; }
+  .btn:active { transform:translateY(1px); }
+  .btn.danger-outline { border: 1px solid #d32f2f; color: #d32f2f; }
+  
+  /* ---------- 編集ツールバー ---------- */
+  .edit-tools {
+    padding: 10px 16px; background: rgba(0,0,0,0.15);
+    display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--accent);
+  }
+  .edit-hint{ flex-basis:100%; font-size:11px; opacity:.75; margin:2px 0 0; }
+  .stamp-menu-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .stamp-history-list{ max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .stamp-history-row{ display:flex; align-items:center; gap:8px; text-align:left; width:100%; }
+  .stamp-history-row img{ width:28px; height:28px; object-fit:cover; border-radius:3px; }
+
+  /* ---------- 本棚・立体感 ---------- */
+  .cases-row{
+    display:flex; gap:30px; align-items:flex-start;
+    overflow-x:auto; 
+    padding: 20px calc(50% - min(46vw, 280px)) 60px; 
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cases-row.is-dragging-container { scroll-snap-type: none; scroll-behavior: auto; }
+  
+  .cases-row::-webkit-scrollbar { display: none; }
+  .cases-row { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* 検索絞り込み時のスタイル */
+  .cases-row.is-filtered .book:not(.matched) {
+    opacity: 0.15;
+    pointer-events: none;
+    filter: grayscale(80%);
+  }
+  .cases-row.is-filtered .book.matched {
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.8), inset 0 0 0 2px rgba(255, 215, 0, 1);
+  }
+
+  .bookcase-unit{
+    flex:0 0 auto; width:min(92vw,560px); position:relative;
+    background: var(--case-bg); border-radius:5px; padding:16px 12px 12px;
+    box-shadow: 0 20px 40px -18px rgba(0,0,0,.85), inset 0 0 0 1px rgba(0,0,0,.5);
+    scroll-snap-align: center;
+  }
+  .bookcase-unit::before, .bookcase-unit::after{
+    content:''; position:absolute; top:0; bottom:0; width:12px;
+    background:linear-gradient(90deg, rgba(0,0,0,.3), rgba(255,255,255,.05) 40%, rgba(0,0,0,.3));
+  }
+  .bookcase-unit::before{left:0; border-radius:5px 0 0 5px;}
+  .bookcase-unit::after{right:0; border-radius:0 5px 5px 0;}
+  
+  .shelf-block{position:relative; margin-bottom:14px;}
   .shelf-books{
-    display:flex;align-items:flex-end;gap:0;
-    min-height:190px;
-    padding:14px 10px 0;
-    overflow-x:auto;overflow-y:visible;
-    scrollbar-width:thin;scrollbar-color:var(--brass) transparent;
-    touch-action:pan-x;
+    display:grid; grid-auto-rows:auto; align-items:flex-end; gap:0;
+    padding:18px 10px 0; position:relative;
+    box-shadow: inset 0 -20px 20px -20px rgba(0,0,0,0.7);
+    overflow-x:auto; overflow-y:hidden;
+    scrollbar-width:thin; scrollbar-color:var(--accent) transparent;
   }
-  .shelf-books::-webkit-scrollbar{height:6px;}
-  .shelf-books::-webkit-scrollbar-thumb{background:var(--brass);border-radius:3px;}
+  .book{ justify-self:start; }
+  .slot-preview{ align-self:stretch; }
   .shelf-books.empty::after{
-    content:'まだ本がありません';
-    color:#a08a63;font-size:13px;padding:0 6px 20px;
+    content:'まだ本がありません'; color:var(--text-dim); font-size:13px; padding:0 6px 20px;
   }
+  
+  /* 棚板 */
   .shelf-plank{
-    height:20px;position:relative;z-index:2;
-    background:linear-gradient(180deg,var(--wood-light),var(--wood-mid) 45%,var(--wood-dark));
-    border-radius:2px;
-    box-shadow:0 10px 14px -6px rgba(0,0,0,.7), inset 0 2px 0 rgba(255,255,255,.18);
+    height: 14px; position:relative; z-index:2;
+    background: linear-gradient(180deg, var(--plank-top) 0%, var(--plank-top) 40%, var(--plank-front) 40%, var(--plank-front) 100%);
+    border-radius:2px; box-shadow:0 10px 14px -6px rgba(0,0,0,.7);
   }
-  .shelf-plank::after{
-    content:'';position:absolute;inset:0;
-    background:repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 1px, transparent 1px 14px);
-    mix-blend-mode:multiply;
-  }
-  .shelf-controls{
-    position:absolute;right:6px;top:-15px;z-index:3;display:flex;gap:4px;
-  }
-  .shelf-controls button{
-    font-size:11px;padding:4px 8px;background:rgba(36,22,9,.7);color:var(--paper-dim);
-    border:1px solid var(--brass);
-  }
-  .add-shelf-wrap{display:flex;justify-content:center;margin-top:6px;}
+  .shelf-controls{ position:absolute; right:2px; top:-6px; z-index:4; display:flex; gap:4px; }
+  .shelf-controls button{ font-size:10px; padding:3px 6px; background:rgba(0,0,0,.6); color:#fff; border:1px solid var(--accent); border-radius:4px; }
 
-  /* ---------- book ---------- */
+  /* 大きな帯サイン */
+  .sign-bar{
+    width:100%; padding:12px 16px; margin-bottom:8px;
+    color:#fff; font-weight:800; font-family:'Shippori Mincho',serif; font-size:20px;
+    text-align:center; border-radius:4px; box-shadow:0 6px 14px rgba(0,0,0,.5);
+    box-sizing:border-box; cursor:pointer;
+  }
+
+  /* 段 */
+  .shelf-row-wrap{ position:relative; margin-bottom:14px; display:flex; align-items:stretch; gap:6px; }
+  .shelf-row-wrap, .shelf-row-wrap *{
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  }
+  .shelf-row-wrap .shelf-block{ flex:1 1 auto; margin-bottom:0; min-width:0; }
+  .row-reorder-handle{
+    flex:0 0 auto; width:28px; align-self:stretch;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.08); border:1px solid var(--accent); border-radius:4px;
+    color:var(--text-main); font-size:16px; cursor:pointer;
+  }
+  .row-reorder-handle.reorder-source{ background:var(--accent); color:#111; }
+  
+  .row-corner-btn{
+    position:absolute; top:-10px; width:26px; height:26px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800;
+    box-shadow:0 3px 8px rgba(0,0,0,.5); z-index:20;
+    opacity:0; pointer-events:none; transform:scale(.6);
+    transition:opacity .15s ease, transform .15s ease;
+  }
+  
+  .bookcase-unit.is-editing-rows .row-corner-btn { opacity:1; pointer-events:auto; transform:scale(1); }
+  .bookcase-unit.is-editing-rows .shelf-controls { display:none; }
+  .row-corner-btn.add{ left:-10px; background:var(--accent); color:#111; }
+  .row-corner-btn.remove{ right:-10px; background:#d32f2f; color:#fff; }
+
+  /* テキストステッカー */
+  .text-sticker{
+    width:100%; height:100%; box-sizing:border-box;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:700; font-size:13px; text-align:center;
+    border-radius:4px; box-shadow:0 4px 10px rgba(0,0,0,.5);
+    padding:2px 8px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  }
+
+  /* ---------- 自由配置レイヤー（サイン・スタンプ） ---------- */
+  .free-layer{ position:absolute; inset:0; pointer-events:none; z-index:15; }
+  .free-item{
+    position:absolute; pointer-events:auto; cursor:pointer;
+    transform-origin:center center; touch-action:pan-y;
+    transition: outline-color .15s ease, transform .18s ease;
+  }
+  .free-item.active {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    transform: scale(1.1);
+    outline: 2px dashed #007bff;
+    outline-offset: 4px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 5px;
+    touch-action: none;
+  }
+
+  .sign-banner{
+    width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:800; font-family:'Shippori Mincho',serif;
+    border-radius:4px; box-shadow:0 6px 14px rgba(0,0,0,.5);
+    padding:2px 10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    font-size:15px; line-height:1.1; box-sizing:border-box;
+  }
+  .free-item img{ width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 4px 6px rgba(0,0,0,.6)); display:block; }
+  .resize-handle{
+    position:absolute; right:-9px; bottom:-9px; width:18px; height:18px;
+    background:var(--accent); border:2px solid #fff; border-radius:50%;
+    cursor:nwse-resize; touch-action:none; z-index:2;
+  }
+  .rotate-handle{
+    position:absolute; left:50%; top:-28px; width:16px; height:16px;
+    background:#fff; border:2px solid var(--accent); border-radius:50%;
+    cursor:grab; transform:translateX(-50%); touch-action:none; z-index:2;
+  }
+  .rotate-handle::after{
+    content:''; position:absolute; left:50%; top:100%; width:2px; height:14px;
+    background:var(--accent); transform:translateX(-50%);
+  }
+
+  /* ---------- 本・スタンプ・タグ・状態マーカー ---------- */
   .book{
-    position:relative;flex:0 0 auto;cursor:grab;user-select:none;touch-action:none;
-    display:flex;align-items:center;justify-content:center;text-align:center;
-    box-shadow:0 3px 6px rgba(0,0,0,.45), inset -3px 0 6px rgba(0,0,0,.35), inset 2px 0 0 rgba(255,255,255,.12);
-    border-radius:1px 3px 3px 1px;
-    transition:box-shadow .15s ease;
+    position:relative; flex:0 0 auto; cursor:pointer; user-select:none; touch-action:pan-x;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    box-shadow:0 3px 6px rgba(0,0,0,.45), inset -2px 0 4px rgba(0,0,0,.3), inset 1px 0 0 rgba(255,255,255,.1);
+    border-radius:1px 3px 3px 1px; z-index: 3;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
   }
-  .book.is-dragging{opacity:.2;}
-  .book.new-item{animation:pop .35s ease;}
-  @keyframes pop{from{transform:scale(.85) translateY(6px);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .book.is-dragging{opacity:.4; transform: scale(1.05);}
+  .book--picked{
+    transform: translateY(-12px) scale(1.04);
+    box-shadow: 0 16px 20px -4px rgba(0,0,0,.6), inset -2px 0 4px rgba(0,0,0,.3), inset 1px 0 0 rgba(255,255,255,.1);
+    z-index: 20;
+  }
+  .shelf-books.move-target{ cursor: copy; }
+  
+  .book-tag-badge {
+    position: absolute; top: -6px; left: -6px;
+    color: #fff;
+    font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10; pointer-events: none;
+    white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis;
+  }
+  .book-bg-strip {
+    position: absolute; left: 0; right: 0; top: -14px; height: 14px;
+    border-radius: 2px 2px 0 0; z-index: 7;
+    box-shadow: 0 -1px 2px rgba(0,0,0,0.35);
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .book-bg-strip.match-prev {
+    border-top-left-radius: 0;
+    left: -1px;
+  }
+  .book-bg-strip.match-next {
+    border-top-right-radius: 0;
+    right: -1px;
+  }
+  .book-bg-strip.match-prev span {
+    display: none;
+  }
+
+  .book-bg-strip span{
+    color:#fff; font-size:8px; font-weight:bold; line-height:1;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    max-width:100%; padding:0 2px;
+  }
+
+  .book--spine .status-dot{
+    position:absolute; bottom:5px; left:50%; transform:translateX(-50%);
+    width:7px; height:7px; border-radius:50%; box-shadow:0 0 0 1px rgba(0,0,0,.4);
+  }
+  .status-flag{
+    position:absolute; top:0; right:0; width:0; height:0;
+    border-style:solid; border-width:0 22px 22px 0;
+    border-color:transparent currentColor transparent transparent;
+    pointer-events:none; filter:drop-shadow(0 1px 2px rgba(0,0,0,.5)); z-index: 5;
+  }
+  .memo-badge{
+    position:absolute; pointer-events:none; width:16px; height:16px; border-radius:50%;
+    background:var(--modal-bg); color:var(--modal-text); font-size:10px; line-height:16px; text-align:center;
+    box-shadow:0 1px 3px rgba(0,0,0,.5); z-index: 6;
+  }
+  .book--spine .memo-badge{ top:4px; left:50%; transform:translateX(-50%); }
+  .book--cover .memo-badge{ bottom:4px; left:4px; }
+
+  /* 背表紙：はみ出しを確実に防止する設定 */
   .book--spine{
-    writing-mode:vertical-rl;text-orientation:mixed;
-    font-family:'Shippori Mincho',serif;font-weight:600;
-    font-size:12.5px;line-height:1.4;letter-spacing:.03em;
-    padding:10px 4px;color:rgba(255,250,238,.94);
-    text-shadow:0 1px 1px rgba(0,0,0,.4);
-    overflow:hidden;
+    writing-mode:vertical-rl; text-orientation:mixed;
+    font-family:'Shippori Mincho',serif; font-weight:600; font-size:12.5px; line-height:1.4;
+    padding:8px 4px; color:rgba(255,250,238,.94); text-shadow:0 1px 1px rgba(0,0,0,.4);
+    align-items: flex-start;
+    justify-content: flex-start;
   }
-  .book--spine .book-title{max-height:100%;overflow:hidden;}
-  .book--cover{
-    width:104px;height:156px;margin:0 3px;
-    background-size:cover;background-position:center;
-    flex-direction:column;
-    background-color:#4a4038;
-  }
-  .book--cover .cover-fallback{
-    font-family:'Shippori Mincho',serif;font-weight:700;font-size:12px;
-    color:var(--paper);padding:10px;line-height:1.5;
-  }
-  .book-ghost{position:fixed;pointer-events:none;z-index:9999;opacity:.92;filter:drop-shadow(0 10px 14px rgba(0,0,0,.6));}
-
-  /* ---------- empty state ---------- */
-  .empty-hint{
-    text-align:center;color:#a08a63;font-size:13px;padding:30px 10px;
-    border:1px dashed var(--brass);border-radius:6px;
+  .book--spine .book-title {
+    flex: 1; 
+    min-height: 0; 
+    width: 100%;
+    overflow: hidden; 
+    word-break: break-all;
   }
 
-  /* ---------- modal ---------- */
-  .modal{
-    position:fixed;inset:0;background:rgba(10,6,2,.6);
-    display:flex;align-items:flex-end;justify-content:center;z-index:1000;
-    padding:0;
+  .book--cover{ flex-direction:column; background-color:#4a4038; overflow:visible; position:relative; }
+  .cover-face{width:100%; height:100%; position:relative; overflow:hidden; border-radius:inherit;}
+  .cover-face img{width:100%; height:100%; object-fit:cover; display:block;}
+  .cover-fallback{
+    font-family:'Shippori Mincho',serif;font-weight:700;font-size:12px; color:#fff; padding:10px; line-height:1.5; display:flex; align-items:center; justify-content:center; height:100%; text-shadow: 0 1px 3px rgba(0,0,0,0.6);
   }
+  
+  .hide-signs .sign-bar{ display:none !important; }
+  .hide-stamps .free-item{ display:none !important; }
+
+  .slot-preview {
+    width: 4px; background: var(--accent); border-radius: 2px;
+    margin: 0 2px; height: 80%; align-self: flex-end;
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  /* ---------- ページインジケーター（ポッチ） ---------- */
+  .pagination-dots {
+    position: absolute; bottom: 20px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 8px;
+    opacity: 0; transition: opacity 0.3s ease; pointer-events: none; z-index: 50;
+  }
+  .pagination-dots.show { opacity: 1; }
+  .pagination-dots .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.3); border: 1px solid rgba(0,0,0,0.3);
+    transition: background 0.3s, transform 0.3s;
+  }
+  .pagination-dots .dot.active { background: var(--accent); transform: scale(1.2); }
+
+  /* ---------- ゴミ箱 ---------- */
+  #trash-area {
+    position: fixed;
+    bottom: -80px;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    background-color: #ff4d4d;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    transition: bottom 0.3s ease;
+    z-index: 4500;
+    cursor: pointer;
+  }
+  #trash-area.show {
+    bottom: 0;
+  }
+
+  /* ---------- 検索・追加ビュー ---------- */
+  .search-container { padding: 16px; }
+  .scan-mode-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+  .scan-mode-toggle button { flex: 1; padding: 10px; font-size: 14px; }
+  .scan-wrap { position:relative; border-radius:8px; overflow:hidden; background:#000; min-height:180px; margin-bottom: 16px; }
+  .scan-wrap video { width:100% !important; height:auto !important; display:block; max-height:40vh; object-fit:cover; }
+  .scan-guide { position:absolute; left:8%; right:8%; top:42%; height:16%; border:2px solid #00ff00; border-radius:6px; box-shadow:0 0 0 999px rgba(0,0,0,.35); pointer-events:none; }
+  .manual-input-wrap { display: flex; gap: 8px; margin-bottom: 16px; }
+  .manual-input-wrap input { flex: 1; padding: 10px; font-size: 14px; border-radius: 4px; border: 1px solid var(--accent); color: #222;}
+  
+  .queue-list { border-top: 1px solid var(--accent); padding-top: 10px; margin-top: 10px; }
+  .queue-item { display: flex; padding: 10px 0; border-bottom: 1px solid rgba(128,128,128,0.2); align-items: center; gap: 12px; }
+  .queue-item img { width: 44px; height: 64px; object-fit: cover; border-radius: 2px; background: #555; }
+  .queue-info { flex: 1; min-width: 0; }
+  .queue-title { font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+  .queue-author { font-size: 11px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .queue-del { background: transparent; color: #ff5555; border: none; font-size: 22px; cursor: pointer; padding: 8px; box-shadow: none; }
+
+  /* ---------- 設定ビュー ---------- */
+  .settings-container { padding: 20px; }
+  .theme-btn {
+    display: block; width: 100%; padding: 14px; margin-bottom: 12px;
+    font-size: 15px; border-radius: 8px; border: 1px solid var(--accent); background: var(--case-bg); color: var(--text-main); cursor: pointer;
+  }
+
+  /* ---------- モーダル (詳細・編集用) ---------- */
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:flex-end; justify-content:center; z-index:3000;}
   @media (min-width:560px){.modal{align-items:center;}}
   .modal.hidden{display:none;}
   .modal-card{
-    background:var(--paper);color:var(--ink);width:100%;max-width:420px;
-    border-radius:10px 10px 0 0;padding:18px 18px 22px;
-    box-shadow:0 -10px 30px rgba(0,0,0,.5);
-    max-height:88vh;overflow-y:auto;
+    background:var(--modal-bg); color:var(--modal-text); width:100%; max-width:440px;
+    border-radius:12px 12px 0 0; padding:20px; box-shadow:0 -10px 30px rgba(0,0,0,.5);
+    max-height:88vh; overflow-y:auto;
   }
-  @media (min-width:560px){.modal-card{border-radius:10px;}}
-  .modal-card h2{font-family:'Shippori Mincho',serif;font-size:17px;margin:0 0 12px;}
-  .modal-cover{
-    width:120px;height:172px;object-fit:cover;border-radius:2px;
-    box-shadow:0 4px 10px rgba(0,0,0,.4);margin-bottom:10px;background:#ddd;
-  }
-  .field{margin-bottom:10px;}
-  .field label{display:block;font-size:11px;color:#6b5b45;margin-bottom:3px;}
-  .field input{width:100%;padding:8px 9px;border:1px solid var(--brass);border-radius:4px;font-size:14px;background:#fbf7ee;color:var(--ink);}
-  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
-  .modal-actions .danger{background:var(--danger);}
-  .meta-line{font-size:12.5px;color:#4b4030;margin:2px 0;}
+  @media (min-width:560px){.modal-card{border-radius:12px;}}
+  
+  .bm-top-row{display:flex; gap:12px; margin-bottom:10px; align-items:flex-start;}
+  .modal-cover-wrap{width:120px; height:172px; flex:0 0 auto; border-radius:2px; box-shadow:0 4px 10px rgba(0,0,0,.4); background:#ddd; overflow:hidden;}
+  .bm-synopsis-wrap{flex:1 1 auto; min-width:0;}
+  .bm-synopsis{font-size:12.5px; line-height:1.55; color:var(--modal-text); max-height:172px; overflow:hidden; white-space:pre-wrap;}
+  .bm-synopsis.expanded{max-height:none;}
+  .bm-synopsis-toggle{margin-top:4px; font-size:11.5px; padding:4px 10px;}
+  .modal-cover-wrap img{width:100%; height:100%; object-fit:cover; display:block;}
 
-  .scan-wrap{position:relative;border-radius:8px;overflow:hidden;background:#000;min-height:220px;}
-  .scan-wrap video, .scan-wrap canvas{width:100% !important;height:auto !important;display:block;max-height:52vh;object-fit:cover;}
-  .scan-wrap canvas.drawingBuffer{position:absolute !important;top:0;left:0;}
-  .scan-guide{
-    position:absolute;left:8%;right:8%;top:42%;height:16%;
-    border:2px solid var(--brass-light);border-radius:6px;
-    box-shadow:0 0 0 999px rgba(0,0,0,.35);
-    pointer-events:none;
-  }
+  .meta-group { margin-bottom: 12px; }
+  .meta-line{font-size:12.5px; color:var(--text-dim); margin:2px 0;}
+  
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:11px; opacity: 0.8; margin-bottom:4px;}
+  .field input, .field select, .field textarea{width:100%; padding:10px; border:1px solid var(--accent); border-radius:4px; font-size:14px; font-family:inherit; color:#222;}
+  .read-only-memo { font-size: 14px; white-space: pre-wrap; color: var(--modal-text); padding: 4px 0 8px; line-height: 1.5; }
+  .google-img-link{display:inline-block; margin-top:6px; font-size:12px; color:var(--accent); text-decoration:underline;}
 
+  .tag-chip{
+    display:inline-flex;align-items:center;gap:5px; background:var(--tag-bg);color:#fff;
+    font-size:11px;padding:3px 8px;border-radius:12px;margin:0 5px 5px 0;
+  }
+  /* ジャンルチップは少しデザインを変える */
+  .genre-chip{
+    border: 1px dashed rgba(255,255,255,0.6);
+  }
+  .tag-chip button{background:none;border:none;box-shadow:none;color:#fff;padding:0;font-size:13px;line-height:1;cursor:pointer;}
+  .tag-swatch{
+    width:15px;height:15px;padding:0;border:1px solid rgba(255,255,255,.6);border-radius:50%;
+    cursor:pointer;background:none;appearance:none;-webkit-appearance:none;
+  }
+  .tag-swatch::-webkit-color-swatch-wrapper{padding:0;}
+  .tag-swatch::-webkit-color-swatch{border:none;border-radius:50%;}
+  .tag-swatch:disabled{cursor:default;opacity:.9;}
+  .bgtag-star{font-size:11px;margin-left:2px;}
+
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:16px;}
+  .modal-actions .danger{background:#d32f2f; color:#fff;}
+  
+  #bookModal:not(.is-edit) .edit-only { display: none !important; }
+  #bookModal.is-edit .read-only { display: none !important; }
+  
+  /* ---------- トースト ---------- */
   .toast{
-    position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
-    background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:20px;
-    font-size:13px;box-shadow:0 6px 16px rgba(0,0,0,.5);z-index:1200;
+    position:fixed; left:50%; bottom:50px; transform:translateX(-50%);
+    background:rgba(0,0,0,0.8); color:#fff; padding:12px 24px; border-radius:30px;
+    font-size:14px; z-index:4000; pointer-events:none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
   }
   .toast.hidden{display:none;}
-
-  @media (prefers-reduced-motion:reduce){
-    *{animation:none !important;transition:none !important;}
-  }
 </style>
 </head>
 <body>
-<div id="app">
-  <div class="toolbar">
-    <h1>本棚</h1>
-    <div class="search-row">
-      <input id="isbnInput" inputmode="numeric" placeholder="JANコード / ISBNを入力" aria-label="JANコードまたはISBN">
-      <button id="searchBtn">検索</button>
-      <button class="ghost" id="scanBtn" type="button" title="カメラでバーコードを読み取る">📷 読み取る</button>
-    </div>
-    <button class="ghost" id="manualAddBtn">手動で追加</button>
-    <div class="toggle-group" id="viewToggle" role="group" aria-label="表示切替">
-      <button data-view="spine" class="active">背表紙</button>
-      <button data-view="cover">表紙</button>
-    </div>
-    <div class="toggle-group" id="sortToggle" role="group" aria-label="並び替え">
-      <button data-sort="free" class="active">自由配置</button>
-      <button data-sort="author">著者で並べる</button>
-    </div>
-    <div id="statusMsg" class="status-msg" hidden></div>
+
+<!-- サイドバー -->
+<div id="sidebarOverlay" class="sidebar-overlay"></div>
+<div id="sidebarMenu" class="sidebar-menu">
+  <div class="sidebar-header">メニュー</div>
+  <button class="nav-btn active" data-target="view-bookshelf">📚 マイ本棚</button>
+  <button class="nav-btn" data-target="view-search">🔍 本を追加する</button>
+  
+  <div class="sidebar-header" style="font-size: 14px; margin-top: 10px; border-top: 1px solid var(--accent); padding-top:16px;">読書データ</div>
+  <div style="padding: 10px 20px; font-size: 13px; line-height: 1.8;">
+    <div>全登録数: <span id="stat-total" style="font-weight:bold; color:var(--accent);">0</span> 冊</div>
+    <div>📖 読み中: <span id="stat-reading">0</span> 冊</div>
+    <div>✅ 読了済: <span id="stat-done">0</span> 冊</div>
+    <div>📚 積読/購入済: <span id="stat-owned">0</span> 冊</div>
+    <div>🛒 欲しい: <span id="stat-want">0</span> 冊</div>
   </div>
 
-  <main class="bookcase" id="bookcase"></main>
-  <div class="add-shelf-wrap"><button class="ghost" id="addShelfBtn">＋ 棚を追加</button></div>
+  <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">表示サイズ (横に並ぶ数)</div>
+  <div class="sidebar-settings">
+    <label><span>表紙の数:</span><span id="lblCoverCount">4 冊</span></label>
+    <input type="range" id="inpCoverCount" min="2" max="8" value="4">
+    <label><span>背表紙の数:</span><span id="lblSpineCount">12 冊</span></label>
+    <input type="range" id="inpSpineCount" min="5" max="30" value="12">
+  </div>
+
+  <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">テーマカラー</div>
+  <div style="padding: 10px 20px;">
+    <button class="theme-btn" data-set-theme="default">🪵 木目調（デフォルト）</button>
+    <button class="theme-btn" data-set-theme="white">⚪️ ホワイト</button>
+    <button class="theme-btn" data-set-theme="black">⚫️ ダーク</button>
+  </div>
+
+  <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">データ管理</div>
+  <div style="padding: 10px 20px;">
+    <button class="theme-btn" id="exportDataBtn" type="button" style="margin-bottom:8px;">💾 データをバックアップ</button>
+    <button class="theme-btn" id="importDataBtn" type="button" style="margin-bottom:16px;">📥 データを復元 (読込)</button>
+    <input type="file" id="importFileInput" accept=".json" hidden>
+    
+    <button class="theme-btn" id="clearHistoryBtn" type="button">🗑 スタンプ・サイン履歴を消去</button>
+  </div>
 </div>
 
+<!-- ヘッダー -->
+<header>
+  <div class="header-left">
+    <button id="menuBtn" class="icon-btn">≡</button>
+    <h1 id="headerTitle">マイ本棚</h1>
+  </div>
+  <div class="header-icons" id="bookshelfIcons">
+    <button id="toggleFilterBtn" title="本棚内を検索">🔎</button>
+    <button id="togglePopBtn" title="サイン・スタンプ表示（タップで4段階切替）">👀</button>
+    <button id="toggleMoveBtn" title="本を移動（タップで持ち上げ→タップで置く）">✥</button>
+    <button id="toggleEditBtn" title="編集モード">✏️</button>
+  </div>
+  <div class="header-icons" id="searchIcons" style="display:none;">
+    <button class="btn" id="bulkAddBtn">一括追加 (<span id="queueCount">0</span>)</button>
+  </div>
+</header>
+
+<div id="app">
+  
+  <!-- ==================== 本棚ビュー ==================== -->
+  <div id="view-bookshelf" class="view active">
+
+    <div id="filterBar" style="display: none; padding: 10px 16px; background: rgba(0,0,0,0.1); border-bottom: 1px solid var(--accent);">
+      <input type="text" id="filterInput" placeholder="タイトル、ジャンル、タグで検索..." style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--accent); background: var(--case-bg); color: var(--text-main); font-size: 14px;">
+    </div>
+    
+    <div class="edit-tools" id="editTools" style="display: none;">
+      <button class="btn ghost" id="flipModeBtn">表示切替(表紙/背): OFF</button>
+      <button class="btn ghost" id="stampMenuBtn" title="スタンプ追加">☻</button>
+      <button class="btn ghost" id="addCaseBtnHeader" title="本棚を追加">＋</button>
+      <input type="file" id="stampFileInput" accept="image/*" hidden>
+      <p class="edit-hint">段を長押しで全ての段に＋／×が表示されます（段を全部消すとその本棚ごと消えます）／左の≡をタップしてから別の段の≡をタップで入れ替え</p>
+    </div>
+
+    <div class="cases-row" id="casesRow"></div>
+    <div class="pagination-dots" id="paginationDots"></div>
+
+  </div>
+
+  <!-- ==================== 追加ビュー ==================== -->
+  <div id="view-search" class="view">
+    <div class="search-container">
+      <div class="scan-mode-toggle">
+        <button class="btn" id="modeScanBtn">カメラで連続スキャン</button>
+        <button class="btn ghost" id="modeInputBtn">手動・タイトル検索</button>
+      </div>
+      
+      <div id="scanArea">
+        <div class="scan-wrap" id="scanContainer"></div>
+        <p style="font-size:12px; text-align:center; opacity:0.8;" id="scanHint">バーコードを枠内に収めてください</p>
+      </div>
+      
+      <div id="inputArea" hidden>
+        <div class="manual-input-wrap">
+          <input type="text" id="manualIsbn" placeholder="ISBN または タイトル を入力">
+          <button class="btn" id="manualSearchBtn">検索</button>
+        </div>
+        <p style="font-size:11px; opacity:0.7; margin-top:-8px;">※タイトル入力の場合、少し時間がかかることがあります。</p>
+      </div>
+      
+      <div class="queue-list" id="queueList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== モーダル (詳細・編集用) ==================== -->
 <div class="modal hidden" id="bookModal">
   <div class="modal-card">
-    <h2 id="bm-title">本の詳細</h2>
-    <img id="bm-cover" class="modal-cover" alt="">
-    <p class="meta-line" id="bm-author"></p>
-    <p class="meta-line" id="bm-publisher"></p>
-    <p class="meta-line" id="bm-isbn"></p>
+    <h2 id="bm-title" style="margin-top:0; font-size:16px;">詳細</h2>
+    
+    <div class="bm-top-row">
+      <div class="modal-cover-wrap" id="bm-cover-wrap"></div>
+      <div class="bm-synopsis-wrap read-only">
+        <div class="bm-synopsis" id="bm-synopsis"></div>
+        <button class="btn ghost bm-synopsis-toggle" id="bm-synopsis-toggle" type="button" hidden>続きを読む</button>
+      </div>
+    </div>
+    
+    <div class="meta-group">
+      <p class="meta-line" id="bm-author"></p>
+      <p class="meta-line" id="bm-publisher"></p>
+      <p class="meta-line" id="bm-isbn"></p>
+    </div>
+
+    <div class="field edit-only">
+      <label>あらすじを編集</label>
+      <textarea id="bm-synopsis-input" rows="4" placeholder="あらすじを入力・貼り付け"></textarea>
+      <a id="bm-google-desc" href="#" target="_blank" rel="noopener" class="google-img-link">ブラウザであらすじを検索してコピーする ↗</a>
+    </div>
+
+    <div class="field">
+      <label>メモ（感想など）</label>
+      <div id="bm-memo-text" class="read-only-memo read-only"></div>
+      <textarea id="bm-memo" class="edit-only" rows="3" placeholder="読んだ感想を書いておけます"></textarea>
+    </div>
+    
+    <div class="field">
+      <label>付与されたジャンル・タグ</label>
+      <div id="bm-tags"></div>
+      
+      <!-- ★追加：セレクトボックスを横に連続で配置するUI -->
+      <div class="edit-only" style="margin-top:10px;margin-bottom:0;">
+        <label>追加設定 (ジャンル / タグ / 背景マーク)</label>
+        <div style="display:flex; gap:6px;">
+          <select id="bm-genre-select" style="flex:1; padding:8px; font-size:13px;"></select>
+          <select id="bm-tag-select" style="flex:1; padding:8px; font-size:13px;"></select>
+          <select id="bm-bgtag" style="flex:1; padding:8px; font-size:13px;"></select>
+        </div>
+      </div>
+    </div>
+
+    <div id="editOnlyFields" class="edit-only">
+      <div class="field">
+        <label>表紙・画像URL</label>
+        <input id="bm-cover-input">
+        <div style="margin-top: 6px;">
+          <a id="bm-google-img" href="#" target="_blank" rel="noopener" class="google-img-link">Google画像検索で探す ↗</a>
+          <a id="bm-hanmoto-link" href="#" target="_blank" rel="noopener" class="google-img-link" style="margin-left: 12px;">版元ドットコムで開く ↗</a>
+        </div>
+      </div>
+      <div class="field">
+        <label>サイズ (本の場合)</label>
+        <select id="bm-size">
+          <option value="s">S (文庫)</option>
+          <option value="m">M (単行本)</option>
+          <option value="l">L (大型本)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>状態</label>
+        <select id="bm-status">
+          <option value="want">欲しい</option>
+          <option value="owned">購入済み</option>
+          <option value="reading">読み中</option>
+          <option value="done">済</option>
+        </select>
+      </div>
+    </div>
+    
     <div class="modal-actions">
-      <button class="ghost" id="bm-close">閉じる</button>
-      <button class="danger" id="bm-delete">削除</button>
+      <button class="btn ghost" id="bm-close">閉じる</button>
+      <button class="btn danger edit-only" id="bm-delete">削除</button>
     </div>
   </div>
 </div>
 
-<div class="modal hidden" id="addModal">
+<div class="modal hidden" id="stampMenu">
   <div class="modal-card">
-    <h2>本を手動で追加</h2>
-    <div class="field"><label>タイトル *</label><input id="am-title"></div>
-    <div class="field"><label>著者</label><input id="am-author"></div>
-    <div class="field"><label>出版社</label><input id="am-publisher"></div>
-    <div class="field"><label>ISBN / JANコード</label><input id="am-isbn"></div>
-    <div class="field"><label>表紙画像URL（任意）</label><input id="am-cover"></div>
+    <h2 style="margin-top:0; font-size:16px;">☻ スタンプを追加</h2>
+    <div class="stamp-menu-actions">
+      <button class="btn ghost" id="stampMenuFile">📁 ファイル</button>
+      <button class="btn ghost" id="stampMenuUrl">🔗 URL</button>
+      <button class="btn ghost" id="stampMenuText">📝 テキスト</button>
+    </div>
+    <p class="edit-hint" style="margin:14px 0 4px;">履歴（タップで再利用）</p>
+    <div id="stampMenuHistory" class="stamp-history-list"></div>
     <div class="modal-actions">
-      <button class="ghost" id="am-cancel">キャンセル</button>
-      <button id="am-save">追加する</button>
+      <button class="btn ghost" id="stampMenuClose">閉じる</button>
     </div>
   </div>
 </div>
 
-<div class="modal hidden" id="scanModal">
+<div class="modal hidden" id="signModal">
   <div class="modal-card">
-    <h2>バーコードを読み取る</h2>
-    <div class="scan-wrap" id="scanContainer">
-      <div class="scan-guide"></div>
+    <h2 style="margin-top:0; font-size:16px;">サインの文字</h2>
+    <div class="field">
+      <input id="signTextInput" list="signHistoryList" placeholder="例：社会 政治">
+      <datalist id="signHistoryList"></datalist>
     </div>
-    <p class="meta-line" id="scanHint">本の裏表紙のバーコードをフレーム内に収めてください</p>
     <div class="modal-actions">
-      <button class="ghost" id="scan-cancel">キャンセル</button>
+      <button class="btn ghost" id="signCancelBtn">キャンセル</button>
+      <button class="btn danger" id="signDeleteBtn" hidden>削除</button>
+      <button class="btn" id="signSaveBtn">保存</button>
     </div>
   </div>
 </div>
 
 <div class="toast hidden" id="toast"></div>
 
+<!-- 削除用ゴミ箱エリア -->
+<div id="trash-area">ゴミ箱</div>
+
+<!-- 動的に生成するCSS変数用のstyleタグ -->
+<style id="dynamicStyles"></style>
+
+<!-- 外部ライブラリ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+
 <script>
 (function(){
   "use strict";
 
-  // ---------- state ----------
+  // ========== 状態と定数 ==========
+  var STATUS_DEFS = [
+    { key:'want',    label:'欲しい',   color:'#3a4e6e' },
+    { key:'owned',   label:'購入済み', color:'#a87c3f' },
+    { key:'reading', label:'読み中',   color:'#445c42' },
+    { key:'done',    label:'済',       color:'#6b5b45' }
+  ];
+  function statusDef(key){
+    for (var i=0; i<STATUS_DEFS.length; i++) if (STATUS_DEFS[i].key === key) return STATUS_DEFS[i];
+    return STATUS_DEFS[1]; 
+  }
+
   var state = {
-    shelves: [ { id: 's1' } ],   // ordered list of shelves (id only; books hold shelfId + order)
-    books: [],                    // {id, isbn, title, author, publisher, cover, shelfId, order}
-    view: 'spine',                // 'spine' | 'cover'
-    sort: 'free'                  // 'free' | 'author'
+    cases: [ { id:'c1', rows:1 } ],
+    books: [],   
+    theme: 'default',
+    coverCount: 4, 
+    spineCount: 12, 
+    tagColors: {}, 
+    signHistory: [], 
+    shelfSigns: {}, 
+    stampHistory: [],
+    tagHistory: [], // タグの履歴データ
+    genreHistory: [] // ★追加：ジャンルの履歴データ
   };
-  var nextShelfNum = 2;
-  var STORAGE_KEY = 'bookshelf-state-v1';
+  var searchQueue = []; 
+  var editMode = false;
+  var flipMode = false;
+  var moveMode = false;
+  var selectedItem = null; 
+  var nextCaseNum = 2;
+
+  var globalStampZ = 200; 
+
+  var editingCaseId = null; 
+  var ignoreNextClick = false; 
+
+  document.addEventListener('pointerdown', function(e){
+    if (editingCaseId) {
+      if (ignoreNextClick) return; 
+      if (e.target.closest('.row-corner-btn')) return; 
+      
+      editingCaseId = null;
+      renderShelf(); 
+    }
+  }, true);
 
   var SPINE_COLORS = ['#7b3f3f','#3e5c55','#3a4e6e','#6b5b3e','#4b3b57','#5c6b3e','#7a4b2e','#39424e','#8b5e3c','#4e4b7b'];
+  var TAG_PALETTE = ['#c0392b','#2d6a4f','#5b3a8e','#1f5f9e','#b5651d','#2f6f62','#8e3a5c','#39546e'];
+  function tagColor(tag){
+    return (state.tagColors && state.tagColors[tag]) || TAG_PALETTE[hashStr(tag) % TAG_PALETTE.length];
+  }
 
+  function uid(){ return 'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
   function hashStr(str){
-    var h = 5381;
-    for (var i=0;i<str.length;i++){ h = ((h<<5)+h) + str.charCodeAt(i); h |= 0; }
-    return Math.abs(h);
+    var h=5381; for(var i=0;i<str.length;i++){ h=((h<<5)+h)+str.charCodeAt(i); h|=0; } return Math.abs(h);
   }
-  function uid(){ return 'b'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
-  // ---------- persistence ----------
-  async function loadState(){
+  // ========== データ保存・復元・サイズ計算 ==========
+  function loadState(){
     try{
-      var res = await window.storage.get('bookshelf-data');
-      if (res && res.value){
-        var parsed = JSON.parse(res.value);
-        if (parsed && parsed.books){
-          state.shelves = (parsed.shelves && parsed.shelves.length) ? parsed.shelves : state.shelves;
-          state.books = parsed.books;
-          state.view = parsed.view || 'spine';
-          state.sort = parsed.sort || 'free';
-          var maxN = 0;
-          state.shelves.forEach(function(s){
-            var m = /^s(\d+)$/.exec(s.id);
-            if (m) maxN = Math.max(maxN, parseInt(m[1],10));
-          });
-          nextShelfNum = maxN + 1;
-        }
+      var res = localStorage.getItem('bookshelf-v7'); 
+      if (res) {
+        var p = JSON.parse(res);
+        state.cases = p.cases || [{id:'c1', rows:1}];
+        var legacyRowCount = p.rowCount;
+        state.cases = state.cases.map(function(c){
+          if (c.rows === undefined) c.rows = legacyRowCount || 1;
+          return c;
+        });
+        if (state.cases.length === 0) state.cases = [{id:'c1', rows:1}];
+        state.books = p.books || [];
+        state.theme = p.theme || 'default';
+        state.coverCount = p.coverCount || 4;
+        state.spineCount = p.spineCount || 12;
+        state.tagColors = p.tagColors || {};
+        state.signHistory = p.signHistory || [];
+        state.shelfSigns = p.shelfSigns || {};
+        state.stampHistory = p.stampHistory || [];
+        state.tagHistory = p.tagHistory || []; 
+        state.genreHistory = p.genreHistory || []; // ジャンル履歴復元
+        
+        state.books = state.books.filter(function(b){
+          if (b.isSign){
+            if (!state.shelfSigns[b.shelfId]){
+              state.shelfSigns[b.shelfId] = { text: b.title, color: b.color || tagColor(b.title) };
+            }
+            return false;
+          }
+          return true;
+        });
+        
+        state.books.forEach(function(b){
+          if ((b.isStamp || b.isText) && !b.caseId && b.shelfId){
+            var m = /^(.*)_(\d+)$/.exec(b.shelfId);
+            b.caseId = m ? m[1] : state.cases[0].id;
+            var rowIndex = m ? parseInt(m[2],10) : 0;
+            b.y = Math.min(0.9, (b.y || 0.05) + rowIndex * 0.12);
+            delete b.shelfId;
+          }
+          if (b.z && b.z > globalStampZ) globalStampZ = b.z;
+        });
+        nextCaseNum = state.cases.length + 1;
       }
-    }catch(e){ /* no saved data yet */ }
+    }catch(e){}
+    applyTheme(state.theme);
+    
+    document.getElementById('inpCoverCount').value = state.coverCount;
+    document.getElementById('lblCoverCount').textContent = state.coverCount + ' 冊';
+    document.getElementById('inpSpineCount').value = state.spineCount;
+    document.getElementById('lblSpineCount').textContent = state.spineCount + ' 冊';
+    
+    updateBookSizes();
   }
-  var saveTimer = null;
   function persist(){
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(async function(){
-      try{
-        await window.storage.set('bookshelf-data', JSON.stringify({
-          shelves: state.shelves, books: state.books, view: state.view, sort: state.sort
-        }));
-      }catch(e){ showToast('保存に失敗しました'); }
-    }, 250);
+    localStorage.setItem('bookshelf-v7', JSON.stringify(state));
   }
 
-  // ---------- toast / status ----------
+  var currentSizes = { coverW: 90, coverH: 135, spineW: 30, spineH: 135, stampW: 63 };
+  function updateBookSizes() {
+    var shelfW = Math.min(window.innerWidth * 0.92, 560) - 24 - 20; 
+    if(shelfW < 200) shelfW = 300; 
+    
+    var coverW = Math.max(30, Math.floor(shelfW / state.coverCount));
+    var spineW = Math.max(10, Math.floor(shelfW / state.spineCount));
+    var coverH = Math.floor(coverW * 1.5);
+    var spineH = coverH;
+    currentSizes = { coverW: coverW, coverH: coverH, spineW: spineW, spineH: spineH, stampW: Math.floor(coverW * 0.7) };
+    
+    var styleEl = document.getElementById('dynamicStyles');
+    styleEl.textContent = `
+      :root {
+        --book-cover-w: ${coverW}px;
+        --book-cover-h: ${coverH}px;
+        --book-spine-w: ${spineW}px;
+        --book-spine-h: ${spineH}px;
+        --stamp-w: ${currentSizes.stampW}px;
+      }
+      .book--stamp { width: var(--stamp-w); height: var(--stamp-w); }
+    `;
+  }
+  
+  document.getElementById('inpCoverCount').addEventListener('input', function(){
+    state.coverCount = parseInt(this.value, 10);
+    document.getElementById('lblCoverCount').textContent = state.coverCount + ' 冊';
+    updateBookSizes(); renderShelf(); persist();
+  });
+  document.getElementById('inpSpineCount').addEventListener('input', function(){
+    state.spineCount = parseInt(this.value, 10);
+    document.getElementById('lblSpineCount').textContent = state.spineCount + ' 冊';
+    updateBookSizes(); renderShelf(); persist();
+  });
+  window.addEventListener('resize', function(){
+    updateBookSizes(); renderShelf();
+  });
+
+  // ========== UI制御 ==========
   var toastEl = document.getElementById('toast');
   var toastTimer = null;
   function showToast(msg){
-    toastEl.textContent = msg;
-    toastEl.classList.remove('hidden');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function(){ toastEl.classList.add('hidden'); }, 2600);
-  }
-  var statusEl = document.getElementById('statusMsg');
-  function setStatus(msg){
-    if (!msg){ statusEl.hidden = true; statusEl.textContent=''; return; }
-    statusEl.hidden = false; statusEl.textContent = msg;
+    toastEl.textContent = msg; toastEl.classList.remove('hidden');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toastEl.classList.add('hidden'); }, 2500);
   }
 
-  // ---------- book helpers ----------
-  function booksOnShelf(shelfId){
-    return state.books.filter(function(b){ return b.shelfId === shelfId; })
-      .sort(function(a,b){ return a.order - b.order; });
+  function applyTheme(theme) {
+    if (theme === 'default') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', theme);
   }
-  function nextOrder(shelfId){
-    var arr = booksOnShelf(shelfId);
-    return arr.length ? arr[arr.length-1].order + 1 : 0;
-  }
-  function addBook(data){
-    var shelfId = state.shelves[state.shelves.length-1].id;
-    var book = {
-      id: uid(),
-      isbn: data.isbn || '',
-      title: data.title || '(無題)',
-      author: data.author || '',
-      publisher: data.publisher || '',
-      cover: data.cover || '',
-      shelfId: shelfId,
-      order: nextOrder(shelfId)
+
+  var sidebarOverlay = document.getElementById('sidebarOverlay');
+  var sidebarMenu = document.getElementById('sidebarMenu');
+  
+  document.getElementById('menuBtn').addEventListener('click', function(){
+    sidebarOverlay.classList.add('open'); sidebarMenu.classList.add('open');
+  });
+  sidebarOverlay.addEventListener('click', function(){
+    sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
+  });
+
+  document.querySelectorAll('.nav-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      
+      var targetId = this.dataset.target;
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(targetId).classList.add('active');
+      
+      document.getElementById('headerTitle').textContent = this.textContent.replace(/[📚🔍⚙️]\s*/,'');
+      document.getElementById('bookshelfIcons').style.display = (targetId === 'view-bookshelf') ? 'flex' : 'none';
+      document.getElementById('searchIcons').style.display = (targetId === 'view-search') ? 'flex' : 'none';
+
+      if(targetId !== 'view-search') stopScan();
+      if(targetId === 'view-bookshelf') renderShelf();
+      
+      sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
+    });
+  });
+
+  document.querySelectorAll('.theme-btn[data-set-theme]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      state.theme = this.dataset.setTheme; applyTheme(state.theme); persist();
+      showToast('テーマを変更しました');
+      sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
+    });
+  });
+  document.getElementById('clearHistoryBtn').addEventListener('click', function(){
+    if (!confirm('スタンプ・サインの履歴を消去しますか？（配置済みのものは消えません）')) return;
+    state.stampHistory = [];
+    state.signHistory = [];
+    state.tagHistory = []; 
+    state.genreHistory = [];
+    persist();
+    showToast('履歴を消去しました');
+    sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
+  });
+
+  document.getElementById('exportDataBtn').addEventListener('click', function(){
+    var dataStr = JSON.stringify(state);
+    var blob = new Blob([dataStr], {type: "application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = "bookshelf_backup_" + new Date().toISOString().slice(0,10) + ".json";
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('バックアップを保存しました');
+  });
+  
+  document.getElementById('importDataBtn').addEventListener('click', function(){
+    document.getElementById('importFileInput').click();
+  });
+  
+  document.getElementById('importFileInput').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try {
+        var p = JSON.parse(ev.target.result);
+        if(!p || !p.cases || !p.books) throw new Error("Invalid format");
+        state = p;
+        persist();
+        loadState();
+        renderShelf();
+        showToast('データを復元しました');
+        sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
+      } catch(err) {
+        showToast('エラー: 正しいバックアップファイルではありません');
+      }
     };
-    state.books.push(book);
-    persist();
-    render(book.id);
-  }
-  function deleteBook(id){
-    state.books = state.books.filter(function(b){ return b.id !== id; });
-    persist();
-    render();
-  }
-
-  // ---------- openBD search ----------
-  async function searchByIsbn(raw){
-    var isbn = raw.replace(/[^0-9Xx]/g,'');
-    if (!isbn){ setStatus('JANコード／ISBNを入力してください'); return; }
-    var btn = document.getElementById('searchBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> 検索中';
-    setStatus('');
-    try{
-      var res = await fetch('https://api.openbd.jp/v1/get?isbn=' + encodeURIComponent(isbn));
-      if (!res.ok) throw new Error('network');
-      var data = await res.json();
-      if (!data || !data[0] || !data[0].summary){
-        setStatus('見つかりませんでした。手動で追加できます。');
-        openAddModal({ isbn: isbn });
-        return;
-      }
-      var s = data[0].summary;
-      addBook({
-        isbn: isbn,
-        title: s.title || '(無題)',
-        author: (s.author||'').replace(/\/+$/,''),
-        publisher: s.publisher || '',
-        cover: s.cover || ''
-      });
-      document.getElementById('isbnInput').value = '';
-      showToast('「' + (s.title||'') + '」を追加しました');
-    }catch(err){
-      setStatus('検索に失敗しました（通信環境をご確認ください）。手動で追加できます。');
-      openAddModal({ isbn: isbn });
-    }finally{
-      btn.disabled = false;
-      btn.textContent = '検索して追加';
-    }
-  }
-
-  // ---------- manual add modal ----------
-  var addModal = document.getElementById('addModal');
-  function openAddModal(prefill){
-    prefill = prefill || {};
-    document.getElementById('am-title').value = prefill.title || '';
-    document.getElementById('am-author').value = prefill.author || '';
-    document.getElementById('am-publisher').value = prefill.publisher || '';
-    document.getElementById('am-isbn').value = prefill.isbn || '';
-    document.getElementById('am-cover').value = prefill.cover || '';
-    addModal.classList.remove('hidden');
-    document.getElementById('am-title').focus();
-  }
-  document.getElementById('manualAddBtn').addEventListener('click', function(){ openAddModal(); });
-  document.getElementById('am-cancel').addEventListener('click', function(){ addModal.classList.add('hidden'); });
-  document.getElementById('am-save').addEventListener('click', function(){
-    var title = document.getElementById('am-title').value.trim();
-    if (!title){ document.getElementById('am-title').focus(); return; }
-    addBook({
-      title: title,
-      author: document.getElementById('am-author').value.trim(),
-      publisher: document.getElementById('am-publisher').value.trim(),
-      isbn: document.getElementById('am-isbn').value.trim(),
-      cover: document.getElementById('am-cover').value.trim()
-    });
-    addModal.classList.add('hidden');
-    showToast('「' + title + '」を追加しました');
+    reader.readAsText(file);
+    this.value = ''; 
   });
 
-  // ---------- detail modal ----------
-  var bookModal = document.getElementById('bookModal');
-  var currentDetailId = null;
-  function openDetail(book){
-    currentDetailId = book.id;
-    document.getElementById('bm-title').textContent = book.title;
-    var img = document.getElementById('bm-cover');
-    if (book.cover){ img.src = book.cover; img.style.display='block'; } else { img.style.display='none'; }
-    document.getElementById('bm-author').textContent = book.author ? '著者: ' + book.author : '';
-    document.getElementById('bm-publisher').textContent = book.publisher ? '出版社: ' + book.publisher : '';
-    document.getElementById('bm-isbn').textContent = book.isbn ? 'ISBN: ' + book.isbn : '';
-    bookModal.classList.remove('hidden');
-  }
-  document.getElementById('bm-close').addEventListener('click', function(){ bookModal.classList.add('hidden'); });
-  document.getElementById('bm-delete').addEventListener('click', function(){
-    if (currentDetailId) deleteBook(currentDetailId);
-    bookModal.classList.add('hidden');
+  // ========== 本棚の機能 ==========
+  var casesRow = document.getElementById('casesRow');
+  var paginationDots = document.getElementById('paginationDots');
+  var scrollTimeout;
+  const trashArea = document.getElementById('trash-area');
+  
+  document.getElementById('toggleEditBtn').addEventListener('click', function(){
+    editMode = !editMode;
+    this.classList.toggle('active', editMode);
+    document.getElementById('editTools').style.display = editMode ? 'flex' : 'none';
+    renderShelf();
   });
 
-  // ---------- toolbar wiring ----------
-  document.getElementById('searchBtn').addEventListener('click', function(){
-    searchByIsbn(document.getElementById('isbnInput').value);
+  // ★修正：移動モード切り替え時にもゴミ箱を隠す
+  document.getElementById('toggleMoveBtn').addEventListener('click', function(){
+    moveMode = !moveMode;
+    this.classList.toggle('active', moveMode);
+    selectedItem = null;
+    trashArea.classList.remove('show');
+    renderShelf();
   });
-  document.getElementById('isbnInput').addEventListener('keydown', function(e){
-    if (e.key === 'Enter') searchByIsbn(this.value);
+
+  var popStage = 3; 
+  var POP_STAGE_OPACITY = [0.35, 0.6, 0.8, 1];
+  function applyPopStage(){
+    var hideSigns = (popStage === 0 || popStage === 2);
+    var hideStamps = (popStage === 0 || popStage === 1);
+    casesRow.classList.toggle('hide-signs', hideSigns);
+    casesRow.classList.toggle('hide-stamps', hideStamps);
+    var btn = document.getElementById('togglePopBtn');
+    btn.style.opacity = POP_STAGE_OPACITY[popStage];
+    btn.classList.toggle('pop-all-hidden', popStage === 0);
+  }
+  document.getElementById('togglePopBtn').addEventListener('click', function(){
+    popStage = (popStage + 1) % 4;
+    applyPopStage();
   });
 
-  // ---------- camera barcode scan ----------
-  var scanModal = document.getElementById('scanModal');
-  var scanContainer = document.getElementById('scanContainer');
-  var scanHint = document.getElementById('scanHint');
-  var scanStream = null;
-  var scanLoopId = null;
-  var scanning = false;
-  var quaggaRunning = false;
-  var quaggaLoadPromise = null;
+  document.getElementById('flipModeBtn').addEventListener('click', function(){
+    flipMode = !flipMode;
+    this.textContent = '表示切替(表紙/背): ' + (flipMode ? 'ON' : 'OFF');
+    this.classList.toggle('ghost', !flipMode);
+  });
 
-  document.getElementById('scanBtn').addEventListener('click', startScan);
-  document.getElementById('scan-cancel').addEventListener('click', stopScan);
-
-  function isValidEAN13(code){
-    if (!/^\d{13}$/.test(code)) return false;
-    var sum = 0;
-    for (var i=0;i<12;i++){
-      var d = parseInt(code[i],10);
-      sum += (i % 2 === 0) ? d : d*3;
-    }
-    var check = (10 - (sum % 10)) % 10;
-    return check === parseInt(code[12],10);
-  }
-
-  function loadQuagga(){
-    if (window.Quagga) return Promise.resolve();
-    if (quaggaLoadPromise) return quaggaLoadPromise;
-    quaggaLoadPromise = new Promise(function(resolve, reject){
-      var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js';
-      s.onload = function(){ resolve(); };
-      s.onerror = function(){ reject(new Error('quagga load failed')); };
-      document.head.appendChild(s);
-    });
-    return quaggaLoadPromise;
-  }
-
-  async function startScan(){
-    scanContainer.innerHTML = '<div class="scan-guide"></div>';
-    scanModal.classList.remove('hidden');
-    scanHint.textContent = 'カメラを起動しています…';
-
-    if ('BarcodeDetector' in window){
-      startNativeScan();
+  var filterBar = document.getElementById('filterBar');
+  var filterInput = document.getElementById('filterInput');
+  document.getElementById('toggleFilterBtn').addEventListener('click', function(){
+    var isHidden = filterBar.style.display === 'none';
+    filterBar.style.display = isHidden ? 'block' : 'none';
+    this.classList.toggle('active', !isHidden);
+    if(isHidden) {
+      filterInput.focus();
     } else {
-      startQuaggaScan();
+      filterInput.value = '';
+      applyFilter();
     }
-  }
-
-  async function startNativeScan(){
-    var supported = [];
-    try{ supported = await BarcodeDetector.getSupportedFormats(); }catch(e){}
-    var formats = ['ean_13','ean_8','upc_a','upc_e'].filter(function(f){
-      return supported.length === 0 || supported.indexOf(f) !== -1;
+  });
+  filterInput.addEventListener('input', applyFilter);
+  function applyFilter(){
+    var q = filterInput.value.trim().toLowerCase();
+    if(!q){
+      casesRow.classList.remove('is-filtered');
+      casesRow.querySelectorAll('.book').forEach(function(el){ el.classList.remove('matched'); });
+      return;
+    }
+    casesRow.classList.add('is-filtered');
+    state.books.forEach(function(b){
+      if(b.isStamp || b.isText || b.isSign) return;
+      var el = casesRow.querySelector('.book[data-id="'+b.id+'"]');
+      if(!el) return;
+      // ジャンルも検索対象に含める
+      var textToSearch = (b.title + ' ' + (b.author||'') + ' ' + (b.genres?b.genres.join(' '):'') + ' ' + (b.tags?b.tags.join(' '):'')).toLowerCase();
+      if(textToSearch.indexOf(q) !== -1){
+        el.classList.add('matched');
+      } else {
+        el.classList.remove('matched');
+      }
     });
-    if (formats.length === 0) formats = ['ean_13'];
-
-    var video = document.createElement('video');
-    video.setAttribute('playsinline','');
-    video.muted = true;
-    scanContainer.insertBefore(video, scanContainer.firstChild);
-
-    try{
-      scanStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } }
-      });
-    }catch(err){
-      scanHint.textContent = 'カメラを使用できませんでした（権限をご確認ください）';
-      showToast('カメラへのアクセスが許可されませんでした');
-      return;
-    }
-    video.srcObject = scanStream;
-    await video.play();
-    scanHint.textContent = '本の裏表紙のバーコードをフレーム内に収めてください';
-
-    var detector = new BarcodeDetector({ formats: formats });
-    scanning = true;
-
-    async function loop(){
-      if (!scanning) return;
-      try{
-        var codes = await detector.detect(video);
-        if (codes && codes.length > 0){
-          var value = codes[0].rawValue;
-          if (codes[0].format !== 'ean_13' || isValidEAN13(value)){
-            stopScan();
-            document.getElementById('isbnInput').value = value;
-            searchByIsbn(value);
-            return;
-          }
-        }
-      }catch(e){ /* detection hiccup, keep trying */ }
-      scanLoopId = requestAnimationFrame(loop);
-    }
-    scanLoopId = requestAnimationFrame(loop);
   }
 
-  async function startQuaggaScan(){
-    try{
-      await loadQuagga();
-    }catch(e){
-      scanHint.textContent = '読み取り機能を読み込めませんでした（通信環境をご確認ください）';
-      showToast('カメラ読み取りを初期化できませんでした。コードを入力してください。');
-      return;
+  document.getElementById('addCaseBtnHeader').addEventListener('click', function(){
+    addCase();
+  });
+
+  function shelfIdsInCase(caseId){
+    var c = state.cases.find(x => x.id === caseId);
+    var ids = [];
+    if (c) for (var r=0; r<c.rows; r++) ids.push(caseId + '_' + r);
+    return ids;
+  }
+  function addRowBelow(caseId, rowIndex){
+    var c = state.cases.find(x => x.id === caseId);
+    if (!c) return;
+    for (var r=c.rows-1; r>rowIndex; r--){
+      var oldId = caseId+'_'+r, newId = caseId+'_'+(r+1);
+      state.books.forEach(function(b){ if (b.shelfId===oldId) b.shelfId=newId; });
+      if (state.shelfSigns[oldId]){ state.shelfSigns[newId]=state.shelfSigns[oldId]; delete state.shelfSigns[oldId]; }
     }
-    Quagga.init({
-      inputStream: {
-        type: 'LiveStream',
-        target: scanContainer,
-        constraints: { facingMode: 'environment' }
-      },
-      locate: true,
-      decoder: { readers: ['ean_reader'] }
-    }, function(err){
-      if (err){
-        scanHint.textContent = 'カメラを使用できませんでした（権限をご確認ください）';
-        showToast('カメラへのアクセスが許可されませんでした');
+    c.rows++;
+    persist(); renderShelf();
+  }
+  function deleteCaseRow(caseId, rowIndex){
+    var c = state.cases.find(x => x.id === caseId);
+    if (!c) return;
+    if (c.rows <= 1){
+      if (state.cases.length <= 1){
+        showToast('これ以上段を減らせません');
         return;
       }
-      quaggaRunning = true;
-      Quagga.start();
-      scanHint.textContent = '本の裏表紙のバーコードをフレーム内に収めてください';
-    });
+      deleteCase(caseId);
+      return;
+    }
+    var shelfId = caseId+'_'+rowIndex;
+    var hasItems = state.books.some(b => b.shelfId===shelfId) || !!state.shelfSigns[shelfId];
+    if (hasItems && !confirm('この段のアイテムも削除されます。よろしいですか？')) return;
+    state.books = state.books.filter(b => b.shelfId !== shelfId);
+    delete state.shelfSigns[shelfId];
+    for (var r=rowIndex+1; r<c.rows; r++){
+      var oldId = caseId+'_'+r, newId = caseId+'_'+(r-1);
+      state.books.forEach(function(b){ if (b.shelfId===oldId) b.shelfId=newId; });
+      if (state.shelfSigns[oldId]){ state.shelfSigns[newId]=state.shelfSigns[oldId]; delete state.shelfSigns[oldId]; }
+    }
+    c.rows--;
+    persist(); renderShelf();
+  }
+  function swapShelfContents(shelfIdA, shelfIdB){
+    if (shelfIdA === shelfIdB) return;
+    var tmp = '__swaptmp__';
+    var isRealBook = function(b){ return !b.isStamp && !b.isText && !b.isSign; };
+    state.books.forEach(function(b){ if (isRealBook(b) && b.shelfId===shelfIdA) b.shelfId=tmp; });
+    state.books.forEach(function(b){ if (isRealBook(b) && b.shelfId===shelfIdB) b.shelfId=shelfIdA; });
+    state.books.forEach(function(b){ if (isRealBook(b) && b.shelfId===tmp) b.shelfId=shelfIdB; });
+    var sA = state.shelfSigns[shelfIdA], sB = state.shelfSigns[shelfIdB];
+    if (sB) state.shelfSigns[shelfIdA]=sB; else delete state.shelfSigns[shelfIdA];
+    if (sA) state.shelfSigns[shelfIdB]=sA; else delete state.shelfSigns[shelfIdB];
+    persist(); renderShelf();
+  }
+  var reorderSource = null; 
 
-    Quagga.onDetected(function(result){
-      var code = result && result.codeResult && result.codeResult.code;
-      if (code && isValidEAN13(code)){
-        stopScan();
-        document.getElementById('isbnInput').value = code;
-        searchByIsbn(code);
+  function addCase(){
+    state.cases.push({ id:'c'+(nextCaseNum++), rows:1 });
+    persist(); renderShelf();
+    requestAnimationFrame(function(){ casesRow.scrollTo({ left: casesRow.scrollWidth, behavior:'smooth' }); });
+  }
+  function deleteCase(caseId){
+    var idx = state.cases.findIndex(x => x.id === caseId);
+    if (idx === -1) return;
+    var prefix = caseId + '_';
+    var hasItems = state.books.some(b => (b.shelfId||'').indexOf(prefix)===0 || b.caseId===caseId)
+      || Object.keys(state.shelfSigns).some(k => k.indexOf(prefix)===0);
+    if (hasItems && !confirm('この本棚の中身も削除されます。よろしいですか？')) return;
+    state.books = state.books.filter(b => (b.shelfId||'').indexOf(prefix)!==0 && b.caseId!==caseId);
+    Object.keys(state.shelfSigns).forEach(function(k){ if (k.indexOf(prefix)===0) delete state.shelfSigns[k]; });
+    state.cases.splice(idx, 1);
+    if (state.cases.length === 0) state.cases.push({ id:'c'+(nextCaseNum++), rows:1 });
+    persist(); renderShelf();
+  }
+
+  function attachRowLongPress(unit, block, caseId, rowIndex, addBtn, removeBtn){
+    var pressTimer = null, startX = 0, startY = 0;
+
+    block.addEventListener('pointerdown', function(e){
+      if (e.target.closest('.row-corner-btn')) return;
+      startX = e.clientX; startY = e.clientY;
+      clearTimeout(pressTimer);
+      pressTimer = setTimeout(function(){
+        editingCaseId = caseId; 
+        ignoreNextClick = true;
+        setTimeout(() => ignoreNextClick = false, 500); 
+        renderShelf(); 
+      }, 500);
+    });
+    
+    block.addEventListener('pointermove', function(e){
+      if (Math.abs(e.clientX-startX) > 10 || Math.abs(e.clientY-startY) > 10){
+        clearTimeout(pressTimer);
       }
     });
+    
+    function cancelPress(){ clearTimeout(pressTimer); }
+    block.addEventListener('pointerup', cancelPress);
+    block.addEventListener('pointercancel', cancelPress);
+
+    block.addEventListener('click', function(e){
+      if (ignoreNextClick) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+
+    addBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      addRowBelow(caseId, rowIndex);
+    });
+    
+    removeBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      deleteCaseRow(caseId, rowIndex);
+    });
   }
 
-  function stopScan(){
-    scanning = false;
-    if (scanLoopId) cancelAnimationFrame(scanLoopId);
-    scanLoopId = null;
-    if (scanStream){
-      scanStream.getTracks().forEach(function(t){ t.stop(); });
-      scanStream = null;
+  function registerStampHistory(entry){
+    var idx = state.stampHistory.findIndex(function(h){
+      return h.kind === entry.kind && (h.kind==='image' ? h.cover===entry.cover : h.text===entry.text);
+    });
+    if (idx !== -1) state.stampHistory.splice(idx, 1);
+    state.stampHistory.unshift(entry);
+    if (state.stampHistory.length > 24) state.stampHistory.length = 24;
+  }
+  function addFreeItem(data){
+    var caseId = state.cases[0].id;
+    var item = Object.assign({ id: uid(), caseId: caseId, x: 0.08, y: 0.05, rot: 0, z: ++globalStampZ }, data);
+    state.books.push(item); persist(); renderShelf();
+  }
+  function addStampWithCover(coverUrl, skipHistory){
+    addFreeItem({ isStamp: true, cover: coverUrl, title: 'スタンプ', w: 56, h: 56 });
+    if (!skipHistory) registerStampHistory({ kind:'image', cover: coverUrl });
+  }
+  function addTextSticker(text, skipHistory){
+    addFreeItem({ isText: true, title: text, w: 100, h: 32, color: tagColor(text) });
+    if (!skipHistory) registerStampHistory({ kind:'text', text: text });
+  }
+  function readImageFile(file){
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){ addStampWithCover(reader.result); };
+    reader.onerror = function(){ showToast('画像を読み込めませんでした'); };
+    reader.readAsDataURL(file);
+  }
+  document.getElementById('stampFileInput').addEventListener('change', function(){
+    readImageFile(this.files[0]); this.value = '';
+    document.getElementById('stampMenu').classList.add('hidden');
+  });
+
+  // ---- ☻ スタンプメニュー ----
+  var stampMenu = document.getElementById('stampMenu');
+  document.getElementById('stampMenuBtn').addEventListener('click', function(){
+    renderStampHistoryList();
+    stampMenu.classList.remove('hidden');
+  });
+  document.getElementById('stampMenuClose').addEventListener('click', function(){
+    stampMenu.classList.add('hidden');
+  });
+  document.getElementById('stampMenuFile').addEventListener('click', function(){
+    stampMenu.classList.add('hidden');
+    document.getElementById('stampFileInput').click();
+  });
+  document.getElementById('stampMenuUrl').addEventListener('click', function(){
+    stampMenu.classList.add('hidden');
+    var url = prompt('スタンプ画像のURLを入力してください', '');
+    if (url) addStampWithCover(url);
+  });
+  document.getElementById('stampMenuText').addEventListener('click', function(){
+    stampMenu.classList.add('hidden');
+    var text = prompt('表示する短いテキストを入力してください', '');
+    if (text && text.trim()) addTextSticker(text.trim());
+  });
+  function renderStampHistoryList(){
+    var list = document.getElementById('stampMenuHistory');
+    list.innerHTML = '';
+    if (state.stampHistory.length === 0){
+      list.innerHTML = '<p class="edit-hint" style="margin:4px 0;">履歴はまだありません</p>';
+      return;
     }
-    if (quaggaRunning && window.Quagga){
-      try{ Quagga.offDetected(); Quagga.stop(); }catch(e){}
-      quaggaRunning = false;
+    state.stampHistory.forEach(function(h){
+      var row = document.createElement('button');
+      row.className = 'btn ghost stamp-history-row';
+      if (h.kind === 'image'){
+        row.innerHTML = '';
+        var img = document.createElement('img'); img.src = h.cover;
+        row.appendChild(img);
+        var span = document.createElement('span'); span.textContent = '画像スタンプ';
+        row.appendChild(span);
+      } else {
+        row.textContent = 'テキスト: ' + h.text;
+      }
+      row.addEventListener('click', function(){
+        stampMenu.classList.add('hidden');
+        if (h.kind === 'image') addStampWithCover(h.cover, true);
+        else addTextSticker(h.text, true);
+      });
+      list.appendChild(row);
+    });
+  }
+
+
+  function registerSignHistory(text){
+    if (!text) return;
+    var i = state.signHistory.indexOf(text);
+    if (i !== -1) state.signHistory.splice(i, 1);
+    state.signHistory.unshift(text);
+    if (state.signHistory.length > 30) state.signHistory.length = 30;
+  }
+  function refreshSignHistoryList(){
+    var dl = document.getElementById('signHistoryList');
+    dl.innerHTML = '';
+    state.signHistory.forEach(function(t){
+      var opt = document.createElement('option'); opt.value = t;
+      dl.appendChild(opt);
+    });
+  }
+  var signEditorTarget = null; 
+  function openSignEditor(shelfId){
+    signEditorTarget = shelfId;
+    var existing = state.shelfSigns[shelfId];
+    document.getElementById('signTextInput').value = existing ? existing.text : '';
+    document.getElementById('signDeleteBtn').hidden = !existing;
+    refreshSignHistoryList();
+    document.getElementById('signModal').classList.remove('hidden');
+    document.getElementById('signTextInput').focus();
+  }
+  document.getElementById('signCancelBtn').addEventListener('click', function(){
+    document.getElementById('signModal').classList.add('hidden');
+  });
+  document.getElementById('signDeleteBtn').addEventListener('click', function(){
+    if (signEditorTarget) delete state.shelfSigns[signEditorTarget];
+    persist(); renderShelf();
+    document.getElementById('signModal').classList.add('hidden');
+  });
+  document.getElementById('signSaveBtn').addEventListener('click', function(){
+    var text = document.getElementById('signTextInput').value.trim();
+    if (!text) return;
+    registerSignHistory(text);
+    state.shelfSigns[signEditorTarget] = { text: text, color: tagColor(text) };
+    persist(); renderShelf();
+    document.getElementById('signModal').classList.add('hidden');
+  });
+
+  casesRow.addEventListener('scroll', function() {
+    if(state.cases.length <= 1) return;
+    paginationDots.classList.add('show');
+    var caseWidth = casesRow.children[0].offsetWidth + 30; 
+    var index = Math.round(casesRow.scrollLeft / caseWidth);
+    updateDots(index);
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(function() { paginationDots.classList.remove('show'); }, 1200); 
+  });
+
+  function updateDots(activeIndex) {
+    paginationDots.innerHTML = '';
+    for(var i=0; i<state.cases.length; i++){
+      var d = document.createElement('div');
+      d.className = 'dot' + (i === activeIndex ? ' active' : '');
+      paginationDots.appendChild(d);
     }
-    scanContainer.innerHTML = '';
-    scanModal.classList.add('hidden');
-  }
-  document.getElementById('viewToggle').addEventListener('click', function(e){
-    var btn = e.target.closest('button[data-view]');
-    if (!btn) return;
-    state.view = btn.dataset.view;
-    [].forEach.call(this.querySelectorAll('button'), function(b){ b.classList.toggle('active', b===btn); });
-    persist(); render();
-  });
-  document.getElementById('sortToggle').addEventListener('click', function(e){
-    var btn = e.target.closest('button[data-sort]');
-    if (!btn) return;
-    state.sort = btn.dataset.sort;
-    [].forEach.call(this.querySelectorAll('button'), function(b){ b.classList.toggle('active', b===btn); });
-    persist(); render();
-  });
-  document.getElementById('addShelfBtn').addEventListener('click', function(){
-    state.shelves.push({ id: 's'+(nextShelfNum++) });
-    persist(); render();
-  });
-
-  // ---------- rendering ----------
-  var bookcaseEl = document.getElementById('bookcase');
-
-  function spineStyle(book){
-    var h1 = hashStr(book.id+'w'), h2 = hashStr(book.id+'h'), h3 = hashStr(book.id+'r'), h4 = hashStr(book.title||book.id);
-    var width = 34 + (h1 % 20);           // 34-53px
-    var height = 176 + (h2 % 34);         // 176-209px
-    var rot = ((h3 % 61) - 30) / 10;      // -3.0 .. 3.0 deg
-    var color = SPINE_COLORS[h4 % SPINE_COLORS.length];
-    return { width: width, height: height, rot: rot, color: color };
-  }
-  function coverStyle(book){
-    var h3 = hashStr(book.id+'rc');
-    var rot = ((h3 % 31) - 15) / 10;      // -1.5 .. 1.5 deg
-    return { rot: rot };
   }
 
-  function buildBookEl(book, opts){
-    opts = opts || {};
+  function updateStats(){
+    var total = 0, reading = 0, done = 0, owned = 0, want = 0;
+    state.books.forEach(function(b){
+      if(b.isStamp || b.isText || b.isSign) return;
+      total++;
+      if(b.status === 'reading') reading++;
+      else if(b.status === 'done') done++;
+      else if(b.status === 'want') want++;
+      else owned++; 
+    });
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-reading').textContent = reading;
+    document.getElementById('stat-done').textContent = done;
+    document.getElementById('stat-owned').textContent = owned;
+    document.getElementById('stat-want').textContent = want;
+  }
+
+  // ========== 棚のロジック・描画 ==========
+  function booksOnShelf(shelfId){
+    return state.books.filter(b => b.shelfId === shelfId && !b.isSign && !b.isStamp && !b.isText).sort((a,b) => a.slot - b.slot);
+  }
+  
+  function signsOnShelf(shelfId){
+    return state.books.filter(b => b.shelfId === shelfId && b.isSign);
+  }
+  
+  function resolveCollisions(shelfId){
+    var arr = booksOnShelf(shelfId);
+    var used = {};
+    arr.forEach(function(b){
+      if (used[b.slot] !== undefined){
+        var s = 0; while (used[s] !== undefined) s++;
+        b.slot = s;
+      }
+      used[b.slot] = true;
+    });
+  }
+
+  function slotWidths(){
+    return { cover: currentSizes.coverW, spine: currentSizes.spineW };
+  }
+  function itemGridWidth(book, w){
+    if (!book) return w.spine; 
+    return (book.displayMode === 'cover' && book.cover) ? w.cover : w.spine;
+  }
+
+  function buildItemEl(book, matchPrev, matchNext){
     var el = document.createElement('div');
     el.className = 'book';
     el.dataset.id = book.id;
-    el.tabIndex = 0;
-    el.setAttribute('role','button');
-    el.setAttribute('aria-label', book.title);
+    el.style.gridColumn = (book.slot + 1);
+    if (selectedItem && selectedItem.id === book.id) el.classList.add('book--picked');
 
-    if (state.view === 'spine'){
-      var sp = spineStyle(book);
-      el.classList.add('book--spine');
-      el.style.width = sp.width+'px';
-      el.style.height = sp.height+'px';
-      el.style.background = 'linear-gradient(90deg, rgba(0,0,0,.18), transparent 30%), ' + sp.color;
-      el.style.transform = 'rotate(' + sp.rot + 'deg)';
-      el.style.transformOrigin = 'bottom center';
-      el.style.marginLeft = '-1px';
-      var t = document.createElement('span');
-      t.className = 'book-title';
-      t.textContent = book.title;
-      el.appendChild(t);
-    } else {
-      var cs = coverStyle(book);
-      el.classList.add('book--cover');
-      el.style.transform = 'rotate(' + cs.rot + 'deg)';
-      el.style.transformOrigin = 'bottom center';
-      if (book.cover){
-        el.style.backgroundImage = 'url("'+book.cover+'")';
-      } else {
-        var sp2 = spineStyle(book);
-        el.style.backgroundColor = sp2.color;
-        var fb = document.createElement('div');
-        fb.className = 'cover-fallback';
-        fb.textContent = book.title;
-        el.appendChild(fb);
-      }
+    var authorKey = (book.author && book.author.trim()) ? book.author.trim() : (book.title || book.id);
+    var color = SPINE_COLORS[hashStr(authorKey) % SPINE_COLORS.length];
+    var sd = statusDef(book.status);
+
+    var bgColor = null, bgLabel = null;
+    if (book.bgTag && ((book.tags && book.tags.indexOf(book.bgTag) !== -1) || (book.genres && book.genres.indexOf(book.bgTag) !== -1))) {
+      bgColor = tagColor(book.bgTag);
+      bgLabel = book.bgTag;
     }
-    if (opts.isNew) el.classList.add('new-item');
+    
+    if (bgLabel) {
+      var strip = document.createElement('div');
+      strip.className = 'book-bg-strip';
+      if (matchPrev) strip.classList.add('match-prev');
+      if (matchNext) strip.classList.add('match-next');
+      strip.style.background = bgColor;
+      var stripText = document.createElement('span');
+      stripText.textContent = bgLabel;
+      strip.appendChild(stripText);
+      el.appendChild(strip);
+    }
+
+    if (book.displayMode === 'cover' && book.cover) {
+      el.classList.add('book--cover');
+      el.style.width = currentSizes.coverW + 'px';
+      el.style.height = currentSizes.coverH + 'px';
+      var face = document.createElement('div'); face.className = 'cover-face';
+      var cimg = document.createElement('img');
+      cimg.src = book.cover;
+      cimg.onerror = function(){
+        face.innerHTML = '<div class="cover-fallback" style="background:' + color + '">'+book.title+'</div>';
+      };
+      face.appendChild(cimg);
+      el.appendChild(face);
+
+      var flag = document.createElement('span');
+      flag.className = 'status-flag'; flag.style.color = sd.color;
+      el.appendChild(flag);
+    } else {
+      el.classList.add('book--spine');
+      el.style.width = currentSizes.spineW + 'px';
+      el.style.height = currentSizes.spineH + 'px';
+      el.style.background = 'linear-gradient(90deg, rgba(0,0,0,.2), transparent 30%), ' + color;
+      var t = document.createElement('span'); t.className = 'book-title'; t.textContent = book.title;
+      el.appendChild(t);
+      var dot = document.createElement('span');
+      dot.className = 'status-dot'; dot.style.background = sd.color;
+      el.appendChild(dot);
+    }
+    appendStatusAndMemo(el, book, sd);
     return el;
   }
 
-  var newlyAddedId = null;
+  function appendStatusAndMemo(el, book, sd) {
+    if (book.memo && book.memo.trim()) {
+      var memoBadge = document.createElement('span');
+      memoBadge.className = 'memo-badge'; memoBadge.textContent = '✎'; memoBadge.title = 'メモあり';
+      el.appendChild(memoBadge);
+    }
+  }
 
-  function render(highlightId){
-    newlyAddedId = highlightId || null;
-    bookcaseEl.innerHTML = '';
+  // ========== 自由配置アイテム（サイン・スタンプ） ==========
+  function buildFreeItemEl(fi){
+    var el = document.createElement('div');
+    el.className = 'free-item';
+    el.dataset.id = fi.id;
+    el.dataset.kind = fi.isStamp ? 'stamp' : 'text';
+    el.style.left = (fi.x * 100) + '%';
+    el.style.top = (fi.y * 100) + '%';
+    el.style.width = fi.w + 'px';
+    el.style.height = fi.h + 'px';
+    el.style.transform = 'rotate(' + (fi.rot || 0) + 'deg)';
+    
+    el.style.zIndex = fi.z || 15;
 
-    if (state.sort === 'author'){
-      renderByAuthor();
+    if (fi.isStamp){
+      var img = document.createElement('img'); img.src = fi.cover; img.draggable = false;
+      el.appendChild(img);
     } else {
-      renderFree();
+      var sticker = document.createElement('div');
+      sticker.className = 'text-sticker';
+      sticker.textContent = fi.title;
+      sticker.style.background = fi.color || tagColor(fi.title);
+      el.appendChild(sticker);
     }
 
-    if (state.books.length === 0){
-      var hint = document.createElement('div');
-      hint.className = 'empty-hint';
-      hint.textContent = 'JANコード（ISBN）を入力するか、「手動で追加」から本を登録してください。';
-      bookcaseEl.appendChild(hint);
-    }
+    if (editMode) attachFreeItemHandles(el, fi);
+    return el;
   }
 
-  function renderFree(){
-    document.getElementById('addShelfBtn').parentElement.style.display = '';
-    state.shelves.forEach(function(shelf){
-      var block = document.createElement('div');
-      block.className = 'shelf-block';
-      block.dataset.shelfId = shelf.id;
-
-      var controls = document.createElement('div');
-      controls.className = 'shelf-controls';
-      var books = booksOnShelf(shelf.id);
-      if (state.shelves.length > 1 && books.length === 0){
-        var delBtn = document.createElement('button');
-        delBtn.textContent = 'この棚を削除';
-        delBtn.addEventListener('click', function(){
-          state.shelves = state.shelves.filter(function(s){ return s.id !== shelf.id; });
-          persist(); render();
-        });
-        controls.appendChild(delBtn);
+  function attachFreeItemHandles(el, fi){
+    var resize = document.createElement('div');
+    resize.className = 'resize-handle';
+    el.appendChild(resize);
+    resize.addEventListener('pointerdown', function(e){
+      e.stopPropagation(); e.preventDefault();
+      resize.setPointerCapture(e.pointerId);
+      var startX = e.clientX, startY = e.clientY, startW = fi.w, startH = fi.h;
+      function onMove(ev){
+        var dx = ev.clientX - startX, dy = ev.clientY - startY;
+        fi.w = Math.max(24, Math.round(startW + dx));
+        fi.h = Math.max(24, Math.round(startH + dy));
+        el.style.width = fi.w + 'px'; el.style.height = fi.h + 'px';
       }
-      block.appendChild(controls);
-
-      var booksWrap = document.createElement('div');
-      booksWrap.className = 'shelf-books' + (books.length===0 ? ' empty' : '');
-      booksWrap.dataset.shelfId = shelf.id;
-      books.forEach(function(book){
-        var el = buildBookEl(book, { isNew: book.id === newlyAddedId });
-        attachBookEvents(el, book);
-        booksWrap.appendChild(el);
-      });
-      block.appendChild(booksWrap);
-
-      var plank = document.createElement('div');
-      plank.className = 'shelf-plank';
-      block.appendChild(plank);
-
-      bookcaseEl.appendChild(block);
-    });
-  }
-
-  function renderByAuthor(){
-    document.getElementById('addShelfBtn').parentElement.style.display = 'none';
-    var groups = {};
-    var order = [];
-    state.books.forEach(function(b){
-      var key = b.author && b.author.trim() ? b.author.trim() : '著者不明';
-      if (!groups[key]){ groups[key] = []; order.push(key); }
-      groups[key].push(b);
-    });
-    order.sort(function(a,b){ return a.localeCompare(b,'ja'); });
-    if (order.length === 0) return;
-
-    order.forEach(function(author){
-      var block = document.createElement('div');
-      block.className = 'shelf-block';
-
-      var plate = document.createElement('div');
-      plate.className = 'author-plate';
-      plate.textContent = author;
-      block.appendChild(plate);
-
-      var booksWrap = document.createElement('div');
-      booksWrap.className = 'shelf-books';
-      groups[author].forEach(function(book){
-        var el = buildBookEl(book, { isNew: book.id === newlyAddedId });
-        el.style.cursor = 'pointer';
-        attachBookEvents(el, book, { draggable: false });
-        booksWrap.appendChild(el);
-      });
-      block.appendChild(booksWrap);
-
-      var plank = document.createElement('div');
-      plank.className = 'shelf-plank';
-      block.appendChild(plank);
-
-      bookcaseEl.appendChild(block);
-    });
-  }
-
-  // ---------- pointer-based drag & drop (touch + mouse) ----------
-  var DRAG_THRESHOLD = 6;
-  function attachBookEvents(el, book, opts){
-    opts = opts || { draggable: true };
-    var dragState = null;
-
-    el.addEventListener('pointerdown', function(e){
-      if (opts.draggable === false) return;
-      if (e.button !== undefined && e.button !== 0) return;
-      var rect = el.getBoundingClientRect();
-      dragState = {
-        pointerId: e.pointerId,
-        startX: e.clientX, startY: e.clientY,
-        offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
-        rect: rect,
-        dragging: false,
-        ghost: null
-      };
-    });
-
-    el.addEventListener('pointermove', function(e){
-      if (!dragState || dragState.pointerId !== e.pointerId) return;
-      var dx = e.clientX - dragState.startX, dy = e.clientY - dragState.startY;
-      if (!dragState.dragging){
-        if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
-        dragState.dragging = true;
-        try{ el.setPointerCapture(e.pointerId); }catch(err){}
-        var ghost = el.cloneNode(true);
-        ghost.classList.add('book-ghost');
-        ghost.style.width = dragState.rect.width + 'px';
-        ghost.style.height = dragState.rect.height + 'px';
-        ghost.style.left = dragState.rect.left + 'px';
-        ghost.style.top = dragState.rect.top + 'px';
-        document.body.appendChild(ghost);
-        dragState.ghost = ghost;
-        el.classList.add('is-dragging');
-      }
-      if (dragState.ghost){
-        dragState.ghost.style.left = (e.clientX - dragState.offsetX) + 'px';
-        dragState.ghost.style.top = (e.clientY - dragState.offsetY) + 'px';
-      }
-      updateDropTarget(book, e.clientX, e.clientY);
-    });
-
-    function finishDrag(e){
-      if (!dragState) return;
-      if (dragState.ghost){ dragState.ghost.remove(); }
-      var wasDragging = dragState.dragging;
-      try{ el.releasePointerCapture(dragState.pointerId); }catch(err){}
-      dragState = null;
-      if (wasDragging){
+      function onUp(){
+        resize.removeEventListener('pointermove', onMove);
+        resize.removeEventListener('pointerup', onUp);
         persist();
-        render();
-      } else {
-        openDetail(book);
       }
-    }
-    el.addEventListener('pointerup', finishDrag);
-    el.addEventListener('pointercancel', finishDrag);
+      resize.addEventListener('pointermove', onMove);
+      resize.addEventListener('pointerup', onUp);
+    });
 
-    el.addEventListener('keydown', function(e){
-      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openDetail(book); }
+    var rotate = document.createElement('div');
+    rotate.className = 'rotate-handle';
+    el.appendChild(rotate);
+    rotate.addEventListener('pointerdown', function(e){
+      e.stopPropagation(); e.preventDefault();
+      rotate.setPointerCapture(e.pointerId);
+      function angleFromCenter(clientX, clientY){
+        var r = el.getBoundingClientRect();
+        var cx = r.left + r.width/2, cy = r.top + r.height/2;
+        return Math.atan2(clientY - cy, clientX - cx) * 180 / Math.PI + 90;
+      }
+      function onMove(ev){
+        fi.rot = Math.round(angleFromCenter(ev.clientX, ev.clientY));
+        el.style.transform = 'rotate(' + fi.rot + 'deg)';
+      }
+      function onUp(){
+        rotate.removeEventListener('pointermove', onMove);
+        rotate.removeEventListener('pointerup', onUp);
+        persist();
+      }
+      rotate.addEventListener('pointermove', onMove);
+      rotate.addEventListener('pointerup', onUp);
     });
   }
 
-  function updateDropTarget(book, x, y){
-    var shelves = [].slice.call(bookcaseEl.querySelectorAll('.shelf-books'));
-    if (!shelves.length) return;
-    var target = shelves[0];
-    var best = Infinity;
-    shelves.forEach(function(s){
-      var r = s.getBoundingClientRect();
-      var midY = r.top + r.height/2;
-      var d = Math.abs(y - midY);
-      if (y >= r.top - 40 && y <= r.bottom + 40 && d < best){ best = d; target = s; }
+  function renderShelf(){
+    if(!document.getElementById('view-bookshelf').classList.contains('active')) return;
+    if (state.cases.length === 0) state.cases.push({ id:'c'+(nextCaseNum++), rows:1 });
+    casesRow.innerHTML = '';
+
+    state.cases.forEach(function(c){
+      var unit = document.createElement('div');
+      unit.className = 'bookcase-unit';
+      unit.dataset.caseId = c.id;
+
+      if (editingCaseId === c.id) {
+        unit.classList.add('is-editing-rows');
+      }
+
+      for (var r=0; r<c.rows; r++){
+        let shelfId = c.id + '_' + r;
+        let rowIndex = r;
+        let caseId = c.id;
+        var rowWrap = document.createElement('div');
+        rowWrap.className = 'shelf-row-wrap';
+
+        var block = document.createElement('div');
+        block.className = 'shelf-block';
+
+        var sign = state.shelfSigns[shelfId];
+        if (sign){
+          var signBar = document.createElement('div');
+          signBar.className = 'sign-bar';
+          signBar.textContent = sign.text;
+          signBar.style.background = sign.color || tagColor(sign.text);
+          if (editMode) signBar.addEventListener('click', function(){ openSignEditor(shelfId); });
+          block.appendChild(signBar);
+        }
+
+        if (editMode) {
+          var ctrl = document.createElement('div'); ctrl.className = 'shelf-controls';
+          var btn = document.createElement('button');
+          btn.textContent = sign ? 'サイン編集' : '+サイン';
+          btn.onclick = function(){ openSignEditor(shelfId); };
+          ctrl.appendChild(btn); block.appendChild(ctrl);
+        }
+
+        var wrap = document.createElement('div');
+        wrap.className = 'shelf-books'; wrap.dataset.shelfId = shelfId;
+        
+        var items = booksOnShelf(shelfId);
+        if(items.length===0) wrap.classList.add('empty');
+        
+        items.forEach(function(item, idx){
+          var prev = items[idx - 1];
+          var next = items[idx + 1];
+          
+          var matchPrev = prev && (prev.slot === item.slot - 1) && item.bgTag && (prev.bgTag === item.bgTag);
+          var matchNext = next && (next.slot === item.slot + 1) && item.bgTag && (next.bgTag === item.bgTag);
+
+          var el = buildItemEl(item, matchPrev, matchNext);
+          attachDragAndClick(el, item);
+          wrap.appendChild(el);
+        });
+        
+        block.appendChild(wrap);
+        
+        var plank = document.createElement('div'); plank.className = 'shelf-plank';
+        block.appendChild(plank);
+
+        if (editMode){
+          var addBtn = document.createElement('div');
+          addBtn.className = 'row-corner-btn add'; addBtn.textContent = '＋'; addBtn.title = 'この下に段を追加';
+          var removeBtn = document.createElement('div');
+          removeBtn.className = 'row-corner-btn remove'; removeBtn.textContent = '×'; removeBtn.title = 'この段を削除';
+          block.appendChild(addBtn); block.appendChild(removeBtn);
+        }
+
+        rowWrap.appendChild(block);
+
+        if (editMode){
+          var handle = document.createElement('div');
+          handle.className = 'row-reorder-handle';
+          handle.textContent = '≡';
+          handle.title = '入れ替え：もう一つ別の段の≡をタップ';
+          if (reorderSource === shelfId) handle.classList.add('reorder-source');
+          handle.addEventListener('click', function(e){
+            e.stopPropagation();
+            if (!reorderSource){
+              reorderSource = shelfId;
+            } else if (reorderSource === shelfId){
+              reorderSource = null;
+            } else {
+              swapShelfContents(reorderSource, shelfId);
+              reorderSource = null;
+              return; 
+            }
+            renderShelf();
+          });
+          rowWrap.insertBefore(handle, block);
+          attachRowLongPress(unit, block, caseId, rowIndex, addBtn, removeBtn);
+        }
+
+        unit.appendChild(rowWrap);
+      }
+
+      var freeItems = state.books.filter(b => b.caseId === c.id && (b.isStamp || b.isText));
+      if (freeItems.length){
+        var freeLayer = document.createElement('div');
+        freeLayer.className = 'free-layer';
+        freeItems.forEach(function(fi){ freeLayer.appendChild(buildFreeItemEl(fi)); });
+        unit.appendChild(freeLayer);
+      }
+
+      casesRow.appendChild(unit);
     });
-    var shelfId = target.dataset.shelfId;
-    var siblings = [].slice.call(target.querySelectorAll('.book')).filter(function(b){ return b.dataset.id !== book.id; });
-    var insertBeforeId = null;
-    for (var i=0;i<siblings.length;i++){
-      var r = siblings[i].getBoundingClientRect();
-      if (x < r.left + r.width/2){ insertBeforeId = siblings[i].dataset.id; break; }
+
+    finalizeGrids();
+    updateStats(); 
+    if(filterInput.value) applyFilter(); 
+  }
+
+  function finalizeGrids(){
+    var w = slotWidths();
+    document.querySelectorAll('.shelf-books').forEach(function(el){
+      try{
+        var shelfId = el.dataset.shelfId;
+        var items = booksOnShelf(shelfId);
+        var occ = {};
+        items.forEach(function(b){ occ[b.slot] = b; });
+        var maxSlot = items.length ? Math.max.apply(null, items.map(b => b.slot)) : -1;
+        var cols = Math.max(maxSlot + 2, 4); 
+        var widths = [];
+        for (var i=0;i<cols;i++) widths.push(itemGridWidth(occ[i], w));
+        el.style.gridTemplateColumns = widths.map(x => x+'px').join(' ');
+        var offsets = []; var run = 0;
+        widths.forEach(function(width){ offsets.push(run); run += width; });
+        el._slotOffsets = offsets;
+        el._slotWidths = widths;
+        el.dataset.cols = cols;
+      }catch(err){
+        console.error('finalizeGrids failed for a shelf', err);
+      }
+    });
+  }
+
+  function commitMove(item, shelfId, slot){
+    var occupant = state.books.find(function(b){
+      return b.shelfId === shelfId && b.slot === slot && b.id !== item.id && !b.isStamp && !b.isSign && !b.isText;
+    });
+    var oldShelfId = item.shelfId, oldSlot = item.slot;
+    item.shelfId = shelfId; item.slot = slot;
+    if (occupant) { occupant.shelfId = oldShelfId; occupant.slot = oldSlot; }
+    persist();
+  }
+
+  function slotFromEvent(wrap, clientX){
+    var rect = wrap.getBoundingClientRect();
+    var cs = getComputedStyle(wrap);
+    var padLeft = parseFloat(cs.paddingLeft) || 0;
+    var offsets = wrap._slotOffsets || [0];
+    var widths = wrap._slotWidths || [30];
+    var relX = clientX - rect.left - padLeft + wrap.scrollLeft;
+    var slot = offsets.length - 1;
+    for (var i=0;i<offsets.length;i++){
+      if (relX < offsets[i] + widths[i]){ slot = i; break; }
     }
-    var targetOrder;
-    var arr = booksOnShelf(shelfId).filter(function(b){ return b.id !== book.id; });
-    if (insertBeforeId){
-      var idx = arr.findIndex(function(b){ return b.id === insertBeforeId; });
-      var prevOrder = idx > 0 ? arr[idx-1].order : (arr[idx].order - 1);
-      targetOrder = (prevOrder + arr[idx].order) / 2;
+    return Math.max(0, Math.min(offsets.length - 1, slot));
+  }
+
+  function animateDrop(itemId){
+    var el = casesRow.querySelector('.book[data-id="' + itemId + '"]') ||
+             casesRow.querySelector('.free-item[data-id="' + itemId + '"]');
+    if (!el) return;
+    var orig = el.style.transform || ''; 
+    el.style.transition = 'none';
+    el.style.transform = 'translateY(-12px) scale(1.04) ' + orig;
+    void el.offsetHeight; 
+    el.style.transition = '';
+    el.style.transform = orig;
+  }
+
+  // ========== 移動: タップして持ち上げ→タップして置く (✥モード時のみ) ==========
+  function attachDragAndClick(el, item){
+    el.addEventListener('click', function(e){
+      if (item.isStamp || item.isSign) return; 
+
+      if (moveMode) {
+        if (selectedItem && selectedItem.id === item.id) {
+          selectedItem = null; 
+          trashArea.classList.remove('show'); // 選択解除で隠す
+          renderShelf();
+          return;
+        }
+        if (selectedItem) {
+          var picked = selectedItem;
+          selectedItem = null;
+          trashArea.classList.remove('show'); // 移動完了で隠す
+          commitMove(picked, item.shelfId, item.slot);
+          renderShelf();
+          animateDrop(picked.id);
+        } else {
+          // ★修正：本を持ち上げた時に「タップして削除」を表示
+          selectedItem = item;
+          trashArea.textContent = 'タップして削除';
+          trashArea.classList.add('show');
+          renderShelf();
+        }
+        return;
+      }
+
+      if (flipMode) {
+        item.displayMode = (item.displayMode === 'cover') ? 'spine' : 'cover';
+        persist(); renderShelf();
+        return;
+      }
+
+      openModal(item);
+    });
+  }
+
+  document.getElementById('casesRow').addEventListener('click', function(e){
+    if (!moveMode || !selectedItem || selectedItem.isSign || selectedItem.isStamp) return;
+    var wrap = e.target.closest('.shelf-books');
+    if (!wrap || e.target.closest('.book')) return; 
+    var shelfId = wrap.dataset.shelfId;
+    var slot = slotFromEvent(wrap, e.clientX);
+    var picked = selectedItem;
+    selectedItem = null;
+    trashArea.classList.remove('show'); // 配置完了で隠す
+    commitMove(picked, shelfId, slot);
+    renderShelf();
+    animateDrop(picked.id);
+  });
+
+  // ========== スタンプと本の削除・ドラッグ＆ドロップ実装 ==========
+  let activeFreeItemNode = null;
+  let activeFreeItemData = null;
+  let isDraggingFreeItem = false;
+  let dragStartX = 0, dragStartY = 0;
+  let dragOffsetX = 0, dragOffsetY = 0;
+  let hasMovedFreeItem = false;
+
+  // ★修正：タップ専用削除（移動モード中の本）
+  trashArea.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (moveMode && selectedItem) {
+          if (confirm('「' + (selectedItem.title || 'この本') + '」を削除しますか？')) {
+              state.books = state.books.filter(b => b.id !== selectedItem.id);
+              selectedItem = null;
+              trashArea.classList.remove('show');
+              persist();
+              renderShelf();
+          }
+      }
+  });
+
+  document.addEventListener('pointerdown', function(e) {
+      let freeItemNode = e.target.closest('.free-item');
+      if (freeItemNode && !e.target.closest('.resize-handle, .rotate-handle')) {
+          e.stopPropagation(); 
+          
+          if (activeFreeItemNode && activeFreeItemNode !== freeItemNode) {
+              activeFreeItemNode.classList.remove('active');
+          }
+
+          activeFreeItemNode = freeItemNode;
+          let fiId = freeItemNode.dataset.id;
+          activeFreeItemData = state.books.find(b => b.id === fiId);
+
+          globalStampZ++;
+          activeFreeItemData.z = globalStampZ;
+          activeFreeItemNode.style.zIndex = globalStampZ;
+
+          if (freeItemNode.classList.contains('active')) {
+              isDraggingFreeItem = true;
+              hasMovedFreeItem = false;
+              let rect = freeItemNode.getBoundingClientRect();
+              dragOffsetX = e.clientX - rect.left;
+              dragOffsetY = e.clientY - rect.top;
+              dragStartX = e.clientX;
+              dragStartY = e.clientY;
+              // ★修正：ドラッグ中はドロップ削除を促すテキストに
+              trashArea.textContent = 'ここにドロップして削除';
+              trashArea.classList.add('show');
+              freeItemNode.setPointerCapture(e.pointerId);
+          } else {
+              freeItemNode.classList.add('active');
+              trashArea.textContent = 'ドラッグ移動・ここにドロップで削除';
+              trashArea.classList.add('show');
+          }
+      } else {
+          // 背景などを触って解除した時
+          if (activeFreeItemNode && !e.target.closest('#trash-area')) {
+              activeFreeItemNode.classList.remove('active');
+              activeFreeItemNode = null;
+              activeFreeItemData = null;
+              trashArea.classList.remove('show');
+              persist(); 
+          }
+      }
+  });
+
+  document.addEventListener('pointermove', function(e) {
+      if (isDraggingFreeItem && activeFreeItemNode) {
+          let dx = e.clientX - dragStartX;
+          let dy = e.clientY - dragStartY;
+          if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+              hasMovedFreeItem = true;
+          }
+          if (hasMovedFreeItem) {
+              e.preventDefault();
+              let x = e.clientX - dragOffsetX;
+              let y = e.clientY - dragOffsetY;
+              activeFreeItemNode.style.position = 'fixed';
+              activeFreeItemNode.style.left = x + 'px';
+              activeFreeItemNode.style.top = y + 'px';
+          }
+      }
+  }, {passive: false});
+
+  document.addEventListener('pointerup', function(e) {
+      if (isDraggingFreeItem && activeFreeItemNode) {
+          activeFreeItemNode.releasePointerCapture(e.pointerId);
+          let trashRect = trashArea.getBoundingClientRect();
+          
+          // ★修正：スタンプはドロップで削除される（元通り）
+          if (e.clientY >= trashRect.top && hasMovedFreeItem) {
+              state.books = state.books.filter(b => b.id !== activeFreeItemData.id);
+              activeFreeItemNode.remove();
+              activeFreeItemNode = null;
+              activeFreeItemData = null;
+              trashArea.classList.remove('show');
+              persist();
+          } else {
+              if (hasMovedFreeItem) {
+                  activeFreeItemNode.style.display = 'none';
+                  let dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+                  activeFreeItemNode.style.display = '';
+
+                  let unit = dropTarget ? dropTarget.closest('.bookcase-unit') : null;
+                  if (!unit) {
+                      unit = document.querySelector('.bookcase-unit[data-case-id="' + activeFreeItemData.caseId + '"]');
+                  }
+                  
+                  if (unit) {
+                      let uRect = unit.getBoundingClientRect();
+                      let absLeft = e.clientX - dragOffsetX;
+                      let absTop = e.clientY - dragOffsetY;
+                      let relX = (absLeft - uRect.left) / uRect.width;
+                      let relY = (absTop - uRect.top) / uRect.height;
+
+                      activeFreeItemData.caseId = unit.dataset.caseId;
+                      activeFreeItemData.x = relX;
+                      activeFreeItemData.y = relY;
+
+                      let freeLayer = unit.querySelector('.free-layer');
+                      if (!freeLayer) {
+                          freeLayer = document.createElement('div');
+                          freeLayer.className = 'free-layer';
+                          unit.appendChild(freeLayer);
+                      }
+                      freeLayer.appendChild(activeFreeItemNode);
+                      
+                      activeFreeItemNode.style.position = 'absolute';
+                      activeFreeItemNode.style.left = (relX * 100) + '%';
+                      activeFreeItemNode.style.top = (relY * 100) + '%';
+                  }
+                  persist();
+              } else {
+                  if (activeFreeItemData && activeFreeItemData.isText && editMode) {
+                      let next = prompt('テキストを編集（空にすると削除）', activeFreeItemData.title || '');
+                      if (next !== null) {
+                          if (!next.trim()) {
+                              state.books = state.books.filter(b => b.id !== activeFreeItemData.id);
+                              activeFreeItemNode.remove();
+                              activeFreeItemNode = null;
+                              activeFreeItemData = null;
+                              trashArea.classList.remove('show');
+                          } else {
+                              activeFreeItemData.title = next.trim();
+                              activeFreeItemData.color = tagColor(activeFreeItemData.title);
+                              let sticker = activeFreeItemNode.querySelector('.text-sticker');
+                              if (sticker) {
+                                  sticker.textContent = activeFreeItemData.title;
+                                  sticker.style.background = activeFreeItemData.color;
+                              }
+                          }
+                          persist();
+                      }
+                  }
+              }
+          }
+          isDraggingFreeItem = false;
+      }
+  });
+
+
+  // ========== モーダル (詳細/編集) ==========
+  var curItem = null;
+  
+  // ★修正：タグとジャンルの独立した履歴データをセレクトボックスに反映
+  function updateTagSelects() {
+    var gSel = document.getElementById('bm-genre-select');
+    gSel.innerHTML = '<option value="">＋ ジャンル...</option>';
+    state.genreHistory.forEach(function(g) {
+      gSel.innerHTML += '<option value="' + g + '">' + g + '</option>';
+    });
+    gSel.innerHTML += '<option value="__NEW__">＋ 新規作成...</option>';
+
+    var tSel = document.getElementById('bm-tag-select');
+    tSel.innerHTML = '<option value="">＋ タグ...</option>';
+    state.tagHistory.forEach(function(t) {
+      tSel.innerHTML += '<option value="' + t + '">' + t + '</option>';
+    });
+    tSel.innerHTML += '<option value="__NEW__">＋ 新規作成...</option>';
+  }
+
+  // ★修正：タグ・ジャンルの変更イベント（新規作成・既存追加）
+  function handleTagSelectChange(e, type) {
+    var val = e.target.value;
+    e.target.value = ''; // 選択後はリセット
+    if (!val || !curItem) return;
+
+    if (val === '__NEW__') {
+      val = prompt('新しい' + (type === 'genre' ? 'ジャンル' : 'タグ') + 'を入力してください');
+      if (!val || !val.trim()) return;
+      val = val.trim();
+      
+      // 履歴に保存
+      var history = type === 'genre' ? state.genreHistory : state.tagHistory;
+      var idx = history.indexOf(val);
+      if (idx !== -1) history.splice(idx, 1);
+      history.unshift(val);
+      if (history.length > 50) history.length = 50;
+      persist();
+      updateTagSelects(); // 選択肢を更新
+    }
+
+    var targetList = type === 'genre' ? (curItem.genres = curItem.genres || []) : (curItem.tags = curItem.tags || []);
+    if (!targetList.includes(val)) {
+      targetList.push(val);
+      persist();
+      refreshTagUI(curItem);
+      renderShelf();
+    }
+  }
+
+  document.getElementById('bm-genre-select').addEventListener('change', function(e){ handleTagSelectChange(e, 'genre'); });
+  document.getElementById('bm-tag-select').addEventListener('change', function(e){ handleTagSelectChange(e, 'tag'); });
+
+  function openModal(item){
+    curItem = item;
+    var modal = document.getElementById('bookModal');
+
+    if (editMode) modal.classList.add('is-edit');
+    else modal.classList.remove('is-edit');
+
+    document.getElementById('bm-title').textContent = item.title;
+
+    var coverWrap = document.getElementById('bm-cover-wrap');
+    coverWrap.innerHTML = '';
+    if (item.cover) {
+      var img = document.createElement('img'); img.src = item.cover; coverWrap.appendChild(img);
+    }
+    document.getElementById('bm-cover-input').value = item.cover || '';
+
+    var synEl = document.getElementById('bm-synopsis');
+    var synInput = document.getElementById('bm-synopsis-input');
+    var synToggle = document.getElementById('bm-synopsis-toggle');
+    
+    synEl.textContent = item.description || '（あらすじ情報はありません）';
+    synInput.value = item.description || '';
+    
+    synEl.classList.remove('expanded'); synToggle.hidden = true; synToggle.textContent = '続きを読む';
+    requestAnimationFrame(() => { if (synEl.scrollHeight > synEl.clientHeight + 4) synToggle.hidden = false; });
+
+    var googleImgLink = document.getElementById('bm-google-img');
+    googleImgLink.href = 'https://www.google.com/search?tbm=isch&q=' + encodeURIComponent((item.title || '') + ' ' + (item.author || '') + ' 表紙');
+
+    var hanmotoLink = document.getElementById('bm-hanmoto-link');
+    if (item.isbn) {
+        hanmotoLink.href = 'https://www.hanmoto.com/bd/isbn/' + item.isbn;
+        hanmotoLink.style.display = 'inline-block';
+    } else hanmotoLink.style.display = 'none';
+
+    var descLink = document.getElementById('bm-google-desc');
+    descLink.href = 'https://www.google.com/search?q=' + encodeURIComponent((item.title || '') + ' ' + (item.author || '') + ' あらすじ');
+
+    document.getElementById('bm-author').textContent = item.author ? '著者: ' + item.author : '著者: （情報なし）';
+    document.getElementById('bm-publisher').textContent = item.publisher ? '出版社: ' + item.publisher : '出版社: （情報なし）';
+    document.getElementById('bm-isbn').textContent = item.isbn ? 'ISBN: ' + item.isbn : 'ISBN: （情報なし）';
+
+    document.getElementById('bm-memo').value = item.memo || '';
+    document.getElementById('bm-memo-text').textContent = item.memo || 'メモはありません';
+
+    var statusEl = document.getElementById('bm-status');
+    if(statusEl) statusEl.value = item.status || 'owned';
+    
+    updateTagSelects(); // ★修正：履歴をセレクトボックスに反映
+    
+    refreshTagUI(item);
+    modal.classList.remove('hidden');
+  }
+
+  function renderDetailTags(item){
+    var wrap = document.getElementById('bm-tags'); wrap.innerHTML = '';
+    
+    // ★修正：ジャンルとタグを両方チップとして表示
+    var allTags = [];
+    (item.genres || []).forEach(g => allTags.push({text: g, type: 'genre'}));
+    (item.tags || []).forEach(t => allTags.push({text: t, type: 'tag'}));
+
+    allTags.forEach(function(tagObj){
+      var tag = tagObj.text;
+      var chip = document.createElement('span'); 
+      chip.className = 'tag-chip' + (tagObj.type === 'genre' ? ' genre-chip' : ''); // ジャンルは少し見た目を変える
+
+      var swatch = document.createElement('input');
+      swatch.type = 'color';
+      swatch.className = 'tag-swatch';
+      swatch.value = tagColor(tag);
+      swatch.title = '「' + tag + '」の背景色';
+      swatch.disabled = !editMode;
+      swatch.addEventListener('input', function(){
+        state.tagColors[tag] = this.value;
+        persist(); renderDetailTags(item); renderShelf();
+      });
+      chip.appendChild(swatch);
+
+      var txt = document.createElement('span'); 
+      txt.textContent = tag;
+      chip.appendChild(txt);
+      if (item.bgTag === tag){
+        var star = document.createElement('span'); star.className='bgtag-star'; star.textContent='★';
+        star.title = 'この本の背景マークに設定中';
+        chip.appendChild(star);
+      }
+
+      if(editMode){
+        var rm = document.createElement('button'); rm.textContent = '×';
+        rm.onclick = function(){
+          if(tagObj.type === 'genre') item.genres = item.genres.filter(t => t !== tag);
+          else item.tags = item.tags.filter(t => t !== tag);
+          if (item.bgTag === tag) item.bgTag = null;
+          persist(); refreshTagUI(item); renderShelf();
+        };
+        chip.appendChild(rm);
+      }
+      wrap.appendChild(chip);
+    });
+  }
+
+  function refreshBgTagSelect(item){
+    var sel = document.getElementById('bm-bgtag');
+    sel.innerHTML = '<option value="">背景マーク: なし</option>';
+    
+    var allTags = [].concat(item.genres || [], item.tags || []);
+    allTags.forEach(function(t){
+      var opt = document.createElement('option'); opt.value = t; opt.textContent = t;
+      if (item.bgTag === t) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+  function refreshTagUI(item){
+    renderDetailTags(item);
+    refreshBgTagSelect(item);
+  }
+  document.getElementById('bm-bgtag').addEventListener('change', function(){
+    if (!curItem) return;
+    curItem.bgTag = this.value || null;
+    persist(); renderDetailTags(curItem); renderShelf();
+  });
+
+  document.getElementById('bm-synopsis-toggle').addEventListener('click', function(){
+    var synEl = document.getElementById('bm-synopsis');
+    var expanded = synEl.classList.toggle('expanded');
+    this.textContent = expanded ? '閉じる' : '続きを読む';
+  });
+
+  document.getElementById('bm-close').addEventListener('click', function(){
+    if(curItem){
+      curItem.memo = document.getElementById('bm-memo').value;
+      if(editMode){
+        curItem.description = document.getElementById('bm-synopsis-input').value;
+        curItem.cover = document.getElementById('bm-cover-input').value;
+        var st = document.getElementById('bm-status');
+        if(st) curItem.status = st.value;
+      }
+      persist(); renderShelf();
+    }
+    document.getElementById('bookModal').classList.add('hidden');
+  });
+  
+  document.getElementById('bm-delete').addEventListener('click', function(){
+    if(curItem && confirm('削除しますか？')){
+      state.books = state.books.filter(b => b.id !== curItem.id);
+      persist(); renderShelf();
+      document.getElementById('bookModal').classList.add('hidden');
+    }
+  });
+
+  document.getElementById('bm-memo').addEventListener('input', function(){
+    if(curItem){ curItem.memo = this.value; document.getElementById('bm-memo-text').textContent = curItem.memo || 'メモはありません'; persist(); }
+  });
+  document.getElementById('bm-synopsis-input').addEventListener('input', function(){
+    if(curItem){ curItem.description = this.value; document.getElementById('bm-synopsis').textContent = curItem.description || '（あらすじ情報はありません）'; persist(); }
+  });
+  document.getElementById('bm-cover-input').addEventListener('change', function(){
+    if(curItem){
+      curItem.cover = this.value.trim(); persist();
+      var wrap = document.getElementById('bm-cover-wrap'); wrap.innerHTML = '';
+      if(curItem.cover){ var img = document.createElement('img'); img.src = curItem.cover; wrap.appendChild(img); }
+    }
+  });
+
+  // ========== 検索・一括追加ロジック ==========
+  var scanStream = null;
+  var scanning = false;
+  
+  document.getElementById('modeScanBtn').addEventListener('click', function(){
+    this.classList.remove('ghost'); document.getElementById('modeInputBtn').classList.add('ghost');
+    document.getElementById('scanArea').hidden = false; document.getElementById('inputArea').hidden = true;
+    startScan();
+  });
+  document.getElementById('modeInputBtn').addEventListener('click', function(){
+    this.classList.remove('ghost'); document.getElementById('modeScanBtn').classList.add('ghost');
+    document.getElementById('scanArea').hidden = true; document.getElementById('inputArea').hidden = false;
+    stopScan();
+  });
+
+  function renderQueue(){
+    document.getElementById('queueCount').textContent = searchQueue.length;
+    var list = document.getElementById('queueList'); list.innerHTML = '';
+    searchQueue.forEach(function(q, i){
+      var d = document.createElement('div'); d.className = 'queue-item';
+      var img = document.createElement('img'); img.src = q.cover || ''; img.onerror = function(){ this.style.display='none'; };
+      var info = document.createElement('div'); info.className = 'queue-info';
+      info.innerHTML = '<div class="queue-title">'+(q.title||'無題')+'</div><div class="queue-author">'+(q.author||'')+'</div>';
+      var del = document.createElement('button'); del.className = 'queue-del'; del.textContent = '×';
+      del.onclick = function(){ searchQueue.splice(i,1); renderQueue(); };
+      d.appendChild(img); d.appendChild(info); d.appendChild(del); list.appendChild(d);
+    });
+  }
+
+  async function fetchBookInfo(query){
+    var isIsbn = /^[0-9Xx]+$/.test(query.replace(/-/g,''));
+    var resObj = { title: '', author: '', publisher: '', cover: '', description: '', displayMode: 'cover', size: 'm', tags: [], genres: [], status: 'owned', bgTag: null };
+    
+    if (isIsbn) {
+      var isbn = query.replace(/-/g,''); resObj.isbn = isbn;
+      try {
+        var res = await fetch('https://api.openbd.jp/v1/get?isbn=' + isbn);
+        var data = await res.json();
+        if(data && data[0]){
+          var s = data[0].summary;
+          resObj.title = s.title; resObj.author = (s.author||'').replace(/\/+$/,'');
+          resObj.publisher = s.publisher; resObj.cover = s.cover;
+        }
+      } catch(e) {}
+
+      if(!resObj.cover || !resObj.title){
+        try{
+           var gRes = await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn);
+           var gData = await gRes.json();
+           var info = gData.items?.[0]?.volumeInfo;
+           if(info){
+              if(!resObj.title) resObj.title = info.title;
+              if(!resObj.author) resObj.author = info.authors?.join(', ');
+              if(!resObj.cover) resObj.cover = info.imageLinks?.thumbnail?.replace('http:','https:');
+              if(!resObj.description) resObj.description = info.description;
+           }
+        }catch(e){}
+      }
+      if(!resObj.cover) resObj.cover = 'https://www.hanmoto.com/bd/img/'+isbn+'.jpg';
+      if(!resObj.title) resObj.title = '未登録本 (ISBN:'+isbn+')';
+      return resObj;
     } else {
-      targetOrder = arr.length ? arr[arr.length-1].order + 1 : 0;
-    }
-    var b = state.books.find(function(bb){ return bb.id === book.id; });
-    if (b.shelfId !== shelfId || b.order !== targetOrder){
-      b.shelfId = shelfId;
-      b.order = targetOrder;
-      render();
-      // re-mark dragging state on new element since render rebuilt DOM
-      var newEl = bookcaseEl.querySelector('.book[data-id="'+book.id+'"]');
-      if (newEl) newEl.classList.add('is-dragging');
+      try {
+        var gRes2 = await fetch('https://www.googleapis.com/books/v1/volumes?q=intitle:' + encodeURIComponent(query));
+        var gData2 = await gRes2.json();
+        if(gData2.items && gData2.items.length > 0){
+          var info2 = gData2.items[0].volumeInfo;
+          resObj.title = info2.title || query;
+          resObj.author = info2.authors?.join(', ') || '';
+          resObj.publisher = info2.publisher || '';
+          resObj.cover = info2.imageLinks?.thumbnail?.replace('http:','https:') || '';
+          resObj.description = info2.description || '';
+        } else resObj.title = query + ' (情報なし)';
+      } catch(e) { resObj.title = query; }
+      return resObj;
     }
   }
 
-  // ---------- init ----------
-  (async function init(){
-    await loadState();
-    // reflect loaded toggle states in UI
-    document.querySelectorAll('#viewToggle button').forEach(function(b){
-      b.classList.toggle('active', b.dataset.view === state.view);
+  document.getElementById('manualSearchBtn').addEventListener('click', async function(){
+    var val = document.getElementById('manualIsbn').value.trim();
+    if(!val) return;
+    this.disabled = true; this.textContent = '...';
+    var info = await fetchBookInfo(val);
+    searchQueue.push(info); renderQueue();
+    document.getElementById('manualIsbn').value = '';
+    this.disabled = false; this.textContent = '検索';
+  });
+
+  document.getElementById('bulkAddBtn').addEventListener('click', function(){
+    if(searchQueue.length === 0) return showToast('追加する本がありません');
+    var sid = state.cases[0].id + '_0'; 
+    searchQueue.forEach(function(q){
+      var siblings = booksOnShelf(sid);
+      var b = Object.assign({}, q, { id:uid(), shelfId:sid, slot: siblings.length });
+      state.books.push(b);
     });
-    document.querySelectorAll('#sortToggle button').forEach(function(b){
-      b.classList.toggle('active', b.dataset.sort === state.sort);
+    persist(); searchQueue = []; renderQueue(); showToast('本棚に追加しました！');
+    document.querySelector('.nav-btn[data-target="view-bookshelf"]').click();
+  });
+
+  // ---------- カメラ ----------
+  var lastScanned = '';
+  function startScan(){
+    if(scanning) return;
+    scanning = true; lastScanned = '';
+    Quagga.init({
+      inputStream: { type: 'LiveStream', target: document.getElementById('scanContainer'), constraints: { facingMode: 'environment' } },
+      decoder: { readers: ['ean_reader'] }
+    }, function(err){
+      if(err) { scanning=false; return showToast('カメラが起動できません'); }
+      Quagga.start();
     });
-    render();
-  })();
+    Quagga.onDetected(async function(res){
+      var code = res.codeResult.code;
+      if(code !== lastScanned && /^978/.test(code)){
+        lastScanned = code; showToast(code + ' 読取完了');
+        var info = await fetchBookInfo(code);
+        searchQueue.push(info); renderQueue();
+        setTimeout(()=> { lastScanned = ''; }, 3000); 
+      }
+    });
+  }
+  function stopScan(){ if(scanning) { Quagga.stop(); scanning = false; } }
+
+  // ========== 初期化 ==========
+  loadState();
+  applyPopStage();
+  renderShelf();
+
 })();
 </script>
 </body>
