@@ -669,14 +669,23 @@
         </select>
         <button class="btn ghost" type="button" id="filterClearBtn" style="margin-left:auto;">クリア</button>
       </div>
+      <div style="display:flex; gap:6px; align-items:center; margin-top:8px;">
+        <select id="sortSelect" style="flex:1; padding:8px; font-size:12.5px; border-radius:4px; border:1px solid var(--accent); background:var(--case-bg); color:var(--text-main);">
+          <option value="">並び替え（今のページ）...</option>
+          <option value="kana">五十音順</option>
+          <option value="pubdate">発売日順</option>
+          <option value="added">登録日順</option>
+          <option value="status_asc">達成度順（下）：欲しい→購入済み→読み中→済</option>
+          <option value="status_desc">達成度順（上）：済→読み中→購入済み→欲しい</option>
+        </select>
+        <button class="btn ghost" type="button" id="undoSortBtn" hidden>↩️ 元に戻す</button>
+      </div>
     </div>
     
     <div class="edit-tools" id="editTools" style="display: none;">
       <button class="btn ghost" id="flipModeBtn">表示切替(表紙/背): OFF</button>
       <button class="btn ghost" id="stampMenuBtn" title="スタンプ追加">☻</button>
       <button class="btn ghost" id="addCaseBtnHeader" title="本棚を追加">＋</button>
-      <button class="btn ghost" id="sortCaseBtn" title="今のページの各段をタイトル順に並び替え">🔤 並び替え</button>
-      <button class="btn ghost" id="undoSortBtn" title="並び替えを元に戻す" hidden>↩️ 元に戻す</button>
       <input type="file" id="stampFileInput" accept="image/*" hidden>
       <p class="edit-hint">段を長押しで全ての段に＋／⚙️／×が表示されます（段を全部消すとその本棚ごと消えます）／⚙️でその段だけのサイズを個別設定／左の≡をタップしてから別の段の≡をタップで入れ替え／個別設定していない段はサイドバーの表示サイズで一括変更できます</p>
     </div>
@@ -736,6 +745,7 @@
 
         <div id="graphAvgPanel">
           <select id="graphAvgMetricSelect" class="graph-metric-select"></select>
+          <p class="edit-hint" style="margin:-10px 0 12px;">📊のグラフはダブルタップでも指標を切替できます</p>
           <div id="graphAvgCharts"></div>
         </div>
 
@@ -751,6 +761,7 @@
             <button class="btn ghost" id="compareRemoveBtn" style="flex:1;">－ 追加した順に削除</button>
           </div>
           <select id="graphCompareMetricSelect" class="graph-metric-select"></select>
+          <p class="edit-hint" style="margin:-10px 0 12px;">🥧📊のグラフはダブルタップでも指標を切替できます</p>
           <div id="graphCompareCharts"></div>
         </div>
       </div>
@@ -1447,9 +1458,36 @@
     return ids;
   }
 
-  // ---- 並び替え（タイトル順、元に戻せる） ----
+  // ---- 並び替え（5種類、元に戻せる） ----
   var lastSortBackup = null;
-  function sortCurrentCase(){
+  function pubdateSortKey(b){
+    if (!b.pubdate) return null;
+    var s = String(b.pubdate).replace(/-/g,'');
+    if (/^\d{4}$/.test(s)) s += '0000';
+    else if (/^\d{6}$/.test(s)) s += '00';
+    else if (!/^\d{8}$/.test(s)) return null;
+    return parseInt(s, 10);
+  }
+  function statusIndex(b){
+    var i = STATUS_DEFS.findIndex(function(sd){ return sd.key === (b.status || 'owned'); });
+    return i === -1 ? 1 : i;
+  }
+  var SORT_COMPARATORS = {
+    kana: function(a,b){ return (a.title||'').localeCompare(b.title||'', 'ja'); },
+    pubdate: function(a,b){
+      var ka = pubdateSortKey(a), kb = pubdateSortKey(b);
+      if (ka===null && kb===null) return 0;
+      if (ka===null) return 1;
+      if (kb===null) return -1;
+      return ka - kb;
+    },
+    added: function(a,b){ return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; }, // idの先頭がDate.now()由来なので登録順として使える
+    status_asc: function(a,b){ return statusIndex(a) - statusIndex(b); },
+    status_desc: function(a,b){ return statusIndex(b) - statusIndex(a); }
+  };
+  function sortCurrentCase(criterion){
+    var cmp = SORT_COMPARATORS[criterion];
+    if (!cmp) return;
     var caseId = currentCaseId();
     var shelfIds = shelfIdsInCase(caseId);
     var backup = [];
@@ -1460,12 +1498,12 @@
     lastSortBackup = backup;
     shelfIds.forEach(function(sid){
       var items = booksOnShelf(sid);
-      items.sort(function(a,b){ return (a.title||'').localeCompare(b.title||'', 'ja'); });
+      items.sort(cmp);
       items.forEach(function(b, i){ b.slot = i; });
     });
     persist(); renderShelf();
     document.getElementById('undoSortBtn').hidden = false;
-    showToast('タイトル順に並び替えました');
+    showToast('並び替えました');
   }
   function undoSort(){
     if (!lastSortBackup) return;
@@ -1478,7 +1516,11 @@
     document.getElementById('undoSortBtn').hidden = true;
     showToast('元に戻しました');
   }
-  document.getElementById('sortCaseBtn').addEventListener('click', sortCurrentCase);
+  document.getElementById('sortSelect').addEventListener('change', function(){
+    if (!this.value) return;
+    sortCurrentCase(this.value);
+    this.selectedIndex = 0; // 同じ項目を続けて選び直せるようにリセット
+  });
   document.getElementById('undoSortBtn').addEventListener('click', undoSort);
 
   function addRowBelow(caseId, rowIndex){
@@ -2062,9 +2104,11 @@
     container.appendChild(wrap);
   }
   // 折れ線グラフ：SVGのpolylineで作る。series: [{label,color,points:[{x,y}]}] （x,yは0〜1に正規化済み）
-  function renderLineChart(container, series){
-    var W = 300, H = 120, PAD = 8;
-    var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  function renderLineChart(container, series, opts){
+    opts = opts || {};
+    var W = 300, H = 130, PAD = 8, LEFT_PAD = 34;
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(svgNS,'svg');
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     svg.setAttribute('class', 'line-chart-svg');
     var hasAny = series.some(function(s){ return s.points.length > 1; });
@@ -2072,12 +2116,32 @@
       container.appendChild(Object.assign(document.createElement('p'), {className:'edit-hint', textContent:'折れ線を描くにはデータが足りません'}));
       return;
     }
+    var plotW = W - LEFT_PAD - PAD;
+    // 目盛り（横線＋時間ラベル）
+    var maxValue = opts.maxValue || 0;
+    var gridCount = 4;
+    for (var i=0; i<=gridCount; i++){
+      var frac = i/gridCount;
+      var y = H-PAD - frac*(H-2*PAD);
+      var line = document.createElementNS(svgNS,'line');
+      line.setAttribute('x1', LEFT_PAD); line.setAttribute('x2', W-PAD);
+      line.setAttribute('y1', y); line.setAttribute('y2', y);
+      line.setAttribute('stroke', 'rgba(128,128,128,.3)'); line.setAttribute('stroke-width', '0.6');
+      svg.appendChild(line);
+      if (maxValue > 0){
+        var label = document.createElementNS(svgNS,'text');
+        label.setAttribute('x', 2); label.setAttribute('y', y+2.5);
+        label.setAttribute('font-size', '6.5'); label.setAttribute('fill', '#999');
+        label.textContent = formatDuration(Math.round(maxValue*frac));
+        svg.appendChild(label);
+      }
+    }
     series.forEach(function(s){
       if (s.points.length < 2) return;
       var pts = s.points.map(function(p){
-        return (PAD + p.x*(W-2*PAD)).toFixed(1) + ',' + (H-PAD - p.y*(H-2*PAD)).toFixed(1);
+        return (LEFT_PAD + p.x*plotW).toFixed(1) + ',' + (H-PAD - p.y*(H-2*PAD)).toFixed(1);
       }).join(' ');
-      var poly = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+      var poly = document.createElementNS(svgNS,'polyline');
       poly.setAttribute('points', pts);
       poly.setAttribute('fill', 'none');
       poly.setAttribute('stroke', s.color);
@@ -2098,17 +2162,20 @@
       container.appendChild(legend);
     }
   }
-  // 本の累積読書時間の推移（セッションを時系列で積み上げ）。x=0〜1はセッション番号の割合、y=0〜1は累積時間の割合
-  function cumulativeSeriesFor(book){
+  // 本の累積読書時間の推移（セッションを時系列で積み上げ）。x=0〜1はセッション番号の割合、
+  // y=0〜1は累積時間の割合。sharedMaxを渡すと、その値を100%として正規化する
+  // （比較グラフで複数の本を同じ縮尺で重ねて描くために必要 — 渡さないとその本自身の
+  // 最終値が100%になり、本ごとに縮尺がバラバラになって比較にならない）
+  function cumulativeSeriesFor(book, sharedMax){
     var sessions = (book.readingSessions || []).slice().sort(function(a,b){ return new Date(a.end) - new Date(b.end); });
     if (!sessions.length) return [];
-    var acc = 0; var points = [];
+    var acc = 0; var raw = [];
     sessions.forEach(function(sess, idx){
       acc += (new Date(sess.end) - new Date(sess.start)) / 1000;
-      points.push({ x: idx/(sessions.length-1 || 1), y: acc, idx: idx });
+      raw.push({ x: idx/(sessions.length-1 || 1), seconds: acc });
     });
-    var maxY = points[points.length-1].y || 1;
-    return points.map(function(p){ return { x: p.x, y: p.y / maxY, seconds: p.y }; });
+    var maxY = sharedMax || raw[raw.length-1].seconds || 1;
+    return raw.map(function(p){ return { x: p.x, y: p.seconds / maxY, seconds: p.seconds }; });
   }
   var METRIC_DEFS = {
     total: { label: '合計読書時間', get: function(b){ return bookElapsedSeconds(b); }, fmt: formatDuration },
@@ -2123,6 +2190,18 @@
     Object.keys(METRIC_DEFS).forEach(function(k){
       var opt = document.createElement('option'); opt.value = k; opt.textContent = METRIC_DEFS[k].label;
       sel.appendChild(opt);
+    });
+  }
+  // グラフをダブルタップすると、そのグラフの指標を順番に切り替えて再描画する
+  function attachMetricDblTap(sectionEl, selectEl, rerenderFn){
+    sectionEl.style.cursor = 'pointer';
+    sectionEl.title = 'ダブルタップで表示する指標を切替';
+    sectionEl.addEventListener('dblclick', function(e){
+      e.preventDefault();
+      var keys = Object.keys(METRIC_DEFS);
+      var idx = keys.indexOf(selectEl.value || keys[0]);
+      selectEl.value = keys[(idx+1) % keys.length];
+      rerenderFn();
     });
   }
 
@@ -2161,6 +2240,7 @@
     sorted.forEach(function(b){
       barSec.appendChild(barRow(b.title || '無題', metric.get(b), maxVal, metric.fmt(metric.get(b))));
     });
+    attachMetricDblTap(barSec, document.getElementById('graphAvgMetricSelect'), renderGraphAvg);
 
     // 折れ線グラフ：全体の累積読書時間の推移（読了日順）
     var lineSec = renderSection(panel, '📈 累積読書時間の推移（読了順）');
@@ -2173,7 +2253,7 @@
       acc += b.totalReadingSeconds;
       return { x: idx/(sortedByDone.length-1 || 1), y: acc/maxAcc };
     });
-    renderLineChart(lineSec, [{ label:'累積時間', color: '#a87c3f', points: points }]);
+    renderLineChart(lineSec, [{ label:'累積時間', color: '#a87c3f', points: points }], { maxValue: maxAcc });
   }
 
   // ---- 本単品ページ ----
@@ -2222,7 +2302,7 @@
     });
 
     var lineSec = renderSection(detail, '📈 累積読書時間の推移');
-    renderLineChart(lineSec, [{ label: b.title, color: color, points: cumulativeSeriesFor(b) }]);
+    renderLineChart(lineSec, [{ label: b.title, color: color, points: cumulativeSeriesFor(b) }], { maxValue: bookElapsedSeconds(b) });
   }
 
   // ---- 比較ページ ----
@@ -2270,6 +2350,7 @@
     // 円グラフ：選んだ本の間での指標の割合
     var pieSec = renderSection(charts, '🥧 ' + metric.label + 'の割合');
     renderPieChart(pieSec, books.map(function(e){ return { label: e.book.title||'無題', value: metric.get(e.book), color: e.color }; }));
+    attachMetricDblTap(pieSec, document.getElementById('graphCompareMetricSelect'), renderGraphCompare);
 
     // 棒グラフ：指標を重ねて半透明表示
     var barSec = renderSection(charts, '📊 ' + metric.label + '（重ねて表示）');
@@ -2282,12 +2363,15 @@
     books.forEach(function(e){
       barSec.appendChild(barRow(e.book.title||'無題', metric.get(e.book), maxVal, metric.fmt(metric.get(e.book)), e.color));
     });
+    attachMetricDblTap(barSec, document.getElementById('graphCompareMetricSelect'), renderGraphCompare);
 
     // 折れ線グラフ：累積読書時間の推移を重ねて表示
+    // sharedMaxを渡して、本ごとに縮尺がバラバラにならないようにする（これが前回のバグでした）
     var lineSec = renderSection(charts, '📈 累積読書時間の推移（重ねて表示）');
+    var sharedMax = Math.max.apply(null, books.map(function(e){ return bookElapsedSeconds(e.book); }).concat([1]));
     renderLineChart(lineSec, books.map(function(e){
-      return { label: e.book.title||'無題', color: e.color, opacity: '0.75', points: cumulativeSeriesFor(e.book) };
-    }));
+      return { label: e.book.title||'無題', color: e.color, opacity: '0.75', points: cumulativeSeriesFor(e.book, sharedMax) };
+    }), { maxValue: sharedMax });
   }
 
   // ========== 棚のロジック・描画 ==========
