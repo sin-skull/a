@@ -1942,7 +1942,7 @@
         var occ = {};
         items.forEach(function(b){ occ[b.slot] = b; });
         var maxSlot = items.length ? Math.max.apply(null, items.map(b => b.slot)) : -1;
-        var cols = Math.max(maxSlot + 2, 4); 
+        var cols = Math.max(maxSlot + 1, 1); // 実際にある本の分だけ。余分な空きスロットは確保しない
         var widths = [];
         for (var i=0;i<cols;i++) widths.push(itemGridWidth(occ[i], w));
         el.style.gridTemplateColumns = widths.map(x => x+'px').join(' ');
