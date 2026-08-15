@@ -1633,6 +1633,17 @@
       used[b.slot] = true;
     });
   }
+  // 本を移動・削除した結果、先頭の本のスロットが0より大きいまま残っていると
+  // その分だけ左に余白ができる。先頭側の余分だけを詰め、本と本の間の隙間は
+  // （意図的な設計なので）そのまま残す。
+  function trimLeadingGap(shelfId){
+    var arr = booksOnShelf(shelfId);
+    if (!arr.length) return false;
+    var minSlot = Math.min.apply(null, arr.map(function(b){ return b.slot; }));
+    if (minSlot <= 0) return false;
+    arr.forEach(function(b){ b.slot -= minSlot; });
+    return true;
+  }
 
   function slotWidths(){
     return { cover: currentSizes.coverW, spine: currentSizes.spineW };
@@ -1792,6 +1803,7 @@
     if(!document.getElementById('view-bookshelf').classList.contains('active')) return;
     if (state.cases.length === 0) state.cases.push({ id:'c'+(nextCaseNum++), rows:1 });
     casesRow.innerHTML = '';
+    var needsPersist = false;
 
     state.cases.forEach(function(c){
       var unit = document.createElement('div');
@@ -1834,6 +1846,7 @@
         var wrap = document.createElement('div');
         wrap.className = 'shelf-books'; wrap.dataset.shelfId = shelfId;
         
+        if (trimLeadingGap(shelfId)) needsPersist = true;
         var items = booksOnShelf(shelfId);
         if(items.length===0) wrap.classList.add('empty');
         
@@ -1930,6 +1943,7 @@
     finalizeGrids();
     updateStats(); 
     if (casesRow.classList.contains('is-filtered')) applyFilter(); 
+    if (needsPersist) persist();
   }
 
   function finalizeGrids(){
