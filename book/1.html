@@ -453,6 +453,30 @@
   .queue-author { font-size: 11px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .queue-del { background: transparent; color: #ff5555; border: none; font-size: 22px; cursor: pointer; padding: 8px; box-shadow: none; }
 
+  /* ---------- 計測ビュー ---------- */
+  .timer-item{
+    display:flex; align-items:center; gap:12px; padding:12px 0;
+    border-bottom:1px solid rgba(128,128,128,0.2);
+  }
+  .timer-item img{ width:44px; height:64px; object-fit:cover; border-radius:2px; background:#555; flex:0 0 auto; }
+  .timer-info{ flex:1; min-width:0; }
+  .timer-title{ font-size:14px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .timer-meta{ font-size:11px; opacity:0.75; margin-top:2px; }
+  .timer-elapsed{ font-size:13px; font-weight:bold; color:var(--accent); margin-top:2px; font-variant-numeric:tabular-nums; }
+  .timer-controls{ display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+  .timer-switch{
+    position:relative; width:46px; height:26px; border-radius:13px;
+    background:#555; cursor:pointer; border:none; box-shadow:none; flex:0 0 auto;
+    transition:background .15s ease;
+  }
+  .timer-switch::after{
+    content:''; position:absolute; top:2px; left:2px; width:22px; height:22px;
+    border-radius:50%; background:#fff; transition:transform .15s ease;
+  }
+  .timer-switch.on{ background:#4caf50; }
+  .timer-switch.on::after{ transform:translateX(20px); }
+  .timer-finish-btn{ font-size:11px; padding:6px 10px; }
+
   /* ---------- 設定ビュー ---------- */
   .settings-container { padding: 20px; }
   .theme-btn {
@@ -529,6 +553,7 @@
   <div class="sidebar-header">メニュー</div>
   <button class="nav-btn active" data-target="view-bookshelf">📚 マイ本棚</button>
   <button class="nav-btn" data-target="view-search">🔍 本を追加する</button>
+  <button class="nav-btn" data-target="view-timer">⏱ 計測</button>
   
   <div class="sidebar-header" style="font-size: 14px; margin-top: 10px; border-top: 1px solid var(--accent); padding-top:16px;">読書データ</div>
   <div style="padding: 10px 20px; font-size: 13px; line-height: 1.8;">
@@ -537,6 +562,7 @@
     <div>✅ 読了済: <span id="stat-done">0</span> 冊</div>
     <div>📚 積読/購入済: <span id="stat-owned">0</span> 冊</div>
     <div>🛒 欲しい: <span id="stat-want">0</span> 冊</div>
+    <div>⏱ 平均読了時間: <span id="stat-avg-time">-</span></div>
   </div>
 
   <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">表示サイズ (横に並ぶ数)</div>
@@ -639,6 +665,15 @@
       </div>
       
       <div class="queue-list" id="queueList"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 計測ビュー ==================== -->
+  <div id="view-timer" class="view">
+    <div class="search-container">
+      <input type="text" id="timerFilterInput" placeholder="タイトルで探す..." style="width:100%; padding:10px; border-radius:4px; border:1px solid var(--accent); background:var(--case-bg); color:var(--text-main); font-size:14px; margin-bottom:12px;">
+      <p class="edit-hint" style="margin:0 0 12px;">購入済み・読み中の本だけが対象です。スタートで計測開始（購入済みは自動で読み中になります）。終了で読了として記録し、済にします。</p>
+      <div id="timerList"></div>
     </div>
   </div>
 </div>
@@ -1104,12 +1139,13 @@
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       document.getElementById(targetId).classList.add('active');
       
-      document.getElementById('headerTitle').textContent = this.textContent.replace(/[📚🔍⚙️]\s*/,'');
+      document.getElementById('headerTitle').textContent = this.textContent.replace(/[📚🔍⏱️⏱]\s*/,'');
       document.getElementById('bookshelfIcons').style.display = (targetId === 'view-bookshelf') ? 'flex' : 'none';
       document.getElementById('searchIcons').style.display = (targetId === 'view-search') ? 'flex' : 'none';
 
       if(targetId !== 'view-search') stopScan();
       if(targetId === 'view-bookshelf') renderShelf();
+      if(targetId === 'view-timer') renderTimerList();
       
       sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
     });
@@ -1598,6 +1634,7 @@
 
   function updateStats(){
     var total = 0, reading = 0, done = 0, owned = 0, want = 0;
+    var totalTimeSum = 0, totalTimeCount = 0;
     state.books.forEach(function(b){
       if(b.isStamp || b.isText || b.isSign) return;
       total++;
@@ -1605,12 +1642,137 @@
       else if(b.status === 'done') done++;
       else if(b.status === 'want') want++;
       else owned++; 
+      if (b.status === 'done' && b.totalReadingSeconds){
+        totalTimeSum += b.totalReadingSeconds; totalTimeCount++;
+      }
     });
     document.getElementById('stat-total').textContent = total;
     document.getElementById('stat-reading').textContent = reading;
     document.getElementById('stat-done').textContent = done;
     document.getElementById('stat-owned').textContent = owned;
     document.getElementById('stat-want').textContent = want;
+    document.getElementById('stat-avg-time').textContent =
+      totalTimeCount ? formatDuration(Math.round(totalTimeSum / totalTimeCount)) : '-';
+  }
+
+  // ========== ⏱ 計測 ==========
+  function formatDuration(totalSeconds){
+    var h = Math.floor(totalSeconds / 3600);
+    var m = Math.floor((totalSeconds % 3600) / 60);
+    if (h > 0) return h + '時間' + m + '分';
+    if (m > 0) return m + '分';
+    return Math.max(0, totalSeconds) + '秒';
+  }
+  function bookElapsedSeconds(b){
+    var sum = (b.readingSessions || []).reduce(function(s, sess){
+      return s + (new Date(sess.end) - new Date(sess.start)) / 1000;
+    }, 0);
+    if (b.activeSessionStart){
+      sum += (Date.now() - new Date(b.activeSessionStart)) / 1000;
+    }
+    return Math.round(sum);
+  }
+  function timerToggle(b, on){
+    if (on){
+      if (b.status === 'owned') b.status = 'reading';
+      b.activeSessionStart = new Date().toISOString();
+    } else if (b.activeSessionStart){
+      b.readingSessions = b.readingSessions || [];
+      b.readingSessions.push({ start: b.activeSessionStart, end: new Date().toISOString() });
+      b.activeSessionStart = null;
+    }
+    persist(); renderTimerList(); renderShelf();
+  }
+  function timerFinish(b){
+    if (b.activeSessionStart){
+      b.readingSessions = b.readingSessions || [];
+      b.readingSessions.push({ start: b.activeSessionStart, end: new Date().toISOString() });
+      b.activeSessionStart = null;
+    }
+    b.totalReadingSeconds = bookElapsedSeconds(b);
+    b.status = 'done';
+    persist(); renderTimerList(); renderShelf();
+    showToast('「' + (b.title||'この本') + '」を読了として記録しました（' + formatDuration(b.totalReadingSeconds) + '）');
+  }
+  var timerFilterInput = document.getElementById('timerFilterInput');
+  timerFilterInput.addEventListener('input', renderTimerList);
+  function renderTimerList(){
+    var list = document.getElementById('timerList');
+    var q = timerFilterInput.value.trim().toLowerCase();
+    var targets = state.books.filter(function(b){
+      if (b.isStamp || b.isText || b.isSign) return false;
+      if (b.status !== 'owned' && b.status !== 'reading') return false;
+      if (q && (b.title||'').toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+    // 読み中（計測できる状態）を上に
+    targets.sort(function(a,b){
+      if ((a.status==='reading') !== (b.status==='reading')) return a.status==='reading' ? -1 : 1;
+      return 0;
+    });
+    list.innerHTML = '';
+    if (!targets.length){
+      list.innerHTML = '<p class="edit-hint" style="margin:8px 0;">対象の本（購入済み・読み中）がありません</p>';
+      return;
+    }
+    targets.forEach(function(b){
+      var row = document.createElement('div'); row.className = 'timer-item';
+      var img = document.createElement('img'); img.src = b.cover || ''; img.onerror = function(){ this.style.display='none'; };
+      var info = document.createElement('div'); info.className = 'timer-info';
+      var title = document.createElement('div'); title.className = 'timer-title'; title.textContent = b.title || '無題';
+      var meta = document.createElement('div'); meta.className = 'timer-meta';
+      meta.textContent = statusDef(b.status).label + (b.readingSessions && b.readingSessions.length ? ' ／ これまで ' + formatDuration(bookElapsedSeconds(b)) : '');
+      var elapsed = document.createElement('div'); elapsed.className = 'timer-elapsed';
+      info.appendChild(title); info.appendChild(meta); info.appendChild(elapsed);
+
+      var controls = document.createElement('div'); controls.className = 'timer-controls';
+      var sw = document.createElement('button');
+      sw.className = 'timer-switch' + (b.activeSessionStart ? ' on' : '');
+      sw.title = b.activeSessionStart ? '計測を一時停止' : '計測をスタート';
+      sw.addEventListener('click', function(){ timerToggle(b, !b.activeSessionStart); });
+      var finishBtn = document.createElement('button');
+      finishBtn.className = 'btn ghost timer-finish-btn'; finishBtn.textContent = '終了';
+      finishBtn.addEventListener('click', function(){
+        if (confirm('「' + (b.title||'この本') + '」を読了にしますか？')) timerFinish(b);
+      });
+      controls.appendChild(sw); controls.appendChild(finishBtn);
+
+      row.appendChild(img); row.appendChild(info); row.appendChild(controls);
+      list.appendChild(row);
+
+      if (b.activeSessionStart){
+        elapsed.textContent = formatDuration(bookElapsedSeconds(b));
+        row.dataset.timing = '1';
+      }
+    });
+  }
+  // 計測中の本があれば、表示を1秒ごとに更新する（計測ビューが開いている間だけ）
+  setInterval(function(){
+    if (!document.getElementById('view-timer').classList.contains('active')) return;
+    var hasActive = state.books.some(function(b){ return b.activeSessionStart; });
+    if (!hasActive) return;
+    renderTimerListTick();
+  }, 1000);
+  function renderTimerListTick(){
+    var rows = document.querySelectorAll('#timerList .timer-item');
+    var q = timerFilterInput.value.trim().toLowerCase();
+    var targets = state.books.filter(function(b){
+      if (b.isStamp || b.isText || b.isSign) return false;
+      if (b.status !== 'owned' && b.status !== 'reading') return false;
+      if (q && (b.title||'').toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+    targets.sort(function(a,b){
+      if ((a.status==='reading') !== (b.status==='reading')) return a.status==='reading' ? -1 : 1;
+      return 0;
+    });
+    targets.forEach(function(b, i){
+      if (!b.activeSessionStart) return;
+      var row = rows[i];
+      if (!row) return;
+      var elapsedEl = row.querySelector('.timer-elapsed');
+      if (elapsedEl) elapsedEl.textContent = formatDuration(bookElapsedSeconds(b));
+    });
   }
 
   // ========== 棚のロジック・描画 ==========
