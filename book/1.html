@@ -476,6 +476,31 @@
   .timer-switch.on{ background:#4caf50; }
   .timer-switch.on::after{ transform:translateX(20px); }
   .timer-finish-btn{ font-size:11px; padding:6px 10px; }
+  .timer-bottom-tabs{
+    position:fixed; left:0; right:0; bottom:0; display:flex;
+    background:var(--header-bg); border-top:1px solid var(--accent); z-index:60;
+  }
+  .timer-tab{
+    flex:1; padding:12px 4px; background:transparent; border:none; box-shadow:none;
+    color:var(--text-dim); font-size:12px; border-radius:0;
+  }
+  .timer-tab.active{ color:var(--accent); font-weight:bold; border-top:2px solid var(--accent); }
+  .data-book-card{
+    border:1px solid var(--accent); border-radius:6px; padding:10px 12px; margin-bottom:10px;
+  }
+  .data-book-title{ font-weight:bold; font-size:14px; margin-bottom:4px; }
+  .data-book-summary{ font-size:11px; opacity:.8; margin-bottom:6px; }
+  .data-session-row{
+    display:flex; justify-content:space-between; align-items:center; font-size:12px;
+    padding:4px 0; border-top:1px dashed rgba(128,128,128,.3);
+  }
+  .data-session-del{ background:none; border:none; box-shadow:none; color:#ff5555; font-size:16px; padding:2px 6px; }
+  .data-reset-btn{ font-size:11px; padding:4px 10px; margin-top:6px; }
+  .graph-bar-row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:12px; }
+  .graph-bar-label{ flex:0 0 90px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .graph-bar-track{ flex:1; background:rgba(128,128,128,.2); border-radius:3px; height:14px; position:relative; }
+  .graph-bar-fill{ background:var(--accent); height:100%; border-radius:3px; }
+  .graph-bar-value{ flex:0 0 auto; font-size:11px; opacity:.85; }
 
   /* ---------- 設定ビュー ---------- */
   .settings-container { padding: 20px; }
@@ -633,6 +658,8 @@
       <button class="btn ghost" id="flipModeBtn">表示切替(表紙/背): OFF</button>
       <button class="btn ghost" id="stampMenuBtn" title="スタンプ追加">☻</button>
       <button class="btn ghost" id="addCaseBtnHeader" title="本棚を追加">＋</button>
+      <button class="btn ghost" id="sortCaseBtn" title="今のページの各段をタイトル順に並び替え">🔤 並び替え</button>
+      <button class="btn ghost" id="undoSortBtn" title="並び替えを元に戻す" hidden>↩️ 元に戻す</button>
       <input type="file" id="stampFileInput" accept="image/*" hidden>
       <p class="edit-hint">段を長押しで全ての段に＋／⚙️／×が表示されます（段を全部消すとその本棚ごと消えます）／⚙️でその段だけのサイズを個別設定／左の≡をタップしてから別の段の≡をタップで入れ替え／個別設定していない段はサイドバーの表示サイズで一括変更できます</p>
     </div>
@@ -670,10 +697,36 @@
 
   <!-- ==================== 計測ビュー ==================== -->
   <div id="view-timer" class="view">
-    <div class="search-container">
-      <input type="text" id="timerFilterInput" placeholder="タイトルで探す..." style="width:100%; padding:10px; border-radius:4px; border:1px solid var(--accent); background:var(--case-bg); color:var(--text-main); font-size:14px; margin-bottom:12px;">
-      <p class="edit-hint" style="margin:0 0 12px;">購入済み・読み中の本だけが対象です。スタートで計測開始（購入済みは自動で読み中になります）。終了で読了として記録し、済にします。</p>
-      <div id="timerList"></div>
+    <div class="search-container" style="padding-bottom:72px;">
+
+      <div id="timerSubList">
+        <input type="text" id="timerFilterInput" placeholder="タイトルで探す..." style="width:100%; padding:10px; border-radius:4px; border:1px solid var(--accent); background:var(--case-bg); color:var(--text-main); font-size:14px; margin-bottom:12px;">
+        <p class="edit-hint" style="margin:0 0 12px;">購入済み・読み中の本だけが対象です。スタートで計測開始（購入済みは自動で読み中になります）。終了で読了として記録し、済にします。</p>
+        <div id="timerList"></div>
+      </div>
+
+      <div id="timerSubData" hidden>
+        <p class="edit-hint" style="margin:0 0 12px;">読書セッション（開始〜終了）の記録です。1冊を何回に分けて読んだかも分かります。</p>
+        <div id="timerDataList"></div>
+      </div>
+
+      <div id="timerSubGraph" hidden>
+        <div class="scan-mode-toggle" style="margin-bottom:16px;">
+          <button class="btn" id="graphModeAvgBtn">平均</button>
+          <button class="btn ghost" id="graphModePerBookBtn">本単品</button>
+        </div>
+        <div id="graphAvgPanel"></div>
+        <div id="graphPerBookPanel" hidden>
+          <select id="graphBookSelect" style="width:100%; padding:8px; margin-bottom:12px; border-radius:4px; border:1px solid var(--accent); background:var(--case-bg); color:var(--text-main);"></select>
+          <div id="graphBookDetail"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="timer-bottom-tabs">
+      <button class="timer-tab active" data-timer-tab="list">📋 本リスト</button>
+      <button class="timer-tab" data-timer-tab="data">🗂 データ</button>
+      <button class="timer-tab" data-timer-tab="graph">📊 グラフ</button>
     </div>
   </div>
 </div>
@@ -1360,6 +1413,41 @@
     if (c) for (var r=0; r<c.rows; r++) ids.push(caseId + '_' + r);
     return ids;
   }
+
+  // ---- 並び替え（タイトル順、元に戻せる） ----
+  var lastSortBackup = null;
+  function sortCurrentCase(){
+    var caseId = currentCaseId();
+    var shelfIds = shelfIdsInCase(caseId);
+    var backup = [];
+    shelfIds.forEach(function(sid){
+      booksOnShelf(sid).forEach(function(b){ backup.push({ id: b.id, slot: b.slot }); });
+    });
+    if (!backup.length){ showToast('並び替える本がありません'); return; }
+    lastSortBackup = backup;
+    shelfIds.forEach(function(sid){
+      var items = booksOnShelf(sid);
+      items.sort(function(a,b){ return (a.title||'').localeCompare(b.title||'', 'ja'); });
+      items.forEach(function(b, i){ b.slot = i; });
+    });
+    persist(); renderShelf();
+    document.getElementById('undoSortBtn').hidden = false;
+    showToast('タイトル順に並び替えました');
+  }
+  function undoSort(){
+    if (!lastSortBackup) return;
+    lastSortBackup.forEach(function(entry){
+      var b = state.books.find(function(x){ return x.id === entry.id; });
+      if (b) b.slot = entry.slot;
+    });
+    lastSortBackup = null;
+    persist(); renderShelf();
+    document.getElementById('undoSortBtn').hidden = true;
+    showToast('元に戻しました');
+  }
+  document.getElementById('sortCaseBtn').addEventListener('click', sortCurrentCase);
+  document.getElementById('undoSortBtn').addEventListener('click', undoSort);
+
   function addRowBelow(caseId, rowIndex){
     var c = state.cases.find(x => x.id === caseId);
     if (!c) return;
@@ -1772,6 +1860,179 @@
       if (!row) return;
       var elapsedEl = row.querySelector('.timer-elapsed');
       if (elapsedEl) elapsedEl.textContent = formatDuration(bookElapsedSeconds(b));
+    });
+  }
+
+  // ---- タブ切替 (本リスト／データ／グラフ) ----
+  var timerTab = 'list';
+  document.querySelectorAll('.timer-tab').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      timerTab = this.dataset.timerTab;
+      document.querySelectorAll('.timer-tab').forEach(function(b){ b.classList.remove('active'); });
+      this.classList.add('active');
+      document.getElementById('timerSubList').hidden = (timerTab !== 'list');
+      document.getElementById('timerSubData').hidden = (timerTab !== 'data');
+      document.getElementById('timerSubGraph').hidden = (timerTab !== 'graph');
+      if (timerTab === 'data') renderTimerData();
+      if (timerTab === 'graph') renderTimerGraph();
+    });
+  });
+
+  // ---- データ（セッションの詳細一覧、削除・リセット可） ----
+  function booksWithSessions(){
+    return state.books.filter(function(b){
+      return !b.isStamp && !b.isText && !b.isSign &&
+        ((b.readingSessions && b.readingSessions.length) || b.activeSessionStart);
+    });
+  }
+  function deleteSession(b, idx){
+    if (!confirm('この記録を削除しますか？')) return;
+    b.readingSessions.splice(idx, 1);
+    if (b.status === 'done') b.totalReadingSeconds = bookElapsedSeconds(b);
+    persist(); renderTimerData(); renderTimerList();
+  }
+  function resetBookTimer(b){
+    if (!confirm('「' + (b.title||'この本') + '」の計測記録を全て消しますか？（元に戻せません）')) return;
+    b.readingSessions = [];
+    b.activeSessionStart = null;
+    delete b.totalReadingSeconds;
+    persist(); renderTimerData(); renderTimerList();
+  }
+  function fmtDateTime(iso){
+    var d = new Date(iso);
+    return (d.getMonth()+1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+  function renderTimerData(){
+    var list = document.getElementById('timerDataList');
+    var targets = booksWithSessions();
+    list.innerHTML = '';
+    if (!targets.length){
+      list.innerHTML = '<p class="edit-hint">まだ計測記録がありません</p>';
+      return;
+    }
+    targets.forEach(function(b){
+      var card = document.createElement('div'); card.className = 'data-book-card';
+      var title = document.createElement('div'); title.className = 'data-book-title'; title.textContent = b.title || '無題';
+      var sessions = b.readingSessions || [];
+      var summary = document.createElement('div'); summary.className = 'data-book-summary';
+      summary.textContent = statusDef(b.status).label + ' ／ 合計 ' + formatDuration(bookElapsedSeconds(b)) + ' ／ ' + sessions.length + '回に分けて読んでいます';
+      card.appendChild(title); card.appendChild(summary);
+
+      sessions.forEach(function(sess, idx){
+        var row = document.createElement('div'); row.className = 'data-session-row';
+        var durSec = Math.round((new Date(sess.end) - new Date(sess.start))/1000);
+        var span = document.createElement('span');
+        span.textContent = fmtDateTime(sess.start) + ' 〜 ' + fmtDateTime(sess.end) + '（' + formatDuration(durSec) + '）';
+        var del = document.createElement('button'); del.className = 'data-session-del'; del.textContent = '×';
+        del.addEventListener('click', function(){ deleteSession(b, idx); });
+        row.appendChild(span); row.appendChild(del);
+        card.appendChild(row);
+      });
+      if (b.activeSessionStart){
+        var activeRow = document.createElement('div'); activeRow.className = 'data-session-row';
+        activeRow.innerHTML = '<span>' + fmtDateTime(b.activeSessionStart) + ' 〜 計測中…</span>';
+        card.appendChild(activeRow);
+      }
+
+      var resetBtn = document.createElement('button');
+      resetBtn.className = 'btn ghost data-reset-btn'; resetBtn.textContent = 'この本の記録を消す';
+      resetBtn.addEventListener('click', function(){ resetBookTimer(b); });
+      card.appendChild(resetBtn);
+
+      list.appendChild(card);
+    });
+  }
+
+  // ---- グラフ（平均／本単品） ----
+  var graphMode = 'avg';
+  document.getElementById('graphModeAvgBtn').addEventListener('click', function(){
+    graphMode = 'avg';
+    this.classList.remove('ghost'); document.getElementById('graphModePerBookBtn').classList.add('ghost');
+    document.getElementById('graphAvgPanel').hidden = false;
+    document.getElementById('graphPerBookPanel').hidden = true;
+    renderGraphAvg();
+  });
+  document.getElementById('graphModePerBookBtn').addEventListener('click', function(){
+    graphMode = 'perbook';
+    this.classList.remove('ghost'); document.getElementById('graphModeAvgBtn').classList.add('ghost');
+    document.getElementById('graphAvgPanel').hidden = true;
+    document.getElementById('graphPerBookPanel').hidden = false;
+    renderGraphPerBookSelect();
+  });
+  function renderTimerGraph(){
+    if (graphMode === 'avg') renderGraphAvg(); else renderGraphPerBookSelect();
+  }
+  function barRow(label, value, maxValue, valueText){
+    var row = document.createElement('div'); row.className = 'graph-bar-row';
+    var lab = document.createElement('div'); lab.className = 'graph-bar-label'; lab.textContent = label; lab.title = label;
+    var track = document.createElement('div'); track.className = 'graph-bar-track';
+    var fill = document.createElement('div'); fill.className = 'graph-bar-fill';
+    fill.style.width = (maxValue > 0 ? Math.max(2, (value/maxValue)*100) : 0) + '%';
+    track.appendChild(fill);
+    var val = document.createElement('div'); val.className = 'graph-bar-value'; val.textContent = valueText;
+    row.appendChild(lab); row.appendChild(track); row.appendChild(val);
+    return row;
+  }
+  function renderGraphAvg(){
+    var panel = document.getElementById('graphAvgPanel');
+    panel.innerHTML = '';
+    var doneBooks = state.books.filter(function(b){ return !b.isStamp && !b.isText && !b.isSign && b.status === 'done' && b.totalReadingSeconds; });
+    if (!doneBooks.length){
+      panel.innerHTML = '<p class="edit-hint">読了して時間が記録された本がまだありません</p>';
+      return;
+    }
+    var totalTime = doneBooks.reduce(function(s,b){ return s + b.totalReadingSeconds; }, 0);
+    var avgTime = totalTime / doneBooks.length;
+    var totalSessions = doneBooks.reduce(function(s,b){ return s + (b.readingSessions?b.readingSessions.length:0); }, 0);
+    var avgSessions = totalSessions / doneBooks.length;
+
+    var summary = document.createElement('p'); summary.className = 'edit-hint';
+    summary.style.marginBottom = '14px';
+    summary.textContent = '読了 ' + doneBooks.length + '冊 ／ 平均読了時間 ' + formatDuration(Math.round(avgTime)) + ' ／ 平均セッション数 ' + avgSessions.toFixed(1) + '回';
+    panel.appendChild(summary);
+
+    var maxTime = Math.max.apply(null, doneBooks.map(function(b){ return b.totalReadingSeconds; }));
+    doneBooks
+      .slice()
+      .sort(function(a,b){ return b.totalReadingSeconds - a.totalReadingSeconds; })
+      .forEach(function(b){
+        panel.appendChild(barRow(b.title || '無題', b.totalReadingSeconds, maxTime, formatDuration(b.totalReadingSeconds)));
+      });
+  }
+  function renderGraphPerBookSelect(){
+    var sel = document.getElementById('graphBookSelect');
+    var targets = booksWithSessions();
+    sel.innerHTML = '';
+    if (!targets.length){
+      sel.innerHTML = '<option value="">対象の本がありません</option>';
+      document.getElementById('graphBookDetail').innerHTML = '';
+      return;
+    }
+    targets.forEach(function(b){
+      var opt = document.createElement('option'); opt.value = b.id; opt.textContent = b.title || '無題';
+      sel.appendChild(opt);
+    });
+    renderGraphBookDetail(targets[0].id);
+    sel.onchange = function(){ renderGraphBookDetail(this.value); };
+  }
+  function renderGraphBookDetail(bookId){
+    var detail = document.getElementById('graphBookDetail');
+    var b = state.books.find(function(x){ return x.id === bookId; });
+    detail.innerHTML = '';
+    if (!b) return;
+    var sessions = b.readingSessions || [];
+    var summary = document.createElement('p'); summary.className = 'edit-hint';
+    summary.style.marginBottom = '14px';
+    summary.textContent = '合計 ' + formatDuration(bookElapsedSeconds(b)) + ' ／ ' + sessions.length + '回に分けて読んでいます';
+    detail.appendChild(summary);
+    if (!sessions.length){
+      detail.appendChild(Object.assign(document.createElement('p'), { className:'edit-hint', textContent:'この本のセッション記録はまだありません' }));
+      return;
+    }
+    var maxDur = Math.max.apply(null, sessions.map(function(s){ return (new Date(s.end)-new Date(s.start))/1000; }));
+    sessions.forEach(function(sess, idx){
+      var durSec = Math.round((new Date(sess.end) - new Date(sess.start))/1000);
+      detail.appendChild(barRow((idx+1) + '回目 (' + fmtDateTime(sess.start) + ')', durSec, maxDur, formatDuration(durSec)));
     });
   }
 
