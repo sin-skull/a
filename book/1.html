@@ -153,11 +153,20 @@
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
-  /* ドラッグ中はスナップを解除してスクロールしやすくする */
   .cases-row.is-dragging-container { scroll-snap-type: none; scroll-behavior: auto; }
   
   .cases-row::-webkit-scrollbar { display: none; }
   .cases-row { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* 検索絞り込み時のスタイル */
+  .cases-row.is-filtered .book:not(.matched) {
+    opacity: 0.15;
+    pointer-events: none;
+    filter: grayscale(80%);
+  }
+  .cases-row.is-filtered .book.matched {
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.8), inset 0 0 0 2px rgba(255, 215, 0, 1);
+  }
 
   .bookcase-unit{
     flex:0 0 auto; width:min(92vw,560px); position:relative;
@@ -195,7 +204,7 @@
   .shelf-controls{ position:absolute; right:2px; top:-6px; z-index:4; display:flex; gap:4px; }
   .shelf-controls button{ font-size:10px; padding:3px 6px; background:rgba(0,0,0,.6); color:#fff; border:1px solid var(--accent); border-radius:4px; }
 
-  /* 大きな帯サイン（棚固定・自由配置ではない） */
+  /* 大きな帯サイン */
   .sign-bar{
     width:100%; padding:12px 16px; margin-bottom:8px;
     color:#fff; font-weight:800; font-family:'Shippori Mincho',serif; font-size:20px;
@@ -203,7 +212,7 @@
     box-sizing:border-box; cursor:pointer;
   }
 
-  /* 段：長押しで＋／×、常時表示の≡で入れ替え */
+  /* 段 */
   .shelf-row-wrap{ position:relative; margin-bottom:14px; display:flex; align-items:stretch; gap:6px; }
   .shelf-row-wrap, .shelf-row-wrap *{
     -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
@@ -216,6 +225,7 @@
     color:var(--text-main); font-size:16px; cursor:pointer;
   }
   .row-reorder-handle.reorder-source{ background:var(--accent); color:#111; }
+  
   .row-corner-btn{
     position:absolute; top:-10px; width:26px; height:26px; border-radius:50%;
     display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800;
@@ -223,11 +233,16 @@
     opacity:0; pointer-events:none; transform:scale(.6);
     transition:opacity .15s ease, transform .15s ease;
   }
-  .shelf-row-wrap.long-pressed .row-corner-btn{ opacity:1; pointer-events:auto; transform:scale(1); }
+  
+  .bookcase-unit.is-editing-rows .row-corner-btn { opacity:1; pointer-events:auto; transform:scale(1); }
+  .bookcase-unit.is-editing-rows .shelf-controls { display:none; }
   .row-corner-btn.add{ left:-10px; background:var(--accent); color:#111; }
   .row-corner-btn.remove{ right:-10px; background:#d32f2f; color:#fff; }
+  .row-corner-btn.size{ left:50%; background:#333; color:#fff; transform:translateX(-50%) scale(.6); }
+  .row-corner-btn.size.customized{ background:#1f5f9e; }
+  .bookcase-unit.is-editing-rows .row-corner-btn.size{ transform:translateX(-50%) scale(1); }
 
-  /* テキストステッカー（自由配置・本棚に干渉しない） */
+  /* テキストステッカー */
   .text-sticker{
     width:100%; height:100%; box-sizing:border-box;
     display:flex; align-items:center; justify-content:center;
@@ -236,22 +251,23 @@
     padding:2px 8px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
   }
 
-  /* 本棚の追加・削除タイル（編集モード時、右端に表示） */
-  .case-end-tile{
-    flex:0 0 auto; width:90px; align-self:stretch; display:flex; align-items:center; justify-content:center;
-    border:2px dashed var(--accent); border-radius:6px; cursor:pointer;
-    font-size:30px; color:var(--accent); background:rgba(255,255,255,.03);
-    scroll-snap-align:center;
-  }
-
   /* ---------- 自由配置レイヤー（サイン・スタンプ） ---------- */
   .free-layer{ position:absolute; inset:0; pointer-events:none; z-index:15; }
   .free-item{
     position:absolute; pointer-events:auto; cursor:pointer;
-    transform-origin:center center; touch-action:pan-x;
+    transform-origin:center center; touch-action:pan-y;
     transition: outline-color .15s ease, transform .18s ease;
   }
-  .free-item.free-item--picked{ outline:3px dashed #fff; outline-offset:3px; z-index:25; }
+  .free-item.active {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    transform: scale(1.1);
+    outline: 2px dashed #007bff;
+    outline-offset: 4px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 5px;
+    touch-action: none;
+  }
+
   .sign-banner{
     width:100%; height:100%;
     display:flex; align-items:center; justify-content:center;
@@ -304,8 +320,20 @@
     border-radius: 2px 2px 0 0; z-index: 7;
     box-shadow: 0 -1px 2px rgba(0,0,0,0.35);
     display: flex; align-items: center; justify-content: center;
-    overflow: hidden; pointer-events: none;
+    pointer-events: none;
   }
+  .book-bg-strip.match-prev {
+    border-top-left-radius: 0;
+    left: -1px;
+  }
+  .book-bg-strip.match-next {
+    border-top-right-radius: 0;
+    right: -1px;
+  }
+  .book-bg-strip.match-prev span {
+    display: none;
+  }
+
   .book-bg-strip span{
     color:#fff; font-size:8px; font-weight:bold; line-height:1;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -330,19 +358,21 @@
   .book--spine .memo-badge{ top:4px; left:50%; transform:translateX(-50%); }
   .book--cover .memo-badge{ bottom:4px; left:4px; }
 
-  /* ★【修正】背表紙の文字が必ず「最初から（一番上から）」表示されるように設定 */
+  /* 背表紙：はみ出しを確実に防止する設定 */
   .book--spine{
     writing-mode:vertical-rl; text-orientation:mixed;
     font-family:'Shippori Mincho',serif; font-weight:600; font-size:12.5px; line-height:1.4;
-    padding:8px 4px; color:rgba(255,250,238,.94); text-shadow:0 1px 1px rgba(0,0,0,.4); overflow:hidden;
-    align-items: flex-start; /* 文字を上に揃える */
+    padding:8px 4px; color:rgba(255,250,238,.94); text-shadow:0 1px 1px rgba(0,0,0,.4);
+    align-items: flex-start;
     justify-content: flex-start;
   }
   .book--spine .book-title {
-    max-height: 100%;
-    overflow: hidden;
+    flex: 1; 
+    min-height: 0; 
+    width: 100%;
+    overflow: hidden; 
+    word-break: break-all;
   }
-  /* ---------------------------------------------------- */
 
   .book--cover{ flex-direction:column; background-color:#4a4038; overflow:visible; position:relative; }
   .cover-face{width:100%; height:100%; position:relative; overflow:hidden; border-radius:inherit;}
@@ -354,7 +384,6 @@
   .hide-signs .sign-bar{ display:none !important; }
   .hide-stamps .free-item{ display:none !important; }
 
-  /* ドロップ挿入位置のプレビュー（オレンジの線） */
   .slot-preview {
     width: 4px; background: var(--accent); border-radius: 2px;
     margin: 0 2px; height: 80%; align-self: flex-end;
@@ -374,6 +403,28 @@
     transition: background 0.3s, transform 0.3s;
   }
   .pagination-dots .dot.active { background: var(--accent); transform: scale(1.2); }
+
+  /* ---------- ゴミ箱 ---------- */
+  #trash-area {
+    position: fixed;
+    bottom: -80px;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    background-color: #ff4d4d;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    transition: bottom 0.3s ease;
+    z-index: 4500;
+    cursor: pointer;
+  }
+  #trash-area.show {
+    bottom: 0;
+  }
 
   /* ---------- 検索・追加ビュー ---------- */
   .search-container { padding: 16px; }
@@ -432,6 +483,10 @@
     display:inline-flex;align-items:center;gap:5px; background:var(--tag-bg);color:#fff;
     font-size:11px;padding:3px 8px;border-radius:12px;margin:0 5px 5px 0;
   }
+  /* ジャンルチップは少しデザインを変える */
+  .genre-chip{
+    border: 1px dashed rgba(255,255,255,0.6);
+  }
   .tag-chip button{background:none;border:none;box-shadow:none;color:#fff;padding:0;font-size:13px;line-height:1;cursor:pointer;}
   .tag-swatch{
     width:15px;height:15px;padding:0;border:1px solid rgba(255,255,255,.6);border-radius:50%;
@@ -441,8 +496,6 @@
   .tag-swatch::-webkit-color-swatch{border:none;border-radius:50%;}
   .tag-swatch:disabled{cursor:default;opacity:.9;}
   .bgtag-star{font-size:11px;margin-left:2px;}
-  .tag-add-row{display:flex;gap:6px;margin-top:4px;}
-  .tag-add-row input{flex:1;}
 
   .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:16px;}
   .modal-actions .danger{background:#d32f2f; color:#fff;}
@@ -468,7 +521,16 @@
   <button class="nav-btn active" data-target="view-bookshelf">📚 マイ本棚</button>
   <button class="nav-btn" data-target="view-search">🔍 本を追加する</button>
   
-  <div class="sidebar-header" style="font-size: 14px; margin-top: 10px; border-top: 1px solid var(--accent); padding-top:16px;">表示サイズ (横に並ぶ数)</div>
+  <div class="sidebar-header" style="font-size: 14px; margin-top: 10px; border-top: 1px solid var(--accent); padding-top:16px;">読書データ</div>
+  <div style="padding: 10px 20px; font-size: 13px; line-height: 1.8;">
+    <div>全登録数: <span id="stat-total" style="font-weight:bold; color:var(--accent);">0</span> 冊</div>
+    <div>📖 読み中: <span id="stat-reading">0</span> 冊</div>
+    <div>✅ 読了済: <span id="stat-done">0</span> 冊</div>
+    <div>📚 積読/購入済: <span id="stat-owned">0</span> 冊</div>
+    <div>🛒 欲しい: <span id="stat-want">0</span> 冊</div>
+  </div>
+
+  <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">表示サイズ (横に並ぶ数)</div>
   <div class="sidebar-settings">
     <label><span>表紙の数:</span><span id="lblCoverCount">4 冊</span></label>
     <input type="range" id="inpCoverCount" min="2" max="8" value="4">
@@ -483,8 +545,12 @@
     <button class="theme-btn" data-set-theme="black">⚫️ ダーク</button>
   </div>
 
-  <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">データ</div>
+  <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">データ管理</div>
   <div style="padding: 10px 20px;">
+    <button class="theme-btn" id="exportDataBtn" type="button" style="margin-bottom:8px;">💾 データをバックアップ</button>
+    <button class="theme-btn" id="importDataBtn" type="button" style="margin-bottom:16px;">📥 データを復元 (読込)</button>
+    <input type="file" id="importFileInput" accept=".json" hidden>
+    
     <button class="theme-btn" id="clearHistoryBtn" type="button">🗑 スタンプ・サイン履歴を消去</button>
   </div>
 </div>
@@ -496,6 +562,7 @@
     <h1 id="headerTitle">マイ本棚</h1>
   </div>
   <div class="header-icons" id="bookshelfIcons">
+    <button id="toggleFilterBtn" title="本棚内を検索">🔎</button>
     <button id="togglePopBtn" title="サイン・スタンプ表示（タップで4段階切替）">👀</button>
     <button id="toggleMoveBtn" title="本を移動（タップで持ち上げ→タップで置く）">✥</button>
     <button id="toggleEditBtn" title="編集モード">✏️</button>
@@ -509,12 +576,17 @@
   
   <!-- ==================== 本棚ビュー ==================== -->
   <div id="view-bookshelf" class="view active">
+
+    <div id="filterBar" style="display: none; padding: 10px 16px; background: rgba(0,0,0,0.1); border-bottom: 1px solid var(--accent);">
+      <input type="text" id="filterInput" placeholder="タイトル、ジャンル、タグで検索..." style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--accent); background: var(--case-bg); color: var(--text-main); font-size: 14px;">
+    </div>
     
     <div class="edit-tools" id="editTools" style="display: none;">
       <button class="btn ghost" id="flipModeBtn">表示切替(表紙/背): OFF</button>
       <button class="btn ghost" id="stampMenuBtn" title="スタンプ追加">☻</button>
+      <button class="btn ghost" id="addCaseBtnHeader" title="本棚を追加">＋</button>
       <input type="file" id="stampFileInput" accept="image/*" hidden>
-      <p class="edit-hint">段を長押しで＋／×が表示（段を全部消すとその本棚ごと消えます）／左の≡をタップしてから別の段の≡をタップで入れ替え／本棚は右端の＋タイルをタップで追加</p>
+      <p class="edit-hint">段を長押しで全ての段に＋／⚙️／×が表示されます（段を全部消すとその本棚ごと消えます）／⚙️でその段だけのサイズを個別設定／左の≡をタップしてから別の段の≡をタップで入れ替え／個別設定していない段はサイドバーの表示サイズで一括変更できます</p>
     </div>
 
     <div class="cases-row" id="casesRow"></div>
@@ -580,15 +652,17 @@
     </div>
     
     <div class="field">
-      <label>タグ（本棚に付箋として表示されます）</label>
+      <label>付与されたジャンル・タグ</label>
       <div id="bm-tags"></div>
-      <div class="tag-add-row edit-only" id="tagAddRow">
-        <input id="bm-tag-input" placeholder="ジャンルや気分を入力して追加">
-        <button class="btn ghost" id="bm-tag-add" type="button">追加</button>
-      </div>
-      <div class="field edit-only" style="margin-top:10px;margin-bottom:0;">
-        <label>背景（マーク）にするタグ</label>
-        <select id="bm-bgtag"></select>
+      
+      <!-- ★追加：セレクトボックスを横に連続で配置するUI -->
+      <div class="edit-only" style="margin-top:10px;margin-bottom:0;">
+        <label>追加設定 (ジャンル / タグ / 背景マーク)</label>
+        <div style="display:flex; gap:6px;">
+          <select id="bm-genre-select" style="flex:1; padding:8px; font-size:13px;"></select>
+          <select id="bm-tag-select" style="flex:1; padding:8px; font-size:13px;"></select>
+          <select id="bm-bgtag" style="flex:1; padding:8px; font-size:13px;"></select>
+        </div>
       </div>
     </div>
 
@@ -643,6 +717,25 @@
   </div>
 </div>
 
+<div class="modal hidden" id="rowSizeModal">
+  <div class="modal-card">
+    <h2 style="margin-top:0; font-size:16px;">⚙️ この段だけのサイズ</h2>
+    <div class="field">
+      <label>表紙の数: <span id="rowSizeCoverLabel"></span></label>
+      <input type="range" id="rowSizeCoverInput" min="2" max="8">
+    </div>
+    <div class="field">
+      <label>背表紙の数: <span id="rowSizeSpineLabel"></span></label>
+      <input type="range" id="rowSizeSpineInput" min="5" max="30">
+    </div>
+    <p class="edit-hint" id="rowSizeStatus" style="margin:0 0 4px;"></p>
+    <div class="modal-actions">
+      <button class="btn ghost" id="rowSizeResetBtn">全体設定に戻す</button>
+      <button class="btn" id="rowSizeCloseBtn">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal hidden" id="signModal">
   <div class="modal-card">
     <h2 style="margin-top:0; font-size:16px;">サインの文字</h2>
@@ -659,6 +752,9 @@
 </div>
 
 <div class="toast hidden" id="toast"></div>
+
+<!-- 削除用ゴミ箱エリア -->
+<div id="trash-area">ゴミ箱</div>
 
 <!-- 動的に生成するCSS変数用のstyleタグ -->
 <style id="dynamicStyles"></style>
@@ -683,23 +779,40 @@
   }
 
   var state = {
-    cases: [ { id:'c1', rows:1 } ], // rows is per-case now (not shared)
+    cases: [ { id:'c1', rows:1 } ],
     books: [],   
     theme: 'default',
-    coverCount: 4, // 表紙の表示冊数
-    spineCount: 12, // 背表紙の表示冊数
-    tagColors: {}, // タグ名 -> 背景色（未設定ならハッシュから自動決定）
-    signHistory: [], // 過去に使ったサインの文言（再利用できるように）
-    shelfSigns: {}, // shelfId -> {text, color} — 棚ごとの大きな帯サイン（自由配置ではない）
-    stampHistory: [] // 過去に使ったスタンプ/テキストステッカー（再利用用）
+    coverCount: 4, 
+    spineCount: 12, 
+    tagColors: {}, 
+    signHistory: [], 
+    shelfSigns: {}, 
+    stampHistory: [],
+    tagHistory: [], // タグの履歴データ
+    genreHistory: [], // ジャンルの履歴データ
+    shelfSizes: {} // shelfId -> {coverCount, spineCount}（未設定の段はサイドバーの全体設定に従う）
   };
   var searchQueue = []; 
   var editMode = false;
   var flipMode = false;
   var moveMode = false;
-  var selectedItem = null; // book currently "picked up" for a tap-to-place move
-  var selectedFreeItem = null; // stamp/text sticker currently picked up, same mechanic
+  var selectedItem = null; 
   var nextCaseNum = 2;
+
+  var globalStampZ = 200; 
+
+  var editingCaseId = null; 
+  var ignoreNextClick = false; 
+
+  document.addEventListener('pointerdown', function(e){
+    if (editingCaseId) {
+      if (ignoreNextClick) return; 
+      if (e.target.closest('.row-corner-btn')) return; 
+      
+      editingCaseId = null;
+      renderShelf(); 
+    }
+  }, true);
 
   var SPINE_COLORS = ['#7b3f3f','#3e5c55','#3a4e6e','#6b5b3e','#4b3b57','#5c6b3e','#7a4b2e','#39424e','#8b5e3c','#4e4b7b'];
   var TAG_PALETTE = ['#c0392b','#2d6a4f','#5b3a8e','#1f5f9e','#b5651d','#2f6f62','#8e3a5c','#39546e'];
@@ -719,7 +832,6 @@
       if (res) {
         var p = JSON.parse(res);
         state.cases = p.cases || [{id:'c1', rows:1}];
-        // migrate from the old shared-rowCount format: give every case that count
         var legacyRowCount = p.rowCount;
         state.cases = state.cases.map(function(c){
           if (c.rows === undefined) c.rows = legacyRowCount || 1;
@@ -734,18 +846,20 @@
         state.signHistory = p.signHistory || [];
         state.shelfSigns = p.shelfSigns || {};
         state.stampHistory = p.stampHistory || [];
-        // migrate old freeform isSign items into the new fixed-banner shelfSigns dict
+        state.tagHistory = p.tagHistory || []; 
+        state.genreHistory = p.genreHistory || []; // ジャンル履歴復元
+        state.shelfSizes = p.shelfSizes || {};
+        
         state.books = state.books.filter(function(b){
           if (b.isSign){
             if (!state.shelfSigns[b.shelfId]){
               state.shelfSigns[b.shelfId] = { text: b.title, color: b.color || tagColor(b.title) };
             }
-            return false; // drop the old freeform sign item
+            return false;
           }
           return true;
         });
-        // migrate stamps/text stickers from per-shelf placement to per-bookcase
-        // placement (they're no longer tracked to a specific row at all)
+        
         state.books.forEach(function(b){
           if ((b.isStamp || b.isText) && !b.caseId && b.shelfId){
             var m = /^(.*)_(\d+)$/.exec(b.shelfId);
@@ -754,13 +868,13 @@
             b.y = Math.min(0.9, (b.y || 0.05) + rowIndex * 0.12);
             delete b.shelfId;
           }
+          if (b.z && b.z > globalStampZ) globalStampZ = b.z;
         });
         nextCaseNum = state.cases.length + 1;
       }
     }catch(e){}
     applyTheme(state.theme);
     
-    // スライダーの初期値同期
     document.getElementById('inpCoverCount').value = state.coverCount;
     document.getElementById('lblCoverCount').textContent = state.coverCount + ' 冊';
     document.getElementById('inpSpineCount').value = state.spineCount;
@@ -773,29 +887,78 @@
   }
 
   var currentSizes = { coverW: 90, coverH: 135, spineW: 30, spineH: 135, stampW: 63 };
-  function updateBookSizes() {
-    var shelfW = Math.min(window.innerWidth * 0.92, 560) - 24 - 20; // bookcase padding + shelf-books padding
-    if(shelfW < 200) shelfW = 300; 
-    
-    var coverW = Math.max(30, Math.floor(shelfW / state.coverCount));
-    var spineW = Math.max(10, Math.floor(shelfW / state.spineCount));
+  // Reusable: turns a (coverCount, spineCount) pair into actual pixel sizes.
+  // Used both for the global default and for any per-row override.
+  function computeSizes(coverCount, spineCount){
+    var shelfW = Math.min(window.innerWidth * 0.92, 560) - 24 - 20;
+    if (shelfW < 200) shelfW = 300;
+    var coverW = Math.max(30, Math.floor(shelfW / coverCount));
+    var spineW = Math.max(10, Math.floor(shelfW / spineCount));
     var coverH = Math.floor(coverW * 1.5);
     var spineH = coverH;
-    currentSizes = { coverW: coverW, coverH: coverH, spineW: spineW, spineH: spineH, stampW: Math.floor(coverW * 0.7) };
-    
+    return { coverW: coverW, coverH: coverH, spineW: spineW, spineH: spineH, stampW: Math.floor(coverW * 0.7) };
+  }
+  // A row with no override just follows the global default (from the sidebar
+  // sliders) — that's how "bulk-edit every row that hasn't been customized"
+  // works, with no special-case code needed.
+  function shelfSizeCounts(shelfId){
+    return state.shelfSizes[shelfId] || { coverCount: state.coverCount, spineCount: state.spineCount };
+  }
+  function shelfSizesFor(shelfId){
+    var c = shelfSizeCounts(shelfId);
+    return computeSizes(c.coverCount, c.spineCount);
+  }
+  function updateBookSizes() {
+    currentSizes = computeSizes(state.coverCount, state.spineCount);
     var styleEl = document.getElementById('dynamicStyles');
     styleEl.textContent = `
-      :root {
-        --book-cover-w: ${coverW}px;
-        --book-cover-h: ${coverH}px;
-        --book-spine-w: ${spineW}px;
-        --book-spine-h: ${spineH}px;
-        --stamp-w: ${currentSizes.stampW}px;
-      }
+      :root { --stamp-w: ${currentSizes.stampW}px; }
       .book--stamp { width: var(--stamp-w); height: var(--stamp-w); }
     `;
   }
-  
+
+  // ---- ⚙️ 段ごとのサイズ設定モーダル ----
+  var rowSizeTarget = null;
+  function refreshRowSizeModalUI(){
+    var counts = shelfSizeCounts(rowSizeTarget);
+    var isCustom = !!state.shelfSizes[rowSizeTarget];
+    document.getElementById('rowSizeCoverInput').value = counts.coverCount;
+    document.getElementById('rowSizeSpineInput').value = counts.spineCount;
+    document.getElementById('rowSizeCoverLabel').textContent = counts.coverCount + ' 冊';
+    document.getElementById('rowSizeSpineLabel').textContent = counts.spineCount + ' 冊';
+    document.getElementById('rowSizeStatus').textContent = isCustom
+      ? 'この段だけ個別のサイズです（全体設定の変更を受けません）'
+      : '今は全体設定に従っています（動かすとこの段だけ固定されます）';
+    document.getElementById('rowSizeResetBtn').disabled = !isCustom;
+  }
+  function openRowSizeModal(shelfId){
+    rowSizeTarget = shelfId;
+    refreshRowSizeModalUI();
+    document.getElementById('rowSizeModal').classList.remove('hidden');
+  }
+  function setRowSizeOverride(field, value){
+    if (!rowSizeTarget) return;
+    var counts = shelfSizeCounts(rowSizeTarget); // current effective values (custom or global)
+    var next = { coverCount: counts.coverCount, spineCount: counts.spineCount };
+    next[field] = value;
+    state.shelfSizes[rowSizeTarget] = next;
+    persist(); renderShelf(); refreshRowSizeModalUI();
+  }
+  document.getElementById('rowSizeCoverInput').addEventListener('input', function(){
+    setRowSizeOverride('coverCount', parseInt(this.value, 10));
+  });
+  document.getElementById('rowSizeSpineInput').addEventListener('input', function(){
+    setRowSizeOverride('spineCount', parseInt(this.value, 10));
+  });
+  document.getElementById('rowSizeResetBtn').addEventListener('click', function(){
+    if (!rowSizeTarget) return;
+    delete state.shelfSizes[rowSizeTarget];
+    persist(); renderShelf(); refreshRowSizeModalUI();
+  });
+  document.getElementById('rowSizeCloseBtn').addEventListener('click', function(){
+    document.getElementById('rowSizeModal').classList.add('hidden');
+  });
+
   document.getElementById('inpCoverCount').addEventListener('input', function(){
     state.coverCount = parseInt(this.value, 10);
     document.getElementById('lblCoverCount').textContent = state.coverCount + ' 冊';
@@ -864,15 +1027,56 @@
     if (!confirm('スタンプ・サインの履歴を消去しますか？（配置済みのものは消えません）')) return;
     state.stampHistory = [];
     state.signHistory = [];
+    state.tagHistory = []; 
+    state.genreHistory = [];
     persist();
     showToast('履歴を消去しました');
     sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
+  });
+
+  document.getElementById('exportDataBtn').addEventListener('click', function(){
+    var dataStr = JSON.stringify(state);
+    var blob = new Blob([dataStr], {type: "application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = "bookshelf_backup_" + new Date().toISOString().slice(0,10) + ".json";
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('バックアップを保存しました');
+  });
+  
+  document.getElementById('importDataBtn').addEventListener('click', function(){
+    document.getElementById('importFileInput').click();
+  });
+  
+  document.getElementById('importFileInput').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try {
+        var p = JSON.parse(ev.target.result);
+        if(!p || !p.cases || !p.books) throw new Error("Invalid format");
+        state = p;
+        persist();
+        loadState();
+        renderShelf();
+        showToast('データを復元しました');
+        sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
+      } catch(err) {
+        showToast('エラー: 正しいバックアップファイルではありません');
+      }
+    };
+    reader.readAsText(file);
+    this.value = ''; 
   });
 
   // ========== 本棚の機能 ==========
   var casesRow = document.getElementById('casesRow');
   var paginationDots = document.getElementById('paginationDots');
   var scrollTimeout;
+  const trashArea = document.getElementById('trash-area');
   
   document.getElementById('toggleEditBtn').addEventListener('click', function(){
     editMode = !editMode;
@@ -881,14 +1085,16 @@
     renderShelf();
   });
 
+  // ★修正：移動モード切り替え時にもゴミ箱を隠す
   document.getElementById('toggleMoveBtn').addEventListener('click', function(){
     moveMode = !moveMode;
     this.classList.toggle('active', moveMode);
-    selectedItem = null; // toggling clears any in-progress pickup
+    selectedItem = null;
+    trashArea.classList.remove('show');
     renderShelf();
   });
 
-  var popStage = 3; // 0:両方非表示 1:サインのみ 2:スタンプのみ 3:すべて表示（初期値）
+  var popStage = 3; 
   var POP_STAGE_OPACITY = [0.35, 0.6, 0.8, 1];
   function applyPopStage(){
     var hideSigns = (popStage === 0 || popStage === 2);
@@ -910,7 +1116,46 @@
     this.classList.toggle('ghost', !flipMode);
   });
 
-  // ---- per-case row management (rows no longer shared across bookcases) ----
+  var filterBar = document.getElementById('filterBar');
+  var filterInput = document.getElementById('filterInput');
+  document.getElementById('toggleFilterBtn').addEventListener('click', function(){
+    var isHidden = filterBar.style.display === 'none';
+    filterBar.style.display = isHidden ? 'block' : 'none';
+    this.classList.toggle('active', !isHidden);
+    if(isHidden) {
+      filterInput.focus();
+    } else {
+      filterInput.value = '';
+      applyFilter();
+    }
+  });
+  filterInput.addEventListener('input', applyFilter);
+  function applyFilter(){
+    var q = filterInput.value.trim().toLowerCase();
+    if(!q){
+      casesRow.classList.remove('is-filtered');
+      casesRow.querySelectorAll('.book').forEach(function(el){ el.classList.remove('matched'); });
+      return;
+    }
+    casesRow.classList.add('is-filtered');
+    state.books.forEach(function(b){
+      if(b.isStamp || b.isText || b.isSign) return;
+      var el = casesRow.querySelector('.book[data-id="'+b.id+'"]');
+      if(!el) return;
+      // ジャンルも検索対象に含める
+      var textToSearch = (b.title + ' ' + (b.author||'') + ' ' + (b.genres?b.genres.join(' '):'') + ' ' + (b.tags?b.tags.join(' '):'')).toLowerCase();
+      if(textToSearch.indexOf(q) !== -1){
+        el.classList.add('matched');
+      } else {
+        el.classList.remove('matched');
+      }
+    });
+  }
+
+  document.getElementById('addCaseBtnHeader').addEventListener('click', function(){
+    addCase();
+  });
+
   function shelfIdsInCase(caseId){
     var c = state.cases.find(x => x.id === caseId);
     var ids = [];
@@ -924,6 +1169,7 @@
       var oldId = caseId+'_'+r, newId = caseId+'_'+(r+1);
       state.books.forEach(function(b){ if (b.shelfId===oldId) b.shelfId=newId; });
       if (state.shelfSigns[oldId]){ state.shelfSigns[newId]=state.shelfSigns[oldId]; delete state.shelfSigns[oldId]; }
+      if (state.shelfSizes[oldId]){ state.shelfSizes[newId]=state.shelfSizes[oldId]; delete state.shelfSizes[oldId]; }
     }
     c.rows++;
     persist(); renderShelf();
@@ -936,7 +1182,6 @@
         showToast('これ以上段を減らせません');
         return;
       }
-      // last row of this bookcase, and there are others — remove the whole bookcase
       deleteCase(caseId);
       return;
     }
@@ -945,20 +1190,19 @@
     if (hasItems && !confirm('この段のアイテムも削除されます。よろしいですか？')) return;
     state.books = state.books.filter(b => b.shelfId !== shelfId);
     delete state.shelfSigns[shelfId];
+    delete state.shelfSizes[shelfId];
     for (var r=rowIndex+1; r<c.rows; r++){
       var oldId = caseId+'_'+r, newId = caseId+'_'+(r-1);
       state.books.forEach(function(b){ if (b.shelfId===oldId) b.shelfId=newId; });
       if (state.shelfSigns[oldId]){ state.shelfSigns[newId]=state.shelfSigns[oldId]; delete state.shelfSigns[oldId]; }
+      if (state.shelfSizes[oldId]){ state.shelfSizes[newId]=state.shelfSizes[oldId]; delete state.shelfSizes[oldId]; }
     }
     c.rows--;
     persist(); renderShelf();
   }
-  // 任意の段同士（同じ本棚でも、別の本棚をまたいでも）を丸ごと入れ替える
   function swapShelfContents(shelfIdA, shelfIdB){
     if (shelfIdA === shelfIdB) return;
     var tmp = '__swaptmp__';
-    // only real books ever carry a shelfId now — stamps/text use caseId and
-    // are never touched by a row swap, on purpose
     var isRealBook = function(b){ return !b.isStamp && !b.isText && !b.isSign; };
     state.books.forEach(function(b){ if (isRealBook(b) && b.shelfId===shelfIdA) b.shelfId=tmp; });
     state.books.forEach(function(b){ if (isRealBook(b) && b.shelfId===shelfIdB) b.shelfId=shelfIdA; });
@@ -966,11 +1210,12 @@
     var sA = state.shelfSigns[shelfIdA], sB = state.shelfSigns[shelfIdB];
     if (sB) state.shelfSigns[shelfIdA]=sB; else delete state.shelfSigns[shelfIdA];
     if (sA) state.shelfSigns[shelfIdB]=sA; else delete state.shelfSigns[shelfIdB];
+    // note: per-row size settings deliberately stay put — swapping contents
+    // doesn't swap "how many fit on this physical row"
     persist(); renderShelf();
   }
-  var reorderSource = null; // shelfId currently selected via ≡, or null
+  var reorderSource = null; 
 
-  // ---- case (bookcase) management ----
   function addCase(){
     state.cases.push({ id:'c'+(nextCaseNum++), rows:1 });
     persist(); renderShelf();
@@ -985,73 +1230,56 @@
     if (hasItems && !confirm('この本棚の中身も削除されます。よろしいですか？')) return;
     state.books = state.books.filter(b => (b.shelfId||'').indexOf(prefix)!==0 && b.caseId!==caseId);
     Object.keys(state.shelfSigns).forEach(function(k){ if (k.indexOf(prefix)===0) delete state.shelfSigns[k]; });
+    Object.keys(state.shelfSizes).forEach(function(k){ if (k.indexOf(prefix)===0) delete state.shelfSizes[k]; });
     state.cases.splice(idx, 1);
     if (state.cases.length === 0) state.cases.push({ id:'c'+(nextCaseNum++), rows:1 });
     persist(); renderShelf();
   }
-  function deleteLastCase(){
-    if (state.cases.length === 0) return;
-    deleteCase(state.cases[state.cases.length-1].id);
-  }
 
-  // 長押しで段の左上に＋、右上に×が浮き出る（iOSのアイコン編集に近い動き）
-  function attachRowLongPress(rowWrap, block, caseId, rowIndex, addBtn, removeBtn){
-    var pressTimer = null, startX = 0, startY = 0, longPressed = false;
+  function attachRowLongPress(unit, block, caseId, rowIndex, addBtn, removeBtn){
+    var pressTimer = null, startX = 0, startY = 0;
 
     block.addEventListener('pointerdown', function(e){
       if (e.target.closest('.row-corner-btn')) return;
       startX = e.clientX; startY = e.clientY;
       clearTimeout(pressTimer);
       pressTimer = setTimeout(function(){
-        longPressed = true;
-        rowWrap.classList.add('long-pressed');
+        editingCaseId = caseId; 
+        ignoreNextClick = true;
+        setTimeout(() => ignoreNextClick = false, 500); 
+        renderShelf(); 
       }, 500);
     });
+    
     block.addEventListener('pointermove', function(e){
       if (Math.abs(e.clientX-startX) > 10 || Math.abs(e.clientY-startY) > 10){
         clearTimeout(pressTimer);
       }
     });
+    
     function cancelPress(){ clearTimeout(pressTimer); }
     block.addEventListener('pointerup', cancelPress);
     block.addEventListener('pointercancel', cancelPress);
 
     block.addEventListener('click', function(e){
-      if (e.target.closest('.free-item, .sign-bar, .book, .shelf-controls, .row-corner-btn')) return;
-      if (longPressed){
-        // this click just follows the long-press that revealed the buttons — ignore it once
-        longPressed = false;
-        return;
-      }
-      if (rowWrap.classList.contains('long-pressed')){
-        rowWrap.classList.remove('long-pressed'); // tap elsewhere on the row closes it
+      if (ignoreNextClick) {
+        e.preventDefault();
+        e.stopPropagation();
       }
     });
 
     addBtn.addEventListener('click', function(e){
       e.stopPropagation();
-      rowWrap.classList.remove('long-pressed');
       addRowBelow(caseId, rowIndex);
     });
+    
     removeBtn.addEventListener('click', function(e){
       e.stopPropagation();
-      rowWrap.classList.remove('long-pressed');
       deleteCaseRow(caseId, rowIndex);
     });
   }
 
-  // 編集モード中、本棚の右端に表示される追加タイル（タップで確実に動く方式に一本化）
-  function buildCaseEndTile(){
-    var tile = document.createElement('div');
-    tile.className = 'case-end-tile';
-    tile.textContent = '＋';
-    tile.title = 'タップで本棚を追加';
-    tile.addEventListener('click', function(){ addCase(); });
-    return tile;
-  }
-
   function registerStampHistory(entry){
-    // entry: {kind:'image', cover} or {kind:'text', text}
     var idx = state.stampHistory.findIndex(function(h){
       return h.kind === entry.kind && (h.kind==='image' ? h.cover===entry.cover : h.text===entry.text);
     });
@@ -1061,7 +1289,7 @@
   }
   function addFreeItem(data){
     var caseId = state.cases[0].id;
-    var item = Object.assign({ id: uid(), caseId: caseId, x: 0.08, y: 0.05, rot: 0 }, data);
+    var item = Object.assign({ id: uid(), caseId: caseId, x: 0.08, y: 0.05, rot: 0, z: ++globalStampZ }, data);
     state.books.push(item); persist(); renderShelf();
   }
   function addStampWithCover(coverUrl, skipHistory){
@@ -1151,7 +1379,7 @@
       dl.appendChild(opt);
     });
   }
-  var signEditorTarget = null; // {shelfId} for a new sign, or the sign object itself when editing
+  var signEditorTarget = null; 
   function openSignEditor(shelfId){
     signEditorTarget = shelfId;
     var existing = state.shelfSigns[shelfId];
@@ -1197,6 +1425,23 @@
     }
   }
 
+  function updateStats(){
+    var total = 0, reading = 0, done = 0, owned = 0, want = 0;
+    state.books.forEach(function(b){
+      if(b.isStamp || b.isText || b.isSign) return;
+      total++;
+      if(b.status === 'reading') reading++;
+      else if(b.status === 'done') done++;
+      else if(b.status === 'want') want++;
+      else owned++; 
+    });
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-reading').textContent = reading;
+    document.getElementById('stat-done').textContent = done;
+    document.getElementById('stat-owned').textContent = owned;
+    document.getElementById('stat-want').textContent = want;
+  }
+
   // ========== 棚のロジック・描画 ==========
   function booksOnShelf(shelfId){
     return state.books.filter(b => b.shelfId === shelfId && !b.isSign && !b.isStamp && !b.isText).sort((a,b) => a.slot - b.slot);
@@ -1205,12 +1450,8 @@
   function signsOnShelf(shelfId){
     return state.books.filter(b => b.shelfId === shelfId && b.isSign);
   }
-  function stampsOnShelf(shelfId){
-    return state.books.filter(b => b.shelfId === shelfId && b.isStamp);
-  }
   
   function resolveCollisions(shelfId){
-    // gaps are allowed and preserved — only fix genuine duplicate slots
     var arr = booksOnShelf(shelfId);
     var used = {};
     arr.forEach(function(b){
@@ -1226,38 +1467,33 @@
     return { cover: currentSizes.coverW, spine: currentSizes.spineW };
   }
   function itemGridWidth(book, w){
-    if (!book) return w.spine; // empty slot — default to the denser width
+    if (!book) return w.spine; 
     return (book.displayMode === 'cover' && book.cover) ? w.cover : w.spine;
   }
 
-  function buildItemEl(book){
+  function buildItemEl(book, matchPrev, matchNext, sizes){
+    sizes = sizes || currentSizes;
     var el = document.createElement('div');
     el.className = 'book';
     el.dataset.id = book.id;
     el.style.gridColumn = (book.slot + 1);
     if (selectedItem && selectedItem.id === book.id) el.classList.add('book--picked');
 
-    if (book.isStamp) {
-      el.className += ' book--stamp';
-      var img = document.createElement('img'); img.src = book.cover; img.draggable=false;
-      el.appendChild(img);
-      return el;
-    }
-
     var authorKey = (book.author && book.author.trim()) ? book.author.trim() : (book.title || book.id);
     var color = SPINE_COLORS[hashStr(authorKey) % SPINE_COLORS.length];
     var sd = statusDef(book.status);
 
-    // opt-in background marker: only when the book has a tag explicitly
-    // chosen (via 背景タグ) as its visual mark — not just for having tags
     var bgColor = null, bgLabel = null;
-    if (book.bgTag && book.tags && book.tags.indexOf(book.bgTag) !== -1) {
+    if (book.bgTag && ((book.tags && book.tags.indexOf(book.bgTag) !== -1) || (book.genres && book.genres.indexOf(book.bgTag) !== -1))) {
       bgColor = tagColor(book.bgTag);
       bgLabel = book.bgTag;
     }
+    
     if (bgLabel) {
       var strip = document.createElement('div');
       strip.className = 'book-bg-strip';
+      if (matchPrev) strip.classList.add('match-prev');
+      if (matchNext) strip.classList.add('match-next');
       strip.style.background = bgColor;
       var stripText = document.createElement('span');
       stripText.textContent = bgLabel;
@@ -1267,8 +1503,8 @@
 
     if (book.displayMode === 'cover' && book.cover) {
       el.classList.add('book--cover');
-      el.style.width = currentSizes.coverW + 'px';
-      el.style.height = currentSizes.coverH + 'px';
+      el.style.width = sizes.coverW + 'px';
+      el.style.height = sizes.coverH + 'px';
       var face = document.createElement('div'); face.className = 'cover-face';
       var cimg = document.createElement('img');
       cimg.src = book.cover;
@@ -1283,8 +1519,8 @@
       el.appendChild(flag);
     } else {
       el.classList.add('book--spine');
-      el.style.width = currentSizes.spineW + 'px';
-      el.style.height = currentSizes.spineH + 'px';
+      el.style.width = sizes.spineW + 'px';
+      el.style.height = sizes.spineH + 'px';
       el.style.background = 'linear-gradient(90deg, rgba(0,0,0,.2), transparent 30%), ' + color;
       var t = document.createElement('span'); t.className = 'book-title'; t.textContent = book.title;
       el.appendChild(t);
@@ -1315,6 +1551,8 @@
     el.style.width = fi.w + 'px';
     el.style.height = fi.h + 'px';
     el.style.transform = 'rotate(' + (fi.rot || 0) + 'deg)';
+    
+    el.style.zIndex = fi.z || 15;
 
     if (fi.isStamp){
       var img = document.createElement('img'); img.src = fi.cover; img.draggable = false;
@@ -1328,51 +1566,6 @@
     }
 
     if (editMode) attachFreeItemHandles(el, fi);
-    if (selectedFreeItem && selectedFreeItem.id === fi.id) el.classList.add('free-item--picked');
-
-    // Move mode: tap to pick up, tap the spot to place — same mechanic as
-    // books use, so there's no drag to fight with page-scrolling/swiping.
-    el.addEventListener('click', function(e){
-      if (e.target.closest('.resize-handle, .rotate-handle')) return;
-
-      if (moveMode){
-        if (selectedFreeItem && selectedFreeItem.id === fi.id){
-          selectedFreeItem = null; renderShelf(); return;
-        }
-        if (selectedFreeItem){
-          var picked = selectedFreeItem;
-          selectedFreeItem = null;
-          picked.caseId = fi.caseId;
-          picked.x = fi.x; picked.y = fi.y;
-          persist(); renderShelf();
-          animateDrop(picked.id);
-        } else {
-          selectedFreeItem = fi;
-          renderShelf();
-        }
-        return;
-      }
-
-      if (!editMode) return;
-      if (fi.isStamp){
-        if (confirm('このスタンプを削除しますか？')){
-          state.books = state.books.filter(b => b.id !== fi.id);
-          persist(); renderShelf();
-        }
-        return;
-      }
-      // text sticker: edit or clear-to-delete
-      var next = prompt('テキストを編集（空にすると削除）', fi.title || '');
-      if (next === null) return;
-      if (!next.trim()){
-        state.books = state.books.filter(b => b.id !== fi.id);
-      } else {
-        fi.title = next.trim();
-        fi.color = tagColor(fi.title);
-      }
-      persist(); renderShelf();
-    });
-
     return el;
   }
 
@@ -1424,10 +1617,6 @@
     });
   }
 
-  // Stamps/text stickers are purely decorative overlays now — they never
-  // push the shelf's own size, so no per-item height reservation is needed.
-
-
   function renderShelf(){
     if(!document.getElementById('view-bookshelf').classList.contains('active')) return;
     if (state.cases.length === 0) state.cases.push({ id:'c'+(nextCaseNum++), rows:1 });
@@ -1437,6 +1626,10 @@
       var unit = document.createElement('div');
       unit.className = 'bookcase-unit';
       unit.dataset.caseId = c.id;
+
+      if (editingCaseId === c.id) {
+        unit.classList.add('is-editing-rows');
+      }
 
       for (var r=0; r<c.rows; r++){
         let shelfId = c.id + '_' + r;
@@ -1472,8 +1665,15 @@
         var items = booksOnShelf(shelfId);
         if(items.length===0) wrap.classList.add('empty');
         
-        items.forEach(function(item){
-          var el = buildItemEl(item);
+        var rowSizes = shelfSizesFor(shelfId);
+        items.forEach(function(item, idx){
+          var prev = items[idx - 1];
+          var next = items[idx + 1];
+          
+          var matchPrev = prev && (prev.slot === item.slot - 1) && item.bgTag && (prev.bgTag === item.bgTag);
+          var matchNext = next && (next.slot === item.slot + 1) && item.bgTag && (next.bgTag === item.bgTag);
+
+          var el = buildItemEl(item, matchPrev, matchNext, rowSizes);
           attachDragAndClick(el, item);
           wrap.appendChild(el);
         });
@@ -1486,9 +1686,16 @@
         if (editMode){
           var addBtn = document.createElement('div');
           addBtn.className = 'row-corner-btn add'; addBtn.textContent = '＋'; addBtn.title = 'この下に段を追加';
+          var sizeBtn = document.createElement('div');
+          sizeBtn.className = 'row-corner-btn size'; sizeBtn.textContent = '⚙️'; sizeBtn.title = 'この段だけのサイズを変更';
+          if (state.shelfSizes[shelfId]) sizeBtn.classList.add('customized');
           var removeBtn = document.createElement('div');
           removeBtn.className = 'row-corner-btn remove'; removeBtn.textContent = '×'; removeBtn.title = 'この段を削除';
-          block.appendChild(addBtn); block.appendChild(removeBtn);
+          block.appendChild(addBtn); block.appendChild(sizeBtn); block.appendChild(removeBtn);
+          sizeBtn.addEventListener('click', function(e){
+            e.stopPropagation();
+            openRowSizeModal(shelfId);
+          });
         }
 
         rowWrap.appendChild(block);
@@ -1508,21 +1715,17 @@
             } else {
               swapShelfContents(reorderSource, shelfId);
               reorderSource = null;
-              return; // swapShelfContents already re-renders
+              return; 
             }
             renderShelf();
           });
           rowWrap.insertBefore(handle, block);
-          attachRowLongPress(rowWrap, block, caseId, rowIndex, addBtn, removeBtn);
+          attachRowLongPress(unit, block, caseId, rowIndex, addBtn, removeBtn);
         }
 
         unit.appendChild(rowWrap);
       }
 
-      // one free-form layer per bookcase, spanning every row — stamps and
-      // text stickers can be dropped absolutely anywhere in the whole
-      // bookcase, not tied to any single shelf, and are never clipped by a
-      // row's own swipe-reveal container
       var freeItems = state.books.filter(b => b.caseId === c.id && (b.isStamp || b.isText));
       if (freeItems.length){
         var freeLayer = document.createElement('div');
@@ -1534,26 +1737,22 @@
       casesRow.appendChild(unit);
     });
 
-    if (editMode) casesRow.appendChild(buildCaseEndTile());
-
     finalizeGrids();
+    updateStats(); 
+    if(filterInput.value) applyFilter(); 
   }
 
-  // Builds each shelf's grid-column tracks so an empty slot is real empty
-  // space (not just "no item rendered"), and stashes cumulative pixel
-  // offsets on the element for exact drag hit-testing later. A shelf that
-  // genuinely has more books than fit scrolls (overflow-x on .shelf-books)
-  // rather than silently clipping or force-compacting gaps away.
   function finalizeGrids(){
-    var w = slotWidths();
     document.querySelectorAll('.shelf-books').forEach(function(el){
       try{
         var shelfId = el.dataset.shelfId;
+        var sizes = shelfSizesFor(shelfId);
+        var w = { cover: sizes.coverW, spine: sizes.spineW };
         var items = booksOnShelf(shelfId);
         var occ = {};
         items.forEach(function(b){ occ[b.slot] = b; });
         var maxSlot = items.length ? Math.max.apply(null, items.map(b => b.slot)) : -1;
-        var cols = Math.max(maxSlot + 2, 4); // +1 landing zone to drop past the end
+        var cols = Math.max(maxSlot + 2, 4); 
         var widths = [];
         for (var i=0;i<cols;i++) widths.push(itemGridWidth(occ[i], w));
         el.style.gridTemplateColumns = widths.map(x => x+'px').join(' ');
@@ -1568,9 +1767,6 @@
     });
   }
 
-  // Moves `item` onto shelfId/slot. If that slot is already taken, the two
-  // books simply swap places — nothing else on the shelf shifts, so any
-  // gap you've deliberately left stays exactly where it is.
   function commitMove(item, shelfId, slot){
     var occupant = state.books.find(function(b){
       return b.shelfId === shelfId && b.slot === slot && b.id !== item.id && !b.isStamp && !b.isSign && !b.isText;
@@ -1581,8 +1777,6 @@
     persist();
   }
 
-  // Works out which grid slot a tap landed on, using the same offsets
-  // finalizeGrids() stashed on the shelf element.
   function slotFromEvent(wrap, clientX){
     var rect = wrap.getBoundingClientRect();
     var cs = getComputedStyle(wrap);
@@ -1597,17 +1791,14 @@
     return Math.max(0, Math.min(offsets.length - 1, slot));
   }
 
-  // Brief "settles into place" animation for the book that was just moved —
-  // starts lifted (matching how it looked while picked up) and lets the
-  // .book transition ease it down to its resting position.
   function animateDrop(itemId){
     var el = casesRow.querySelector('.book[data-id="' + itemId + '"]') ||
              casesRow.querySelector('.free-item[data-id="' + itemId + '"]');
     if (!el) return;
-    var orig = el.style.transform || ''; // preserve any existing rotation
+    var orig = el.style.transform || ''; 
     el.style.transition = 'none';
     el.style.transform = 'translateY(-12px) scale(1.04) ' + orig;
-    void el.offsetHeight; // force reflow so the next line animates
+    void el.offsetHeight; 
     el.style.transition = '';
     el.style.transform = orig;
   }
@@ -1615,23 +1806,27 @@
   // ========== 移動: タップして持ち上げ→タップして置く (✥モード時のみ) ==========
   function attachDragAndClick(el, item){
     el.addEventListener('click', function(e){
-      if (item.isStamp || item.isSign) return; // those have their own click handling
+      if (item.isStamp || item.isSign) return; 
 
       if (moveMode) {
         if (selectedItem && selectedItem.id === item.id) {
-          // tapped the picked-up book again -> put it back down, cancel
-          selectedItem = null; renderShelf();
+          selectedItem = null; 
+          trashArea.classList.remove('show'); // 選択解除で隠す
+          renderShelf();
           return;
         }
         if (selectedItem) {
           var picked = selectedItem;
           selectedItem = null;
+          trashArea.classList.remove('show'); // 移動完了で隠す
           commitMove(picked, item.shelfId, item.slot);
           renderShelf();
           animateDrop(picked.id);
         } else {
-          // first tap: pick up
+          // ★修正：本を持ち上げた時に「タップして削除」を表示
           selectedItem = item;
+          trashArea.textContent = 'タップして削除';
+          trashArea.classList.add('show');
           renderShelf();
         }
         return;
@@ -1647,42 +1842,236 @@
     });
   }
 
-  // Tapping empty shelf space (not on a book) while something is picked up
-  // places it at the exact tapped slot.
   document.getElementById('casesRow').addEventListener('click', function(e){
     if (!moveMode || !selectedItem || selectedItem.isSign || selectedItem.isStamp) return;
     var wrap = e.target.closest('.shelf-books');
-    if (!wrap || e.target.closest('.book')) return; // book clicks handle themselves
+    if (!wrap || e.target.closest('.book')) return; 
     var shelfId = wrap.dataset.shelfId;
     var slot = slotFromEvent(wrap, e.clientX);
     var picked = selectedItem;
     selectedItem = null;
+    trashArea.classList.remove('show'); // 配置完了で隠す
     commitMove(picked, shelfId, slot);
     renderShelf();
     animateDrop(picked.id);
   });
 
-  // Tapping empty bookcase space (not on a stamp/text sticker) while one is
-  // picked up places it there, centered on the tapped point.
-  document.getElementById('casesRow').addEventListener('click', function(e){
-    if (!moveMode || !selectedFreeItem) return;
-    if (e.target.closest('.free-item')) return; // handled by the item's own click
-    var unit = e.target.closest('.bookcase-unit');
-    if (!unit) return;
-    var rect = unit.getBoundingClientRect();
-    var picked = selectedFreeItem;
-    selectedFreeItem = null;
-    picked.caseId = unit.dataset.caseId;
-    picked.x = Math.max(0, Math.min(1, (e.clientX - rect.left - picked.w/2) / rect.width));
-    picked.y = Math.max(0, Math.min(1, (e.clientY - rect.top - picked.h/2) / rect.height));
-    persist(); renderShelf();
-    animateDrop(picked.id);
+  // ========== スタンプと本の削除・ドラッグ＆ドロップ実装 ==========
+  let activeFreeItemNode = null;
+  let activeFreeItemData = null;
+  let isDraggingFreeItem = false;
+  let dragStartX = 0, dragStartY = 0;
+  let dragOffsetX = 0, dragOffsetY = 0;
+  let hasMovedFreeItem = false;
+
+  // ★修正：タップ専用削除（移動モード中の本）
+  trashArea.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (moveMode && selectedItem) {
+          if (confirm('「' + (selectedItem.title || 'この本') + '」を削除しますか？')) {
+              state.books = state.books.filter(b => b.id !== selectedItem.id);
+              selectedItem = null;
+              trashArea.classList.remove('show');
+              persist();
+              renderShelf();
+          }
+      }
+  });
+
+  document.addEventListener('pointerdown', function(e) {
+      let freeItemNode = e.target.closest('.free-item');
+      if (freeItemNode && !e.target.closest('.resize-handle, .rotate-handle')) {
+          e.stopPropagation(); 
+          
+          if (activeFreeItemNode && activeFreeItemNode !== freeItemNode) {
+              activeFreeItemNode.classList.remove('active');
+          }
+
+          activeFreeItemNode = freeItemNode;
+          let fiId = freeItemNode.dataset.id;
+          activeFreeItemData = state.books.find(b => b.id === fiId);
+
+          globalStampZ++;
+          activeFreeItemData.z = globalStampZ;
+          activeFreeItemNode.style.zIndex = globalStampZ;
+
+          if (freeItemNode.classList.contains('active')) {
+              isDraggingFreeItem = true;
+              hasMovedFreeItem = false;
+              let rect = freeItemNode.getBoundingClientRect();
+              dragOffsetX = e.clientX - rect.left;
+              dragOffsetY = e.clientY - rect.top;
+              dragStartX = e.clientX;
+              dragStartY = e.clientY;
+              // ★修正：ドラッグ中はドロップ削除を促すテキストに
+              trashArea.textContent = 'ここにドロップして削除';
+              trashArea.classList.add('show');
+              freeItemNode.setPointerCapture(e.pointerId);
+          } else {
+              freeItemNode.classList.add('active');
+              trashArea.textContent = 'ドラッグ移動・ここにドロップで削除';
+              trashArea.classList.add('show');
+          }
+      } else {
+          // 背景などを触って解除した時
+          if (activeFreeItemNode && !e.target.closest('#trash-area')) {
+              activeFreeItemNode.classList.remove('active');
+              activeFreeItemNode = null;
+              activeFreeItemData = null;
+              trashArea.classList.remove('show');
+              persist(); 
+          }
+      }
+  });
+
+  document.addEventListener('pointermove', function(e) {
+      if (isDraggingFreeItem && activeFreeItemNode) {
+          let dx = e.clientX - dragStartX;
+          let dy = e.clientY - dragStartY;
+          if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+              hasMovedFreeItem = true;
+          }
+          if (hasMovedFreeItem) {
+              e.preventDefault();
+              let x = e.clientX - dragOffsetX;
+              let y = e.clientY - dragOffsetY;
+              activeFreeItemNode.style.position = 'fixed';
+              activeFreeItemNode.style.left = x + 'px';
+              activeFreeItemNode.style.top = y + 'px';
+          }
+      }
+  }, {passive: false});
+
+  document.addEventListener('pointerup', function(e) {
+      if (isDraggingFreeItem && activeFreeItemNode) {
+          activeFreeItemNode.releasePointerCapture(e.pointerId);
+          let trashRect = trashArea.getBoundingClientRect();
+          
+          // ★修正：スタンプはドロップで削除される（元通り）
+          if (e.clientY >= trashRect.top && hasMovedFreeItem) {
+              state.books = state.books.filter(b => b.id !== activeFreeItemData.id);
+              activeFreeItemNode.remove();
+              activeFreeItemNode = null;
+              activeFreeItemData = null;
+              trashArea.classList.remove('show');
+              persist();
+          } else {
+              if (hasMovedFreeItem) {
+                  activeFreeItemNode.style.display = 'none';
+                  let dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+                  activeFreeItemNode.style.display = '';
+
+                  let unit = dropTarget ? dropTarget.closest('.bookcase-unit') : null;
+                  if (!unit) {
+                      unit = document.querySelector('.bookcase-unit[data-case-id="' + activeFreeItemData.caseId + '"]');
+                  }
+                  
+                  if (unit) {
+                      let uRect = unit.getBoundingClientRect();
+                      let absLeft = e.clientX - dragOffsetX;
+                      let absTop = e.clientY - dragOffsetY;
+                      let relX = (absLeft - uRect.left) / uRect.width;
+                      let relY = (absTop - uRect.top) / uRect.height;
+
+                      activeFreeItemData.caseId = unit.dataset.caseId;
+                      activeFreeItemData.x = relX;
+                      activeFreeItemData.y = relY;
+
+                      let freeLayer = unit.querySelector('.free-layer');
+                      if (!freeLayer) {
+                          freeLayer = document.createElement('div');
+                          freeLayer.className = 'free-layer';
+                          unit.appendChild(freeLayer);
+                      }
+                      freeLayer.appendChild(activeFreeItemNode);
+                      
+                      activeFreeItemNode.style.position = 'absolute';
+                      activeFreeItemNode.style.left = (relX * 100) + '%';
+                      activeFreeItemNode.style.top = (relY * 100) + '%';
+                  }
+                  persist();
+              } else {
+                  if (activeFreeItemData && activeFreeItemData.isText && editMode) {
+                      let next = prompt('テキストを編集（空にすると削除）', activeFreeItemData.title || '');
+                      if (next !== null) {
+                          if (!next.trim()) {
+                              state.books = state.books.filter(b => b.id !== activeFreeItemData.id);
+                              activeFreeItemNode.remove();
+                              activeFreeItemNode = null;
+                              activeFreeItemData = null;
+                              trashArea.classList.remove('show');
+                          } else {
+                              activeFreeItemData.title = next.trim();
+                              activeFreeItemData.color = tagColor(activeFreeItemData.title);
+                              let sticker = activeFreeItemNode.querySelector('.text-sticker');
+                              if (sticker) {
+                                  sticker.textContent = activeFreeItemData.title;
+                                  sticker.style.background = activeFreeItemData.color;
+                              }
+                          }
+                          persist();
+                      }
+                  }
+              }
+          }
+          isDraggingFreeItem = false;
+      }
   });
 
 
   // ========== モーダル (詳細/編集) ==========
   var curItem = null;
   
+  // ★修正：タグとジャンルの独立した履歴データをセレクトボックスに反映
+  function updateTagSelects() {
+    var gSel = document.getElementById('bm-genre-select');
+    gSel.innerHTML = '<option value="">＋ ジャンル...</option>';
+    state.genreHistory.forEach(function(g) {
+      gSel.innerHTML += '<option value="' + g + '">' + g + '</option>';
+    });
+    gSel.innerHTML += '<option value="__NEW__">＋ 新規作成...</option>';
+
+    var tSel = document.getElementById('bm-tag-select');
+    tSel.innerHTML = '<option value="">＋ タグ...</option>';
+    state.tagHistory.forEach(function(t) {
+      tSel.innerHTML += '<option value="' + t + '">' + t + '</option>';
+    });
+    tSel.innerHTML += '<option value="__NEW__">＋ 新規作成...</option>';
+  }
+
+  // ★修正：タグ・ジャンルの変更イベント（新規作成・既存追加）
+  function handleTagSelectChange(e, type) {
+    var val = e.target.value;
+    e.target.value = ''; // 選択後はリセット
+    if (!val || !curItem) return;
+
+    if (val === '__NEW__') {
+      val = prompt('新しい' + (type === 'genre' ? 'ジャンル' : 'タグ') + 'を入力してください');
+      if (!val || !val.trim()) return;
+      val = val.trim();
+      
+      // 履歴に保存
+      var history = type === 'genre' ? state.genreHistory : state.tagHistory;
+      var idx = history.indexOf(val);
+      if (idx !== -1) history.splice(idx, 1);
+      history.unshift(val);
+      if (history.length > 50) history.length = 50;
+      persist();
+      updateTagSelects(); // 選択肢を更新
+    }
+
+    var targetList = type === 'genre' ? (curItem.genres = curItem.genres || []) : (curItem.tags = curItem.tags || []);
+    if (!targetList.includes(val)) {
+      targetList.push(val);
+      persist();
+      refreshTagUI(curItem);
+      renderShelf();
+    }
+  }
+
+  document.getElementById('bm-genre-select').addEventListener('change', function(e){ handleTagSelectChange(e, 'genre'); });
+  document.getElementById('bm-tag-select').addEventListener('change', function(e){ handleTagSelectChange(e, 'tag'); });
+
   function openModal(item){
     curItem = item;
     var modal = document.getElementById('bookModal');
@@ -1731,14 +2120,24 @@
     var statusEl = document.getElementById('bm-status');
     if(statusEl) statusEl.value = item.status || 'owned';
     
+    updateTagSelects(); // ★修正：履歴をセレクトボックスに反映
+    
     refreshTagUI(item);
     modal.classList.remove('hidden');
   }
 
   function renderDetailTags(item){
     var wrap = document.getElementById('bm-tags'); wrap.innerHTML = '';
-    (item.tags || []).forEach(function(tag){
-      var chip = document.createElement('span'); chip.className = 'tag-chip';
+    
+    // ★修正：ジャンルとタグを両方チップとして表示
+    var allTags = [];
+    (item.genres || []).forEach(g => allTags.push({text: g, type: 'genre'}));
+    (item.tags || []).forEach(t => allTags.push({text: t, type: 'tag'}));
+
+    allTags.forEach(function(tagObj){
+      var tag = tagObj.text;
+      var chip = document.createElement('span'); 
+      chip.className = 'tag-chip' + (tagObj.type === 'genre' ? ' genre-chip' : ''); // ジャンルは少し見た目を変える
 
       var swatch = document.createElement('input');
       swatch.type = 'color';
@@ -1752,7 +2151,8 @@
       });
       chip.appendChild(swatch);
 
-      var txt = document.createElement('span'); txt.textContent = tag;
+      var txt = document.createElement('span'); 
+      txt.textContent = tag;
       chip.appendChild(txt);
       if (item.bgTag === tag){
         var star = document.createElement('span'); star.className='bgtag-star'; star.textContent='★';
@@ -1763,7 +2163,8 @@
       if(editMode){
         var rm = document.createElement('button'); rm.textContent = '×';
         rm.onclick = function(){
-          item.tags = item.tags.filter(t => t !== tag);
+          if(tagObj.type === 'genre') item.genres = item.genres.filter(t => t !== tag);
+          else item.tags = item.tags.filter(t => t !== tag);
           if (item.bgTag === tag) item.bgTag = null;
           persist(); refreshTagUI(item); renderShelf();
         };
@@ -1775,8 +2176,10 @@
 
   function refreshBgTagSelect(item){
     var sel = document.getElementById('bm-bgtag');
-    sel.innerHTML = '<option value="">なし</option>';
-    (item.tags || []).forEach(function(t){
+    sel.innerHTML = '<option value="">背景マーク: なし</option>';
+    
+    var allTags = [].concat(item.genres || [], item.tags || []);
+    allTags.forEach(function(t){
       var opt = document.createElement('option'); opt.value = t; opt.textContent = t;
       if (item.bgTag === t) opt.selected = true;
       sel.appendChild(opt);
@@ -1796,17 +2199,6 @@
     var synEl = document.getElementById('bm-synopsis');
     var expanded = synEl.classList.toggle('expanded');
     this.textContent = expanded ? '閉じる' : '続きを読む';
-  });
-
-  document.getElementById('bm-tag-add').addEventListener('click', function(){
-    if(!curItem) return;
-    var val = document.getElementById('bm-tag-input').value.trim();
-    if(val){
-      curItem.tags = curItem.tags || [];
-      if(!curItem.tags.includes(val)) curItem.tags.push(val);
-      document.getElementById('bm-tag-input').value = '';
-      persist(); refreshTagUI(curItem); renderShelf();
-    }
   });
 
   document.getElementById('bm-close').addEventListener('click', function(){
@@ -1876,7 +2268,7 @@
 
   async function fetchBookInfo(query){
     var isIsbn = /^[0-9Xx]+$/.test(query.replace(/-/g,''));
-    var resObj = { title: '', author: '', publisher: '', cover: '', description: '', displayMode: 'cover', size: 'm', tags: [], status: 'owned', bgTag: null };
+    var resObj = { title: '', author: '', publisher: '', cover: '', description: '', displayMode: 'cover', size: 'm', tags: [], genres: [], status: 'owned', bgTag: null };
     
     if (isIsbn) {
       var isbn = query.replace(/-/g,''); resObj.isbn = isbn;
