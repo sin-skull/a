@@ -3174,24 +3174,21 @@
         
         var rowSizes = shelfSizesFor(shelfId);
 
-        // 透明なプレースホルダー：段の容量（表示サイズ設定）ぶん、本と同じ
-        // サイズの透明なオブジェクトを敷き詰めておく。本があるスロットには
-        // 置かない（＝本が来たら透明オブジェクトと入れ替わる）。これで、
-        // 段の高さは常に安定し、途中や右側にも自由に本を置いて隙間を作れる。
-        var capacity = shelfSizeCounts(shelfId).spineCount;
+        // 透明なアンカー：本が無いスロットを1つだけ選んで高さの基準にする。
+        // 列の幅そのものはfinalizeGridsのgridTemplateColumnsが明示的に決めて
+        // くれるので、透明オブジェクトは高さを保つ役目の1個だけで十分
+        // （容量ぶん全部敷き詰めるのは不要に重かったので撤回）。本と同じ
+        // スロットには絶対に置かない（前回の重なりバグの再発防止）。
         var occupiedSlots = {};
         items.forEach(function(b){ occupiedSlots[effectiveSlot(b)] = true; });
-        var maxSlotNeeded = items.length ? Math.max.apply(null, items.map(effectiveSlot)) : -1;
-        var placeholderCount = Math.max(capacity, maxSlotNeeded + 1);
-        for (var s = 0; s < placeholderCount; s++){
-          if (occupiedSlots[s]) continue;
-          var ph = document.createElement('div');
-          ph.className = 'shelf-anchor';
-          ph.style.width = rowSizes.spineW + 'px';
-          ph.style.height = rowSizes.spineH + 'px';
-          ph.style.gridColumn = (s + 1);
-          wrap.appendChild(ph);
-        }
+        var anchorSlot = 0;
+        while (occupiedSlots[anchorSlot]) anchorSlot++;
+        var anchor = document.createElement('div');
+        anchor.className = 'shelf-anchor';
+        anchor.style.width = rowSizes.spineW + 'px';
+        anchor.style.height = rowSizes.spineH + 'px';
+        anchor.style.gridColumn = (anchorSlot + 1);
+        wrap.appendChild(anchor);
 
         items.forEach(function(item, idx){
           var prev = items[idx - 1];
