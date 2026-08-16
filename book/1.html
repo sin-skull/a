@@ -455,7 +455,7 @@
   .scan-wrap canvas { position:absolute !important; top:0; left:0; width:100% !important; height:100% !important; object-fit:cover; }
   .scan-guide { position:absolute; left:8%; right:8%; top:42%; height:16%; border:2px solid #00ff00; border-radius:6px; box-shadow:0 0 0 999px rgba(0,0,0,.35); pointer-events:none; }
   .manual-input-wrap { display: flex; gap: 8px; margin-bottom: 16px; }
-  .manual-input-wrap input { flex: 1; padding: 10px; font-size: 14px; border-radius: 4px; border: 1px solid var(--accent); color: #222;}
+  .manual-input-wrap input, .manual-input-wrap textarea { flex: 1; padding: 10px; font-size: 14px; border-radius: 4px; border: 1px solid var(--accent); color: #222; font-family: inherit; resize: vertical; }
   
   .queue-list { border-top: 1px solid var(--accent); padding-top: 10px; margin-top: 10px; }
   .queue-item { display: flex; padding: 10px 0; border-bottom: 1px solid rgba(128,128,128,0.2); align-items: center; gap: 12px; }
@@ -464,6 +464,7 @@
   .queue-title { font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
   .queue-author { font-size: 11px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .queue-del { background: transparent; color: #ff5555; border: none; font-size: 22px; cursor: pointer; padding: 8px; box-shadow: none; }
+  .queue-status-select{ font-size:10px; padding:4px 3px; border-radius:4px; border:1px solid var(--accent); background:var(--case-bg); color:var(--text-main); flex:0 0 auto; max-width:64px; }
 
   /* ---------- 計測ビュー ---------- */
   .timer-item{
@@ -757,7 +758,7 @@
       <button class="btn ghost" id="stampMenuBtn" title="スタンプ追加">☻</button>
       <button class="btn ghost" id="addCaseBtnHeader" title="本棚を追加">＋</button>
       <input type="file" id="stampFileInput" accept="image/*" hidden>
-      <p class="edit-hint">段を長押しで全ての段に＋／⚙️／×が表示されます（段を全部消すとその本棚ごと消えます）／⚙️でその段だけのサイズを個別設定／左の≡をタップしてから別の段の≡をタップで入れ替え／個別設定していない段はサイドバーの表示サイズで一括変更できます</p>
+      <p class="edit-hint">段を長押しで全ての段に＋／⚙️／×が表示されます（段を全部消すとその本棚ごと消えます）／⚙️でその段だけのサイズを個別設定／左の≡をタップしてから別の段の≡をタップで入れ替え／個別設定していない段はサイドバーの表示サイズで一括変更できます／横画面では≡の隣に🔄が出て、その段の配置を縦画面に揃えられます（本の配置は縦横で別々に持てます）</p>
     </div>
 
     <div class="cases-row" id="casesRow"></div>
@@ -778,14 +779,15 @@
       <div id="scanArea">
         <div class="scan-wrap" id="scanContainer"></div>
         <p style="font-size:12px; text-align:center; opacity:0.8;" id="scanHint">バーコードを枠内に収めてください</p>
+        <button class="btn ghost" id="scanPauseBtn" type="button" style="width:100%; margin-top:8px;">⏸ カメラを一時停止</button>
       </div>
       
       <div id="inputArea" hidden>
         <div class="manual-input-wrap">
-          <input type="text" id="manualIsbn" placeholder="ISBN または タイトル を入力">
+          <textarea id="manualIsbn" rows="3" placeholder="ISBN または タイトルを入力（複数まとめて登録する場合は改行で区切ってください）"></textarea>
           <button class="btn" id="manualSearchBtn">検索</button>
         </div>
-        <p style="font-size:11px; opacity:0.7; margin-top:-8px;">※タイトル入力の場合、少し時間がかかることがあります。</p>
+        <p style="font-size:11px; opacity:0.7; margin-top:-8px;">※タイトル入力の場合、少し時間がかかることがあります。改行で複数まとめて検索できます。</p>
       </div>
       
       <div class="queue-list" id="queueList"></div>
@@ -939,6 +941,7 @@
 <div class="modal hidden" id="stampMenu">
   <div class="modal-card">
     <h2 style="margin-top:0; font-size:16px;">☻ スタンプを追加</h2>
+    <p class="edit-hint" id="stampMenuOrientHint" style="margin:0 0 10px;"></p>
     <div class="stamp-menu-actions">
       <button class="btn ghost" id="stampMenuFile">📁 ファイル</button>
       <button class="btn ghost" id="stampMenuUrl">🔗 URL</button>
@@ -1071,15 +1074,13 @@
   function isLandscape(){ return window.innerWidth > window.innerHeight; }
   // 縦・横で別々の位置を持たせる：横向き専用の座標があればそれを使い、
   // なければ縦向き（既定）の座標にフォールバックする
+  // スタンプは縦横で別々の存在になったので（isLandscapeでフィルタ）、
+  // 1つの座標だけで良い。以前のxLandscape/yLandscape二重持ちは廃止。
   function getFreeItemPos(fi){
-    if (isLandscape() && fi.xLandscape != null && fi.yLandscape != null){
-      return { x: fi.xLandscape, y: fi.yLandscape };
-    }
     return { x: fi.x, y: fi.y };
   }
   function setFreeItemPos(fi, x, y){
-    if (isLandscape()){ fi.xLandscape = x; fi.yLandscape = y; }
-    else { fi.x = x; fi.y = y; }
+    fi.x = x; fi.y = y;
   }
   function defaultSpineColor(book){
     var authorKey = (book.author && book.author.trim()) ? book.author.trim() : (book.title || book.id);
@@ -1707,12 +1708,12 @@
         // 元のスロット位置のまま表示する（詰めない）— 該当しない本があった場所は
         // 空白として残し、背表紙が別の作品と隣り合って紛らわしくなるのを防ぐ
         matched.forEach(function(item){
-          var el = buildItemEl(item, false, false, rowSizes); // gridColumn は item.slot+1 のまま
+          var el = buildItemEl(item, false, false, rowSizes); // gridColumn は effectiveSlot(item)+1 のまま
           el.addEventListener('click', function(){ openModal(item); });
           wrap.appendChild(el);
         });
-        var maxSlot = Math.max.apply(null, allItems.map(function(b){ return b.slot; }));
-        var occ = {}; allItems.forEach(function(b){ occ[b.slot] = b; });
+        var maxSlot = Math.max.apply(null, allItems.map(effectiveSlot));
+        var occ = {}; allItems.forEach(function(b){ occ[effectiveSlot(b)] = b; });
         var widths = [];
         for (var s=0; s<=maxSlot; s++) widths.push(itemGridWidth(occ[s], w));
         wrap.style.gridTemplateColumns = widths.map(function(x){ return x + 'px'; }).join(' ');
@@ -1739,7 +1740,8 @@
       if (b.isStamp || b.isText || b.isSign) return false;
       return !filterOn || bookMatchesFilter(b);
     });
-    books.sort(function(a,b){ return (a.title||'').localeCompare(b.title||'', 'ja'); });
+    var cmp = SORT_COMPARATORS[currentSortCriterion] || SORT_COMPARATORS.kana;
+    books.sort(cmp);
     container.innerHTML = '';
     if (!books.length){
       container.innerHTML = '<p class="edit-hint" style="margin:16px 0;">' + (filterOn ? '絞り込みに一致する本がありません' : '本がありません') + '</p>';
@@ -1836,37 +1838,51 @@
   function sortCurrentCase(criterion){
     var cmp = SORT_COMPARATORS[criterion];
     if (!cmp) return;
+    var isLS = isLandscape();
     var caseId = currentCaseId();
     var shelfIds = shelfIdsInCase(caseId);
-    var backup = [];
+    var entries = [];
     shelfIds.forEach(function(sid){
-      booksOnShelf(sid).forEach(function(b){ backup.push({ id: b.id, slot: b.slot }); });
+      booksOnShelf(sid).forEach(function(b){
+        entries.push({ id: b.id, slot: isLS ? b.landscapeSlot : b.slot, hadOverride: b.landscapeSlot != null });
+      });
     });
-    if (!backup.length){ showToast('並び替える本がありません'); return; }
-    lastSortBackup = backup;
+    if (!entries.length){ showToast('並び替える本がありません'); return; }
+    lastSortBackup = { isLandscape: isLS, entries: entries };
     shelfIds.forEach(function(sid){
       var items = booksOnShelf(sid);
       items.sort(cmp);
-      items.forEach(function(b, i){ b.slot = i; });
+      items.forEach(function(b, i){
+        if (isLS) b.landscapeSlot = i; else b.slot = i;
+      });
     });
     persist(); renderShelf();
     document.getElementById('undoSortBtn').hidden = false;
-    showToast('並び替えました');
+    showToast('並び替えました' + (isLS ? '（横画面用）' : ''));
   }
   function undoSort(){
     if (!lastSortBackup) return;
-    lastSortBackup.forEach(function(entry){
+    var isLS = lastSortBackup.isLandscape;
+    lastSortBackup.entries.forEach(function(entry){
       var b = state.books.find(function(x){ return x.id === entry.id; });
-      if (b) b.slot = entry.slot;
+      if (!b) return;
+      if (isLS){
+        if (entry.hadOverride) b.landscapeSlot = entry.slot; else delete b.landscapeSlot;
+      } else {
+        b.slot = entry.slot;
+      }
     });
     lastSortBackup = null;
     persist(); renderShelf();
     document.getElementById('undoSortBtn').hidden = true;
     showToast('元に戻しました');
   }
+  var currentSortCriterion = 'kana'; // リスト表示の並び順に使う（本棚側は都度selectで指定）
   document.getElementById('sortSelect').addEventListener('change', function(){
     if (!this.value) return;
-    sortCurrentCase(this.value);
+    currentSortCriterion = this.value;
+    if (listViewActive) renderBookList();
+    else sortCurrentCase(this.value);
     this.selectedIndex = 0; // 同じ項目を続けて選び直せるようにリセット
   });
   document.getElementById('undoSortBtn').addEventListener('click', undoSort);
@@ -1876,7 +1892,10 @@
     if (!c) return;
     for (var r=c.rows-1; r>rowIndex; r--){
       var oldId = caseId+'_'+r, newId = caseId+'_'+(r+1);
-      state.books.forEach(function(b){ if (b.shelfId===oldId) b.shelfId=newId; });
+      state.books.forEach(function(b){
+        if (b.shelfId===oldId) b.shelfId=newId;
+        if (b.landscapeShelfId===oldId) b.landscapeShelfId=newId;
+      });
       if (state.shelfSigns[oldId]){ state.shelfSigns[newId]=state.shelfSigns[oldId]; delete state.shelfSigns[oldId]; }
       if (state.shelfSizes[oldId]){ state.shelfSizes[newId]=state.shelfSizes[oldId]; delete state.shelfSizes[oldId]; }
     }
@@ -1898,28 +1917,61 @@
     var hasItems = state.books.some(b => b.shelfId===shelfId) || !!state.shelfSigns[shelfId];
     if (hasItems && !confirm('この段のアイテムも削除されます。よろしいですか？')) return;
     softDeleteBooks(state.books.filter(b => b.shelfId === shelfId));
+    // この段だけを横画面用に指していた本（縦画面の実家は別）は、消さずに
+    // 縦画面の位置へ戻す（横画面専用の上書きをクリア）
+    state.books.forEach(function(b){
+      if (b.landscapeShelfId === shelfId && b.shelfId !== shelfId){
+        delete b.landscapeShelfId; delete b.landscapeSlot;
+      }
+    });
     state.books = state.books.filter(b => b.shelfId !== shelfId);
     delete state.shelfSigns[shelfId];
     delete state.shelfSizes[shelfId];
     for (var r=rowIndex+1; r<c.rows; r++){
       var oldId = caseId+'_'+r, newId = caseId+'_'+(r-1);
-      state.books.forEach(function(b){ if (b.shelfId===oldId) b.shelfId=newId; });
+      state.books.forEach(function(b){
+        if (b.shelfId===oldId) b.shelfId=newId;
+        if (b.landscapeShelfId===oldId) b.landscapeShelfId=newId;
+      });
       if (state.shelfSigns[oldId]){ state.shelfSigns[newId]=state.shelfSigns[oldId]; delete state.shelfSigns[oldId]; }
       if (state.shelfSizes[oldId]){ state.shelfSizes[newId]=state.shelfSizes[oldId]; delete state.shelfSizes[oldId]; }
     }
     c.rows--;
     persist(); renderShelf();
   }
+  // 横画面編集中だけ使える「同期」：この段の横画面での配置を、縦画面の配置に
+  // 戻す（横画面専用の上書きを全部消す）。横画面に来た本もこの段に属してい
+  // た本も、両方とも縦画面の並びに揃う。
+  function syncShelfToPortrait(shelfId){
+    if (!confirm('この段の横画面での配置を、縦画面と同じに戻します。よろしいですか？')) return;
+    state.books.forEach(function(b){
+      var isHere = (b.landscapeShelfId || b.shelfId) === shelfId;
+      var belongsHere = b.shelfId === shelfId;
+      if (isHere || belongsHere){
+        delete b.landscapeShelfId;
+        delete b.landscapeSlot;
+      }
+    });
+    persist(); renderShelf();
+    showToast('縦画面の配置に揃えました');
+  }
+
   function swapShelfContents(shelfIdA, shelfIdB){
     if (shelfIdA === shelfIdB) return;
     var tmp = '__swaptmp__';
     var isRealBook = function(b){ return !b.isStamp && !b.isText && !b.isSign; };
-    state.books.forEach(function(b){ if (isRealBook(b) && b.shelfId===shelfIdA) b.shelfId=tmp; });
-    state.books.forEach(function(b){ if (isRealBook(b) && b.shelfId===shelfIdB) b.shelfId=shelfIdA; });
-    state.books.forEach(function(b){ if (isRealBook(b) && b.shelfId===tmp) b.shelfId=shelfIdB; });
-    var sA = state.shelfSigns[shelfIdA], sB = state.shelfSigns[shelfIdB];
-    if (sB) state.shelfSigns[shelfIdA]=sB; else delete state.shelfSigns[shelfIdA];
-    if (sA) state.shelfSigns[shelfIdB]=sA; else delete state.shelfSigns[shelfIdB];
+    var isLS = isLandscape();
+    // 横画面中は横画面専用の位置として入れ替える（縦画面のデータは変えない）
+    var setEff = function(b, val){ if (isLS) b.landscapeShelfId = val; else b.shelfId = val; };
+    state.books.forEach(function(b){ if (isRealBook(b) && effectiveShelfId(b)===shelfIdA) setEff(b, tmp); });
+    state.books.forEach(function(b){ if (isRealBook(b) && effectiveShelfId(b)===shelfIdB) setEff(b, shelfIdA); });
+    state.books.forEach(function(b){ if (isRealBook(b) && effectiveShelfId(b)===tmp) setEff(b, shelfIdB); });
+    if (!isLS){
+      // サインは縦画面基準のみ（横画面専用にはしない）
+      var sA = state.shelfSigns[shelfIdA], sB = state.shelfSigns[shelfIdB];
+      if (sB) state.shelfSigns[shelfIdA]=sB; else delete state.shelfSigns[shelfIdA];
+      if (sA) state.shelfSigns[shelfIdB]=sA; else delete state.shelfSigns[shelfIdB];
+    }
     // note: per-row size settings deliberately stay put — swapping contents
     // doesn't swap "how many fit on this physical row"
     persist(); renderShelf();
@@ -1941,6 +1993,13 @@
       || Object.keys(state.shelfSigns).some(k => k.indexOf(prefix)===0);
     if (hasItems && !confirm('この本棚の中身も削除されます。よろしいですか？')) return;
     softDeleteBooks(state.books.filter(b => (b.shelfId||'').indexOf(prefix)===0 || b.caseId===caseId));
+    // この本棚を横画面用に指していた本（縦画面の実家は別）は、消さずに
+    // 縦画面の位置へ戻す
+    state.books.forEach(function(b){
+      if (b.landscapeShelfId && b.landscapeShelfId.indexOf(prefix)===0 && (b.shelfId||'').indexOf(prefix)!==0){
+        delete b.landscapeShelfId; delete b.landscapeSlot;
+      }
+    });
     state.books = state.books.filter(b => (b.shelfId||'').indexOf(prefix)!==0 && b.caseId!==caseId);
     Object.keys(state.shelfSigns).forEach(function(k){ if (k.indexOf(prefix)===0) delete state.shelfSigns[k]; });
     Object.keys(state.shelfSizes).forEach(function(k){ if (k.indexOf(prefix)===0) delete state.shelfSizes[k]; });
@@ -2002,7 +2061,8 @@
   }
   function addFreeItem(data){
     var caseId = currentCaseId();
-    var item = Object.assign({ id: uid(), caseId: caseId, x: 0.08, y: 0.05, rot: 0, z: ++globalStampZ }, data);
+    // 追加した時点の向きだけに属する（縦横で完全に別のスタンプ集合にする）
+    var item = Object.assign({ id: uid(), caseId: caseId, x: 0.08, y: 0.05, rot: 0, z: ++globalStampZ, orientation: isLandscape() ? 'landscape' : 'portrait' }, data);
     state.books.push(item); persist(); renderShelf();
   }
   function addStampWithCover(coverUrl, skipHistory){
@@ -2029,6 +2089,8 @@
   var stampMenu = document.getElementById('stampMenu');
   document.getElementById('stampMenuBtn').addEventListener('click', function(){
     renderStampHistoryList();
+    document.getElementById('stampMenuOrientHint').textContent =
+      '今は' + (isLandscape() ? '横' : '縦') + '画面用として追加されます（縦横で別々に管理されます）';
     stampMenu.classList.remove('hidden');
   });
   document.getElementById('stampMenuClose').addEventListener('click', function(){
@@ -2775,8 +2837,19 @@
   }
 
   // ========== 棚のロジック・描画 ==========
+  // 本の「実際の位置」は、縦画面用（.shelfId/.slot、常に存在）と、
+  // 横画面だけで上書きされた位置（.landscapeShelfId/.landscapeSlot、未設定なら
+  // 縦画面の位置をそのまま使う）の二重構造。新しく追加した本は縦横共通のまま、
+  // 横画面で実際に動かした本だけが独立した位置を持つようになる。
+  function effectiveShelfId(b){
+    return (isLandscape() && b.landscapeShelfId) ? b.landscapeShelfId : b.shelfId;
+  }
+  function effectiveSlot(b){
+    return (isLandscape() && b.landscapeSlot != null) ? b.landscapeSlot : b.slot;
+  }
   function booksOnShelf(shelfId){
-    return state.books.filter(b => b.shelfId === shelfId && !b.isSign && !b.isStamp && !b.isText).sort((a,b) => a.slot - b.slot);
+    return state.books.filter(b => effectiveShelfId(b) === shelfId && !b.isSign && !b.isStamp && !b.isText)
+      .sort((a,b) => effectiveSlot(a) - effectiveSlot(b));
   }
   
   function signsOnShelf(shelfId){
@@ -2787,11 +2860,13 @@
     var arr = booksOnShelf(shelfId);
     var used = {};
     arr.forEach(function(b){
-      if (used[b.slot] !== undefined){
-        var s = 0; while (used[s] !== undefined) s++;
-        b.slot = s;
+      var s = effectiveSlot(b);
+      if (used[s] !== undefined){
+        var ns = 0; while (used[ns] !== undefined) ns++;
+        if (isLandscape()) b.landscapeSlot = ns; else b.slot = ns;
+        s = ns;
       }
-      used[b.slot] = true;
+      used[s] = true;
     });
   }
   // 本を移動・削除した結果、先頭の本のスロットが0より大きいまま残っていると
@@ -2800,9 +2875,13 @@
   function trimLeadingGap(shelfId){
     var arr = booksOnShelf(shelfId);
     if (!arr.length) return false;
-    var minSlot = Math.min.apply(null, arr.map(function(b){ return b.slot; }));
+    var minSlot = Math.min.apply(null, arr.map(effectiveSlot));
     if (minSlot <= 0) return false;
-    arr.forEach(function(b){ b.slot -= minSlot; });
+    var isLS = isLandscape();
+    arr.forEach(function(b){
+      if (isLS) b.landscapeSlot = effectiveSlot(b) - minSlot;
+      else b.slot -= minSlot;
+    });
     return true;
   }
 
@@ -2819,7 +2898,7 @@
     var el = document.createElement('div');
     el.className = 'book';
     el.dataset.id = book.id;
-    el.style.gridColumn = (book.slot + 1);
+    el.style.gridColumn = (effectiveSlot(book) + 1);
     if (selectedItem && selectedItem.id === book.id) el.classList.add('book--picked');
     if (bulkTagMode){
       el.classList.add('bulk-selectable');
@@ -3039,8 +3118,8 @@
           var prev = items[idx - 1];
           var next = items[idx + 1];
           
-          var matchPrev = prev && (prev.slot === item.slot - 1) && item.bgTag && (prev.bgTag === item.bgTag);
-          var matchNext = next && (next.slot === item.slot + 1) && item.bgTag && (next.bgTag === item.bgTag);
+          var matchPrev = prev && (effectiveSlot(prev) === effectiveSlot(item) - 1) && item.bgTag && (prev.bgTag === item.bgTag);
+          var matchNext = next && (effectiveSlot(next) === effectiveSlot(item) + 1) && item.bgTag && (next.bgTag === item.bgTag);
 
           var el = buildItemEl(item, matchPrev, matchNext, rowSizes);
           attachDragAndClick(el, item);
@@ -3104,6 +3183,20 @@
           });
           rowWrap.insertBefore(handle, block);
           attachRowLongPress(unit, block, caseId, rowIndex, addBtn, removeBtn);
+
+          if (isLandscape()){
+            let shelfIdForSync = shelfId;
+            var syncBtn = document.createElement('div');
+            syncBtn.className = 'row-reorder-handle';
+            syncBtn.style.background = 'rgba(31,95,158,.25)';
+            syncBtn.textContent = '🔄';
+            syncBtn.title = 'この段の横画面の配置を縦画面に揃える';
+            syncBtn.addEventListener('click', function(e){
+              e.stopPropagation();
+              syncShelfToPortrait(shelfIdForSync);
+            });
+            rowWrap.insertBefore(syncBtn, block);
+          }
         }
 
         rowWraps.push(rowWrap);
@@ -3127,7 +3220,10 @@
         rowWraps.forEach(function(rw){ unit.appendChild(rw); });
       }
 
-      var freeItems = state.books.filter(b => b.caseId === c.id && (b.isStamp || b.isText));
+      // 既存（向き未設定）のスタンプは後方互換のため両方の向きで表示する。
+      // 新しく追加したものは、追加した向きだけに表示される。
+      var curOrient = isLandscape() ? 'landscape' : 'portrait';
+      var freeItems = state.books.filter(b => b.caseId === c.id && (b.isStamp || b.isText) && (!b.orientation || b.orientation === curOrient));
       if (freeItems.length){
         var freeLayer = document.createElement('div');
         freeLayer.className = 'free-layer';
@@ -3153,8 +3249,8 @@
         var w = { cover: sizes.coverW, spine: sizes.spineW };
         var items = booksOnShelf(shelfId);
         var occ = {};
-        items.forEach(function(b){ occ[b.slot] = b; });
-        var maxSlot = items.length ? Math.max.apply(null, items.map(b => b.slot)) : -1;
+        items.forEach(function(b){ occ[effectiveSlot(b)] = b; });
+        var maxSlot = items.length ? Math.max.apply(null, items.map(effectiveSlot)) : -1;
         // 実際にある本の分だけ詰めるのが基本方針だが、移動モード中だけは
         // 「今ある本より右」に置けるよう、末尾に空きマスを1つだけ復活させる
         // （そうしないと隙間を作ったり本棚の右端に広げたりできなくなる）
@@ -3175,11 +3271,18 @@
 
   function commitMove(item, shelfId, slot){
     var occupant = state.books.find(function(b){
-      return b.shelfId === shelfId && b.slot === slot && b.id !== item.id && !b.isStamp && !b.isSign && !b.isText;
+      return effectiveShelfId(b) === shelfId && effectiveSlot(b) === slot && b.id !== item.id && !b.isStamp && !b.isSign && !b.isText;
     });
-    var oldShelfId = item.shelfId, oldSlot = item.slot;
-    item.shelfId = shelfId; item.slot = slot;
-    if (occupant) { occupant.shelfId = oldShelfId; occupant.slot = oldSlot; }
+    if (isLandscape()){
+      // 横画面での移動は横画面専用の位置として上書きする（縦画面には影響しない）
+      var oldLShelf = effectiveShelfId(item), oldLSlot = effectiveSlot(item);
+      item.landscapeShelfId = shelfId; item.landscapeSlot = slot;
+      if (occupant) { occupant.landscapeShelfId = oldLShelf; occupant.landscapeSlot = oldLSlot; }
+    } else {
+      var oldShelfId = item.shelfId, oldSlot = item.slot;
+      item.shelfId = shelfId; item.slot = slot;
+      if (occupant) { occupant.shelfId = oldShelfId; occupant.slot = oldSlot; }
+    }
     persist();
   }
 
@@ -3230,7 +3333,7 @@
           var picked = selectedItem;
           selectedItem = null;
           trashArea.classList.remove('show'); // 移動完了で隠す
-          commitMove(picked, item.shelfId, item.slot);
+          commitMove(picked, effectiveShelfId(item), effectiveSlot(item));
           renderShelf();
           animateDrop(picked.id);
         } else {
@@ -3707,12 +3810,31 @@
   document.getElementById('modeScanBtn').addEventListener('click', function(){
     this.classList.remove('ghost'); document.getElementById('modeInputBtn').classList.add('ghost');
     document.getElementById('scanArea').hidden = false; document.getElementById('inputArea').hidden = true;
+    resetScanPauseUI();
     startScan();
   });
   document.getElementById('modeInputBtn').addEventListener('click', function(){
     this.classList.remove('ghost'); document.getElementById('modeScanBtn').classList.add('ghost');
     document.getElementById('scanArea').hidden = true; document.getElementById('inputArea').hidden = false;
+    resetScanPauseUI();
     stopScan();
+  });
+  // 一覧を見ている間などにカメラを回しっぱなしにしたくない時のための一時停止
+  var scanPausedByUser = false;
+  function resetScanPauseUI(){
+    scanPausedByUser = false;
+    var btn = document.getElementById('scanPauseBtn');
+    btn.textContent = '⏸ カメラを一時停止';
+  }
+  document.getElementById('scanPauseBtn').addEventListener('click', function(){
+    scanPausedByUser = !scanPausedByUser;
+    if (scanPausedByUser){
+      this.textContent = '▶️ カメラを再開';
+      stopScan();
+    } else {
+      this.textContent = '⏸ カメラを一時停止';
+      startScan();
+    }
   });
 
   function renderQueue(){
@@ -3732,9 +3854,17 @@
         q.displayMode = (q.displayMode === 'cover') ? 'spine' : 'cover';
         renderQueue();
       });
+      var statusSel = document.createElement('select');
+      statusSel.className = 'queue-status-select';
+      STATUS_DEFS.forEach(function(sd){
+        var opt = document.createElement('option'); opt.value = sd.key; opt.textContent = sd.label;
+        if ((q.status || 'owned') === sd.key) opt.selected = true;
+        statusSel.appendChild(opt);
+      });
+      statusSel.addEventListener('change', function(){ q.status = this.value; });
       var del = document.createElement('button'); del.className = 'queue-del'; del.textContent = '×';
       del.onclick = function(){ searchQueue.splice(i,1); renderQueue(); };
-      d.appendChild(img); d.appendChild(info); d.appendChild(modeBtn); d.appendChild(del); list.appendChild(d);
+      d.appendChild(img); d.appendChild(info); d.appendChild(modeBtn); d.appendChild(statusSel); d.appendChild(del); list.appendChild(d);
     });
   }
 
@@ -3842,13 +3972,19 @@
 
 
   document.getElementById('manualSearchBtn').addEventListener('click', async function(){
-    var val = document.getElementById('manualIsbn').value.trim();
-    if(!val) return;
-    this.disabled = true; this.textContent = '...';
-    var info = await fetchBookInfo(val);
-    searchQueue.push(info); renderQueue();
+    var raw = document.getElementById('manualIsbn').value;
+    var lines = raw.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+    if (!lines.length) return;
+    var btn = this;
+    btn.disabled = true;
+    for (var i=0; i<lines.length; i++){
+      btn.textContent = '...(' + (i+1) + '/' + lines.length + ')';
+      var info = await fetchBookInfo(lines[i]);
+      searchQueue.push(info); renderQueue();
+      if (i < lines.length - 1) await new Promise(function(r){ setTimeout(r, 300); }); // APIに優しく
+    }
     document.getElementById('manualIsbn').value = '';
-    this.disabled = false; this.textContent = '検索';
+    btn.disabled = false; btn.textContent = '検索';
   });
 
   document.getElementById('bulkAddBtn').addEventListener('click', function(){
