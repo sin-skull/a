@@ -990,13 +990,6 @@
   <button class="btn ghost" id="bulkTagClearBtn">選択解除</button>
 </div>
 
-<!-- 移動モード中、範囲選択した本をまとめて削除するためのバー -->
-<div id="moveBulkBar" class="bulk-tag-bar" hidden>
-  <span id="moveBulkCount">0冊選択中</span>
-  <button class="btn danger" id="moveBulkDeleteBtn">選択した本を削除</button>
-  <button class="btn ghost" id="moveBulkClearBtn">選択解除</button>
-</div>
-
 <!-- 動的に生成するCSS変数用のstyleタグ -->
 <style id="dynamicStyles"></style>
 
@@ -1406,26 +1399,7 @@
       document.getElementById('toggleBulkTagBtn').classList.remove('active');
       updateBulkTagBar();
     }
-    if (!moveMode) bulkSelectedIds = [];
-    updateMoveBulkBar();
     renderShelf();
-  });
-  function updateMoveBulkBar(){
-    document.getElementById('moveBulkCount').textContent = bulkSelectedIds.length + '冊選択中';
-    document.getElementById('moveBulkBar').hidden = !(moveMode && bulkSelectedIds.length > 0);
-  }
-  document.getElementById('moveBulkClearBtn').addEventListener('click', function(){
-    bulkSelectedIds = [];
-    updateMoveBulkBar();
-    renderShelf();
-  });
-  document.getElementById('moveBulkDeleteBtn').addEventListener('click', function(){
-    if (!bulkSelectedIds.length) return;
-    if (!confirm(bulkSelectedIds.length + '冊を削除します。よろしいですか？')) return;
-    state.books = state.books.filter(function(b){ return bulkSelectedIds.indexOf(b.id) === -1; });
-    bulkSelectedIds = [];
-    persist(); updateMoveBulkBar(); renderShelf();
-    showToast('削除しました');
   });
 
   // ---- 🏷️ 一括タグ付け ----
@@ -1495,7 +1469,6 @@
       bulkSelectedIds = [];
     }
     updateBulkTagBar();
-    updateMoveBulkBar();
     renderShelf();
   });
   document.getElementById('bulkTagClearBtn').addEventListener('click', function(){
@@ -2772,14 +2745,14 @@
     el.dataset.id = book.id;
     el.style.gridColumn = (book.slot + 1);
     if (selectedItem && selectedItem.id === book.id) el.classList.add('book--picked');
-    if (bulkTagMode || moveMode){
+    if (bulkTagMode){
+      el.classList.add('bulk-selectable');
       if (bulkSelectedIds.indexOf(book.id) !== -1){
         el.classList.add('bulk-selected');
         var check = document.createElement('div'); check.className = 'bulk-check'; check.textContent = '✓';
         el.appendChild(check);
       }
     }
-    if (bulkTagMode) el.classList.add('bulk-selectable');
 
     var color = book.spineColor || defaultSpineColor(book);
     var sd = statusDef(book.status);
@@ -2935,7 +2908,7 @@
         unit.classList.add('is-editing-rows');
       }
 
-      if (bulkTagMode || moveMode){
+      if (bulkTagMode){
         let caseIdForBtn = c.id;
         var selCaseBtn = document.createElement('div');
         selCaseBtn.className = 'case-select-btn';
@@ -2944,7 +2917,6 @@
           e.stopPropagation();
           selectAllInCase(caseIdForBtn);
           updateBulkTagBar();
-          updateMoveBulkBar();
           renderShelf();
         });
         unit.appendChild(selCaseBtn);
@@ -3004,7 +2976,7 @@
         var plank = document.createElement('div'); plank.className = 'shelf-plank';
         block.appendChild(plank);
 
-        if (bulkTagMode || moveMode){
+        if (bulkTagMode){
           var selRowBtn = document.createElement('div');
           selRowBtn.className = 'row-select-btn';
           selRowBtn.textContent = '☑ 段';
@@ -3013,7 +2985,6 @@
             e.stopPropagation();
             selectAllInShelf(shelfId);
             updateBulkTagBar();
-            updateMoveBulkBar();
             renderShelf();
           });
           block.appendChild(selRowBtn);
