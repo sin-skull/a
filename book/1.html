@@ -1584,12 +1584,19 @@
       document.getElementById('toggleEditBtn').disabled = false;
       document.getElementById('toggleMoveBtn').disabled = false;
       document.getElementById('toggleBulkTagBtn').disabled = false;
+      renderShelf();
+      applyFilter(); // 通常表示に戻ったら、絞り込みのハイライトを再適用する
+      return;
     }
     renderShelf();
   });
   // 全ての本棚・段を1つの棚にまとめ、絞り込みに一致する本がある段だけを連続して
   // 表示する。編集・移動は一切できない、閲覧専用のビュー。
   function renderCollapsedSearchView(){
+    // このビューは最初から「一致する本だけ」を選んで並べているので、
+    // 通常表示用の「一致/非一致」の色分け（is-filtered）は不要 — 残っていると
+    // 全部「非一致」扱いになって灰色＆タップ無効になってしまう
+    casesRow.classList.remove('is-filtered');
     casesRow.innerHTML = '';
     var filterOn = hasActiveFilter();
     var unit = document.createElement('div');
