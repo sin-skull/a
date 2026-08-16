@@ -3174,15 +3174,24 @@
         
         var rowSizes = shelfSizesFor(shelfId);
 
-        // 透明なアンカー：先頭に本があってもなくても、この段の高さの基準を
-        // 常に保つ（空の段が潰れたり、途中から本を置いた時に段が縮んだり
-        // しないようにするため）。表示上は見えず、タップも素通りする。
-        var anchor = document.createElement('div');
-        anchor.className = 'shelf-anchor';
-        anchor.style.width = rowSizes.spineW + 'px';
-        anchor.style.height = rowSizes.spineH + 'px';
-        anchor.style.gridColumn = '1';
-        wrap.appendChild(anchor);
+        // 透明なプレースホルダー：段の容量（表示サイズ設定）ぶん、本と同じ
+        // サイズの透明なオブジェクトを敷き詰めておく。本があるスロットには
+        // 置かない（＝本が来たら透明オブジェクトと入れ替わる）。これで、
+        // 段の高さは常に安定し、途中や右側にも自由に本を置いて隙間を作れる。
+        var capacity = shelfSizeCounts(shelfId).spineCount;
+        var occupiedSlots = {};
+        items.forEach(function(b){ occupiedSlots[effectiveSlot(b)] = true; });
+        var maxSlotNeeded = items.length ? Math.max.apply(null, items.map(effectiveSlot)) : -1;
+        var placeholderCount = Math.max(capacity, maxSlotNeeded + 1);
+        for (var s = 0; s < placeholderCount; s++){
+          if (occupiedSlots[s]) continue;
+          var ph = document.createElement('div');
+          ph.className = 'shelf-anchor';
+          ph.style.width = rowSizes.spineW + 'px';
+          ph.style.height = rowSizes.spineH + 'px';
+          ph.style.gridColumn = (s + 1);
+          wrap.appendChild(ph);
+        }
 
         items.forEach(function(item, idx){
           var prev = items[idx - 1];
@@ -3323,11 +3332,10 @@
         var occ = {};
         items.forEach(function(b){ occ[effectiveSlot(b)] = b; });
         var maxSlot = items.length ? Math.max.apply(null, items.map(effectiveSlot)) : -1;
-        // 実際にある本の分だけ詰めるのが基本方針だが、移動モード中だけは、
-        // その段に設定した表示サイズ（横に並ぶ数）ぶんを丸ごと置き場所として
-        // 確保する。これで、本を好きな場所に置いて隙間を作ったり、まだ本が
-        // 無い右側にも置けるようになる。
-        var capacity = moveMode ? shelfSizeCounts(shelfId).spineCount : 0;
+        // 段に設定した表示サイズ（横に並ぶ数）ぶんは常に置き場所として確保する
+        // （透明なプレースホルダーと足並みを揃える。本を好きな場所に置いて
+        // 隙間を作ったり、まだ本が無い右側にも置けるようにするため）
+        var capacity = shelfSizeCounts(shelfId).spineCount;
         var cols = Math.max(maxSlot + 1, capacity, 1);
         var widths = [];
         for (var i=0;i<cols;i++) widths.push(itemGridWidth(occ[i], w));
