@@ -156,6 +156,7 @@
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
+  .cases-row[hidden]{ display:none; }
   .cases-row.is-dragging-container { scroll-snap-type: none; scroll-behavior: auto; }
   
   .cases-row::-webkit-scrollbar { display: none; }
@@ -1654,6 +1655,7 @@
     this.classList.toggle('active', listViewActive);
     casesRow.hidden = listViewActive;
     document.getElementById('bookListView').hidden = !listViewActive;
+    paginationDots.style.display = listViewActive ? 'none' : '';
     if (listViewActive) renderBookList();
   });
 
