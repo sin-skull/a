@@ -3079,7 +3079,10 @@
         var occ = {};
         items.forEach(function(b){ occ[b.slot] = b; });
         var maxSlot = items.length ? Math.max.apply(null, items.map(b => b.slot)) : -1;
-        var cols = Math.max(maxSlot + 1, 1); // 実際にある本の分だけ。余分な空きスロットは確保しない
+        // 実際にある本の分だけ詰めるのが基本方針だが、移動モード中だけは
+        // 「今ある本より右」に置けるよう、末尾に空きマスを1つだけ復活させる
+        // （そうしないと隙間を作ったり本棚の右端に広げたりできなくなる）
+        var cols = Math.max(maxSlot + (moveMode ? 2 : 1), 1);
         var widths = [];
         for (var i=0;i<cols;i++) widths.push(itemGridWidth(occ[i], w));
         el.style.gridTemplateColumns = widths.map(x => x+'px').join(' ');
