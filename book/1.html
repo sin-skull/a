@@ -199,6 +199,7 @@
   }
   .book{ justify-self:start; }
   .slot-preview{ align-self:stretch; }
+  .shelf-anchor{ grid-row:1; visibility:hidden; pointer-events:none; }
   
   /* 棚板 */
   .shelf-plank{
@@ -219,6 +220,7 @@
   }
   .sign-bar.landscape-span{ width: calc(200% + 10px); position:relative; z-index:5; }
   .row-pair.spanned{ gap:0; }
+  .row-pair.spanned .shelf-books{ width:100%; }
   .sign-span-handle{
     position:absolute; right:6px; bottom:4px; width:22px; height:22px;
     background:rgba(255,255,255,.25); border-radius:50%; font-size:13px;
@@ -2911,19 +2913,9 @@
   // 本を移動・削除した結果、先頭の本のスロットが0より大きいまま残っていると
   // その分だけ左に余白ができる。先頭側の余分だけを詰め、本と本の間の隙間は
   // （意図的な設計なので）そのまま残す。
-  function trimLeadingGap(shelfId){
-    var arr = booksOnShelf(shelfId);
-    if (!arr.length) return false;
-    var minSlot = Math.min.apply(null, arr.map(effectiveSlot));
-    if (minSlot <= 0) return false;
-    var isLS = isLandscape();
-    arr.forEach(function(b){
-      if (isLS) b.landscapeSlot = effectiveSlot(b) - minSlot;
-      else b.slot -= minSlot;
-    });
-    return true;
-  }
-
+  // 「先頭の空きを自動で詰める」処理は撤去（意図的に途中から本を置きたい
+  // 場合の邪魔になるため）。代わりに、透明なアンカー要素で棚の高さの基準を
+  // 保つ（buildItemEl呼び出し元・shelf-booksの描画側で対応）。
   function slotWidths(){
     return { cover: currentSizes.coverW, spine: currentSizes.spineW };
   }
@@ -3177,11 +3169,21 @@
         var wrap = document.createElement('div');
         wrap.className = 'shelf-books'; wrap.dataset.shelfId = shelfId;
         
-        if (trimLeadingGap(shelfId)) needsPersist = true;
         var items = booksOnShelf(shelfId);
         if(items.length===0) wrap.classList.add('empty');
         
         var rowSizes = shelfSizesFor(shelfId);
+
+        // 透明なアンカー：先頭に本があってもなくても、この段の高さの基準を
+        // 常に保つ（空の段が潰れたり、途中から本を置いた時に段が縮んだり
+        // しないようにするため）。表示上は見えず、タップも素通りする。
+        var anchor = document.createElement('div');
+        anchor.className = 'shelf-anchor';
+        anchor.style.width = rowSizes.spineW + 'px';
+        anchor.style.height = rowSizes.spineH + 'px';
+        anchor.style.gridColumn = '1';
+        wrap.appendChild(anchor);
+
         items.forEach(function(item, idx){
           var prev = items[idx - 1];
           var next = items[idx + 1];
