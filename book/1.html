@@ -501,6 +501,15 @@
   .book-list-meta{ font-size:11px; opacity:0.75; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .book-list-status-dot{ width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
 
+  /* ---------- 本の履歴（削除復元） ---------- */
+  .deleted-book-row{
+    display:flex; align-items:center; gap:8px; padding:6px 0;
+    border-bottom:1px solid rgba(128,128,128,.2); font-size:12px;
+  }
+  .deleted-book-row img{ width:26px; height:38px; object-fit:cover; border-radius:2px; background:#555; flex:0 0 auto; }
+  .deleted-book-title{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .deleted-book-restore{ font-size:11px; padding:5px 8px; flex:0 0 auto; }
+
   /* ---------- 一括タグ付け ---------- */
   .bulk-tag-bar{
     position:fixed; left:0; right:0; bottom:0; z-index:4200;
@@ -665,6 +674,12 @@
   <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">自動整列</div>
   <div style="padding: 10px 20px;">
     <button class="theme-btn" id="autoCenterBtn" type="button">🎯 段を5秒放置で左端に戻す：<span id="autoCenterState">ON</span></button>
+  </div>
+
+  <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">🗂 本の履歴（消した本）</div>
+  <div style="padding: 10px 20px;">
+    <p class="edit-hint" style="margin:0 0 8px;">消した本を、今見ているページに復元できます（最大100件）</p>
+    <div id="deletedBooksList"></div>
   </div>
 
   <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">テーマカラー</div>
@@ -1027,7 +1042,8 @@
     tagHistory: [], // タグの履歴データ
     genreHistory: [], // ジャンルの履歴データ
     shelfSizes: {}, // shelfId -> {coverCount, spineCount}（未設定の段はサイドバーの全体設定に従う）
-    autoCenter: true // 段を5秒放置すると中央へ自動で戻すかどうか
+    autoCenter: true, // 段を5秒放置すると左端へ自動で戻すかどうか
+    deletedBooks: [] // 消した本の履歴（復元用）
   };
   var searchQueue = []; 
   var editMode = false;
@@ -1113,6 +1129,7 @@
           }
         });
         state.autoCenter = (p.autoCenter !== false);
+        state.deletedBooks = p.deletedBooks || [];
         
         state.books = state.books.filter(function(b){
           if (b.isSign){
@@ -1134,7 +1151,13 @@
           }
           if (b.z && b.z > globalStampZ) globalStampZ = b.z;
         });
-        nextCaseNum = state.cases.length + 1;
+        // 本棚の数からではなく、実際に使われている最大の番号から次の番号を決める
+        // （数から計算すると、削除で番号が飛んだ時に既存の本棚とIDが衝突しうる）
+        nextCaseNum = 1;
+        state.cases.forEach(function(c){
+          var m = /^c(\d+)$/.exec(c.id);
+          if (m){ var n = parseInt(m[1], 10); if (n >= nextCaseNum) nextCaseNum = n + 1; }
+        });
       }
     }catch(e){}
     applyTheme(state.theme);
@@ -1287,6 +1310,7 @@
   
   document.getElementById('menuBtn').addEventListener('click', function(){
     refreshGlobalSizeSliders();
+    renderDeletedBooksList();
     sidebarOverlay.classList.add('open'); sidebarMenu.classList.add('open');
   });
   sidebarOverlay.addEventListener('click', function(){
@@ -1873,6 +1897,7 @@
     var shelfId = caseId+'_'+rowIndex;
     var hasItems = state.books.some(b => b.shelfId===shelfId) || !!state.shelfSigns[shelfId];
     if (hasItems && !confirm('この段のアイテムも削除されます。よろしいですか？')) return;
+    softDeleteBooks(state.books.filter(b => b.shelfId === shelfId));
     state.books = state.books.filter(b => b.shelfId !== shelfId);
     delete state.shelfSigns[shelfId];
     delete state.shelfSizes[shelfId];
@@ -1902,6 +1927,8 @@
   var reorderSource = null; 
 
   function addCase(){
+    // 念のため、万が一IDが衝突していたら次の番号にずらす（安全策）
+    while (state.cases.some(function(c){ return c.id === 'c'+nextCaseNum; })) nextCaseNum++;
     state.cases.push({ id:'c'+(nextCaseNum++), rows:1 });
     persist(); renderShelf();
     requestAnimationFrame(function(){ casesRow.scrollTo({ left: casesRow.scrollWidth, behavior:'smooth' }); });
@@ -1913,6 +1940,7 @@
     var hasItems = state.books.some(b => (b.shelfId||'').indexOf(prefix)===0 || b.caseId===caseId)
       || Object.keys(state.shelfSigns).some(k => k.indexOf(prefix)===0);
     if (hasItems && !confirm('この本棚の中身も削除されます。よろしいですか？')) return;
+    softDeleteBooks(state.books.filter(b => (b.shelfId||'').indexOf(prefix)===0 || b.caseId===caseId));
     state.books = state.books.filter(b => (b.shelfId||'').indexOf(prefix)!==0 && b.caseId!==caseId);
     Object.keys(state.shelfSigns).forEach(function(k){ if (k.indexOf(prefix)===0) delete state.shelfSigns[k]; });
     Object.keys(state.shelfSizes).forEach(function(k){ if (k.indexOf(prefix)===0) delete state.shelfSizes[k]; });
@@ -2108,6 +2136,54 @@
   function currentCaseId(){
     var c = state.cases[currentCaseIndex];
     return (c ? c.id : state.cases[0].id);
+  }
+
+  // 本を消す前に履歴へ退避しておく（スタンプ・サインは対象外）。
+  // 誤って本棚ごと消してしまった時などの復元の命綱になる。
+  function softDeleteBooks(items){
+    if (!items || !items.length) return;
+    state.deletedBooks = state.deletedBooks || [];
+    items.forEach(function(b){
+      if (b.isStamp || b.isText || b.isSign) return;
+      var copy = Object.assign({}, b, { deletedAt: new Date().toISOString() });
+      state.deletedBooks.unshift(copy);
+    });
+    if (state.deletedBooks.length > 100) state.deletedBooks.length = 100;
+  }
+  function renderDeletedBooksList(){
+    var list = document.getElementById('deletedBooksList');
+    if (!state.deletedBooks || !state.deletedBooks.length){
+      list.innerHTML = '<p class="edit-hint" style="margin:0;">履歴はありません</p>';
+      return;
+    }
+    list.innerHTML = '';
+    state.deletedBooks.forEach(function(b, idx){
+      var row = document.createElement('div'); row.className = 'deleted-book-row';
+      var img = document.createElement('img'); img.src = b.cover || ''; img.onerror = function(){ this.style.display='none'; };
+      var title = document.createElement('div'); title.className = 'deleted-book-title';
+      title.textContent = b.title || '無題';
+      title.title = b.title || '無題';
+      var restoreBtn = document.createElement('button');
+      restoreBtn.className = 'btn ghost deleted-book-restore'; restoreBtn.textContent = '復元';
+      restoreBtn.addEventListener('click', function(){ restoreDeletedBook(idx); });
+      row.appendChild(img); row.appendChild(title); row.appendChild(restoreBtn);
+      list.appendChild(row);
+    });
+  }
+  function restoreDeletedBook(idx){
+    var entry = state.deletedBooks[idx];
+    if (!entry) return;
+    var caseId = currentCaseId();
+    var shelfId = caseId + '_0';
+    var siblings = booksOnShelf(shelfId);
+    var restored = Object.assign({}, entry);
+    delete restored.deletedAt;
+    restored.shelfId = shelfId;
+    restored.slot = siblings.length;
+    state.books.push(restored);
+    state.deletedBooks.splice(idx, 1);
+    persist(); renderShelf(); renderDeletedBooksList();
+    showToast('「' + (restored.title||'この本') + '」を復元しました');
   }
 
   function updateDots(activeIndex) {
@@ -3204,6 +3280,7 @@
       e.stopPropagation();
       if (moveMode && selectedItem) {
           if (confirm('「' + (selectedItem.title || 'この本') + '」を削除しますか？')) {
+              softDeleteBooks([selectedItem]);
               state.books = state.books.filter(b => b.id !== selectedItem.id);
               selectedItem = null;
               trashArea.classList.remove('show');
@@ -3596,6 +3673,7 @@
   
   document.getElementById('bm-delete').addEventListener('click', function(){
     if(curItem && confirm('削除しますか？')){
+      softDeleteBooks([curItem]);
       state.books = state.books.filter(b => b.id !== curItem.id);
       persist(); renderShelf();
       document.getElementById('bookModal').classList.add('hidden');
