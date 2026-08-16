@@ -493,11 +493,16 @@
   .bulk-tag-bar{
     position:fixed; left:0; right:0; bottom:0; z-index:4200;
     background:var(--header-bg); border-top:1px solid var(--accent);
-    padding:10px 16px; display:flex; align-items:center; gap:10px;
-    font-size:13px; box-shadow:0 -4px 10px rgba(0,0,0,.4);
+    padding:10px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    font-size:12.5px; box-shadow:0 -4px 10px rgba(0,0,0,.4);
   }
   .bulk-tag-bar[hidden]{ display:none; }
-  .bulk-tag-bar .btn{ font-size:12px; padding:8px 12px; }
+  .bulk-tag-bar .btn{ font-size:12px; padding:8px 12px; flex:0 0 auto; }
+  .bulk-tag-select{
+    flex:1 1 100px; min-width:0; padding:8px 6px; font-size:12px; border-radius:4px;
+    border:1px solid var(--accent); background:var(--case-bg); color:var(--text-main);
+  }
+  #bulkTagCount{ flex:0 0 auto; }
   .book.bulk-selectable{ cursor:pointer; }
   .book.bulk-selected{ outline:3px solid var(--accent); outline-offset:2px; }
   .bulk-check{
@@ -556,7 +561,7 @@
   }
 
   /* ---------- モーダル (詳細・編集用) ---------- */
-  .modal{position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:flex-end; justify-content:center; z-index:3000;}
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:flex-end; justify-content:center; z-index:5000;}
   @media (min-width:560px){.modal{align-items:center;}}
   .modal.hidden{display:none;}
   .modal-card{
@@ -963,29 +968,12 @@
 <!-- 削除用ゴミ箱エリア -->
 <div id="trash-area">ゴミ箱</div>
 
-<!-- 一括タグ付け用の下部バー -->
+<!-- 一括タグ付け用の下部バー（選択中に常設。ジャンル・タグはここで直接選ぶ） -->
 <div id="bulkTagBar" class="bulk-tag-bar" hidden>
   <span id="bulkTagCount">0冊選択中</span>
-  <button class="btn" id="bulkTagOpenBtn">タグ・ジャンルを追加</button>
+  <select id="bulkGenreSelect" class="bulk-tag-select"></select>
+  <select id="bulkTagSelect" class="bulk-tag-select"></select>
   <button class="btn ghost" id="bulkTagClearBtn">選択解除</button>
-</div>
-
-<div class="modal hidden" id="bulkTagModal">
-  <div class="modal-card">
-    <h2 style="margin-top:0; font-size:16px;">選択した本にまとめて追加</h2>
-    <p class="edit-hint" id="bulkTagModalCount" style="margin:0 0 12px;"></p>
-    <div class="field">
-      <label>ジャンルを追加</label>
-      <select id="bulkGenreSelect"></select>
-    </div>
-    <div class="field">
-      <label>タグを追加</label>
-      <select id="bulkTagSelect"></select>
-    </div>
-    <div class="modal-actions">
-      <button class="btn ghost" id="bulkTagModalClose">閉じる</button>
-    </div>
-  </div>
 </div>
 
 <!-- 動的に生成するCSS変数用のstyleタグ -->
@@ -1403,9 +1391,23 @@
   // ---- 🏷️ 一括タグ付け ----
   var bulkTagMode = false;
   var bulkSelectedIds = [];
+  function fillBulkSelect(sel, history, placeholder){
+    var current = sel.value;
+    sel.innerHTML = '<option value="">' + placeholder + '</option>';
+    history.forEach(function(v){
+      var opt = document.createElement('option'); opt.value = v; opt.textContent = v;
+      sel.appendChild(opt);
+    });
+    var newOpt = document.createElement('option'); newOpt.value = '__NEW__'; newOpt.textContent = '＋ 新規作成...';
+    sel.appendChild(newOpt);
+  }
   function updateBulkTagBar(){
     document.getElementById('bulkTagCount').textContent = bulkSelectedIds.length + '冊選択中';
     document.getElementById('bulkTagBar').hidden = !bulkTagMode;
+    if (bulkTagMode){
+      fillBulkSelect(document.getElementById('bulkGenreSelect'), state.genreHistory, 'ジャンルを追加...');
+      fillBulkSelect(document.getElementById('bulkTagSelect'), state.tagHistory, 'タグを追加...');
+    }
   }
   function toggleBulkSelect(id){
     var idx = bulkSelectedIds.indexOf(id);
@@ -1431,31 +1433,13 @@
     updateBulkTagBar();
     renderShelf();
   });
-  function fillBulkSelect(sel, history){
-    sel.innerHTML = '<option value="">（追加しない）</option>';
-    history.forEach(function(v){
-      var opt = document.createElement('option'); opt.value = v; opt.textContent = v;
-      sel.appendChild(opt);
-    });
-    var newOpt = document.createElement('option'); newOpt.value = '__NEW__'; newOpt.textContent = '＋ 新規作成...';
-    sel.appendChild(newOpt);
-  }
-  document.getElementById('bulkTagOpenBtn').addEventListener('click', function(){
-    if (!bulkSelectedIds.length){ showToast('本を選んでください'); return; }
-    document.getElementById('bulkTagModalCount').textContent = bulkSelectedIds.length + '冊に追加します';
-    fillBulkSelect(document.getElementById('bulkGenreSelect'), state.genreHistory);
-    fillBulkSelect(document.getElementById('bulkTagSelect'), state.tagHistory);
-    document.getElementById('bulkTagModal').classList.remove('hidden');
-  });
-  document.getElementById('bulkTagModalClose').addEventListener('click', function(){
-    document.getElementById('bulkTagModal').classList.add('hidden');
-  });
   function applyBulkField(selEl, type){
+    if (!bulkSelectedIds.length){ showToast('本を選んでください'); selEl.value = ''; return; }
     var val = selEl.value;
     if (!val) return;
     if (val === '__NEW__'){
       val = prompt('新しい' + (type === 'genre' ? 'ジャンル' : 'タグ') + 'を入力してください');
-      if (!val || !val.trim()) return;
+      if (!val || !val.trim()){ selEl.value = ''; return; }
       val = val.trim();
       var history = type === 'genre' ? state.genreHistory : state.tagHistory;
       var idx = history.indexOf(val);
@@ -1469,15 +1453,13 @@
       var list = type === 'genre' ? (b.genres = b.genres || []) : (b.tags = b.tags || []);
       if (list.indexOf(val) === -1) list.push(val);
     });
+    persist(); renderShelf();
+    updateBulkTagBar(); // 履歴が増えた場合に選択肢へ反映
+    selEl.value = '';
+    showToast(bulkSelectedIds.length + '冊に「' + val + '」を追加しました');
   }
-  ['bulkGenreSelect','bulkTagSelect'].forEach(function(id){
-    document.getElementById(id).addEventListener('change', function(){
-      applyBulkField(this, id === 'bulkGenreSelect' ? 'genre' : 'tag');
-      persist(); renderShelf();
-      this.value = '';
-      showToast('追加しました');
-    });
-  });
+  document.getElementById('bulkGenreSelect').addEventListener('change', function(){ applyBulkField(this, 'genre'); });
+  document.getElementById('bulkTagSelect').addEventListener('change', function(){ applyBulkField(this, 'tag'); });
 
   // 段（棚）を横にスクロールしたまま放っておくと、5秒後に左端へ自動で戻る。
   // ON/OFFはこのボタンで切り替えられる。
@@ -1625,13 +1607,18 @@
         var wrap = document.createElement('div'); wrap.className = 'shelf-books';
         var rowSizes = shelfSizesFor(shelfId);
         var w = { cover: rowSizes.coverW, spine: rowSizes.spineW };
-        matched.forEach(function(item, idx){
-          var el = buildItemEl(item, false, false, rowSizes);
-          el.style.gridColumn = (idx + 1);
+        // 元のスロット位置のまま表示する（詰めない）— 該当しない本があった場所は
+        // 空白として残し、背表紙が別の作品と隣り合って紛らわしくなるのを防ぐ
+        matched.forEach(function(item){
+          var el = buildItemEl(item, false, false, rowSizes); // gridColumn は item.slot+1 のまま
           el.addEventListener('click', function(){ openModal(item); });
           wrap.appendChild(el);
         });
-        wrap.style.gridTemplateColumns = matched.map(function(it){ return itemGridWidth(it, w) + 'px'; }).join(' ');
+        var maxSlot = Math.max.apply(null, allItems.map(function(b){ return b.slot; }));
+        var occ = {}; allItems.forEach(function(b){ occ[b.slot] = b; });
+        var widths = [];
+        for (var s=0; s<=maxSlot; s++) widths.push(itemGridWidth(occ[s], w));
+        wrap.style.gridTemplateColumns = widths.map(function(x){ return x + 'px'; }).join(' ');
         block.appendChild(wrap);
         var plank = document.createElement('div'); plank.className = 'shelf-plank';
         block.appendChild(plank);
@@ -3745,6 +3732,16 @@
     });
   }
   function stopScan(){ if(scanning) { Quagga.stop(); scanning = false; } }
+
+  // 何もないところ（背景）をタップしたら、開いているポップアップ・モーダルは
+  // 全部これで閉じられるようにする（bookModalは閉じるボタンと同じ保存処理を通す）
+  document.querySelectorAll('.modal').forEach(function(modal){
+    modal.addEventListener('click', function(e){
+      if (e.target !== modal) return; // カード自体や中の要素のタップでは閉じない
+      if (modal.id === 'bookModal') document.getElementById('bm-close').click();
+      else modal.classList.add('hidden');
+    });
+  });
 
   // ========== 初期化 ==========
   loadState();
