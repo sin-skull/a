@@ -476,6 +476,34 @@
   .timer-switch.on{ background:#4caf50; }
   .timer-switch.on::after{ transform:translateX(20px); }
   .timer-finish-btn{ font-size:11px; padding:6px 10px; }
+
+  /* ---------- 本リスト表示 ---------- */
+  #bookListView{ padding:8px 16px 40px; }
+  .book-list-row{
+    display:flex; align-items:center; gap:12px; padding:10px 0;
+    border-bottom:1px solid rgba(128,128,128,0.2); cursor:pointer;
+  }
+  .book-list-row img{ width:40px; height:58px; object-fit:cover; border-radius:2px; background:#555; flex:0 0 auto; }
+  .book-list-info{ flex:1; min-width:0; }
+  .book-list-title{ font-size:14px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .book-list-meta{ font-size:11px; opacity:0.75; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .book-list-status-dot{ width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
+
+  /* ---------- 一括タグ付け ---------- */
+  .bulk-tag-bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:4200;
+    background:var(--header-bg); border-top:1px solid var(--accent);
+    padding:10px 16px; display:flex; align-items:center; gap:10px;
+    font-size:13px; box-shadow:0 -4px 10px rgba(0,0,0,.4);
+  }
+  .bulk-tag-bar .btn{ font-size:12px; padding:8px 12px; }
+  .book.bulk-selectable{ cursor:pointer; }
+  .book.bulk-selected{ outline:3px solid var(--accent); outline-offset:2px; }
+  .bulk-check{
+    position:absolute; top:-6px; left:-6px; width:20px; height:20px; border-radius:50%;
+    background:#fff; border:2px solid var(--accent); z-index:8;
+    display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--accent); font-weight:bold;
+  }
   .timer-bottom-tabs{
     position:fixed; left:0; right:0; bottom:0; display:flex;
     background:var(--header-bg); border-top:1px solid var(--accent); z-index:60;
@@ -616,6 +644,11 @@
     <input type="range" id="inpSpineCount" min="5" max="30" value="12">
   </div>
 
+  <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">自動整列</div>
+  <div style="padding: 10px 20px;">
+    <button class="theme-btn" id="autoCenterBtn" type="button">🎯 段を5秒放置で左端に戻す：<span id="autoCenterState">ON</span></button>
+  </div>
+
   <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">テーマカラー</div>
   <div style="padding: 10px 20px;">
     <button class="theme-btn" data-set-theme="default">🪵 木目調（デフォルト）</button>
@@ -642,9 +675,9 @@
   </div>
   <div class="header-icons" id="bookshelfIcons">
     <button id="toggleFilterBtn" title="本棚内を検索">🔎</button>
+    <button id="toggleListViewBtn" title="本リスト表示に切替（絞り込み中は該当する本だけ並びます）">📋</button>
     <button id="togglePopBtn" title="サイン・スタンプ表示（タップで4段階切替）">👀</button>
     <button id="toggleMoveBtn" title="本を移動（タップで持ち上げ→タップで置く）">✥</button>
-    <button id="autoCenterBtn" title="段の中身を触らずに5秒経つと左端に自動で戻します">🎯</button>
     <button id="toggleEditBtn" title="編集モード">✏️</button>
   </div>
   <div class="header-icons" id="searchIcons" style="display:none;">
@@ -680,6 +713,10 @@
         </select>
         <button class="btn ghost" type="button" id="undoSortBtn" hidden>↩️ 元に戻す</button>
       </div>
+      <div style="display:flex; gap:6px; align-items:center; margin-top:8px;">
+        <button class="btn ghost" type="button" id="toggleCollapseBtn" title="絞り込み結果だけを1つの本棚にまとめて表示（編集不可）" style="flex:1;">🗜️ 1つにまとめる</button>
+        <button class="btn ghost" type="button" id="toggleBulkTagBtn" title="複数の本を選んでタグ・ジャンルをまとめて追加" style="flex:1;">🏷️ 一括タグ付け</button>
+      </div>
     </div>
     
     <div class="edit-tools" id="editTools" style="display: none;">
@@ -691,6 +728,7 @@
     </div>
 
     <div class="cases-row" id="casesRow"></div>
+    <div id="bookListView" hidden></div>
     <div class="pagination-dots" id="paginationDots"></div>
 
   </div>
@@ -923,6 +961,31 @@
 
 <!-- 削除用ゴミ箱エリア -->
 <div id="trash-area">ゴミ箱</div>
+
+<!-- 一括タグ付け用の下部バー -->
+<div id="bulkTagBar" class="bulk-tag-bar" hidden>
+  <span id="bulkTagCount">0冊選択中</span>
+  <button class="btn" id="bulkTagOpenBtn">タグ・ジャンルを追加</button>
+  <button class="btn ghost" id="bulkTagClearBtn">選択解除</button>
+</div>
+
+<div class="modal hidden" id="bulkTagModal">
+  <div class="modal-card">
+    <h2 style="margin-top:0; font-size:16px;">選択した本にまとめて追加</h2>
+    <p class="edit-hint" id="bulkTagModalCount" style="margin:0 0 12px;"></p>
+    <div class="field">
+      <label>ジャンルを追加</label>
+      <select id="bulkGenreSelect"></select>
+    </div>
+    <div class="field">
+      <label>タグを追加</label>
+      <select id="bulkTagSelect"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="bulkTagModalClose">閉じる</button>
+    </div>
+  </div>
+</div>
 
 <!-- 動的に生成するCSS変数用のstyleタグ -->
 <style id="dynamicStyles"></style>
@@ -1314,6 +1377,11 @@
     editMode = !editMode;
     this.classList.toggle('active', editMode);
     document.getElementById('editTools').style.display = editMode ? 'flex' : 'none';
+    if (editMode && bulkTagMode){
+      bulkTagMode = false; bulkSelectedIds = [];
+      document.getElementById('toggleBulkTagBtn').classList.remove('active');
+      updateBulkTagBar();
+    }
     renderShelf();
   });
 
@@ -1323,17 +1391,101 @@
     this.classList.toggle('active', moveMode);
     selectedItem = null;
     trashArea.classList.remove('show');
+    if (moveMode && bulkTagMode){
+      bulkTagMode = false; bulkSelectedIds = [];
+      document.getElementById('toggleBulkTagBtn').classList.remove('active');
+      updateBulkTagBar();
+    }
     renderShelf();
   });
 
-  // 段（棚）を横にスクロールしたまま放っておくと、5秒後に中央へ自動で戻る。
+  // ---- 🏷️ 一括タグ付け ----
+  var bulkTagMode = false;
+  var bulkSelectedIds = [];
+  function updateBulkTagBar(){
+    document.getElementById('bulkTagCount').textContent = bulkSelectedIds.length + '冊選択中';
+    document.getElementById('bulkTagBar').hidden = !bulkTagMode;
+  }
+  function toggleBulkSelect(id){
+    var idx = bulkSelectedIds.indexOf(id);
+    if (idx === -1) bulkSelectedIds.push(id); else bulkSelectedIds.splice(idx, 1);
+    updateBulkTagBar();
+    renderShelf();
+  }
+  document.getElementById('toggleBulkTagBtn').addEventListener('click', function(){
+    bulkTagMode = !bulkTagMode;
+    this.classList.toggle('active', bulkTagMode);
+    if (bulkTagMode){
+      // 他のモードと同時には使わない
+      moveMode = false; document.getElementById('toggleMoveBtn').classList.remove('active');
+      if (editMode){ editMode = false; document.getElementById('toggleEditBtn').classList.remove('active'); document.getElementById('editTools').style.display = 'none'; }
+    } else {
+      bulkSelectedIds = [];
+    }
+    updateBulkTagBar();
+    renderShelf();
+  });
+  document.getElementById('bulkTagClearBtn').addEventListener('click', function(){
+    bulkSelectedIds = [];
+    updateBulkTagBar();
+    renderShelf();
+  });
+  function fillBulkSelect(sel, history){
+    sel.innerHTML = '<option value="">（追加しない）</option>';
+    history.forEach(function(v){
+      var opt = document.createElement('option'); opt.value = v; opt.textContent = v;
+      sel.appendChild(opt);
+    });
+    var newOpt = document.createElement('option'); newOpt.value = '__NEW__'; newOpt.textContent = '＋ 新規作成...';
+    sel.appendChild(newOpt);
+  }
+  document.getElementById('bulkTagOpenBtn').addEventListener('click', function(){
+    if (!bulkSelectedIds.length){ showToast('本を選んでください'); return; }
+    document.getElementById('bulkTagModalCount').textContent = bulkSelectedIds.length + '冊に追加します';
+    fillBulkSelect(document.getElementById('bulkGenreSelect'), state.genreHistory);
+    fillBulkSelect(document.getElementById('bulkTagSelect'), state.tagHistory);
+    document.getElementById('bulkTagModal').classList.remove('hidden');
+  });
+  document.getElementById('bulkTagModalClose').addEventListener('click', function(){
+    document.getElementById('bulkTagModal').classList.add('hidden');
+  });
+  function applyBulkField(selEl, type){
+    var val = selEl.value;
+    if (!val) return;
+    if (val === '__NEW__'){
+      val = prompt('新しい' + (type === 'genre' ? 'ジャンル' : 'タグ') + 'を入力してください');
+      if (!val || !val.trim()) return;
+      val = val.trim();
+      var history = type === 'genre' ? state.genreHistory : state.tagHistory;
+      var idx = history.indexOf(val);
+      if (idx !== -1) history.splice(idx, 1);
+      history.unshift(val);
+      if (history.length > 50) history.length = 50;
+    }
+    bulkSelectedIds.forEach(function(id){
+      var b = state.books.find(function(x){ return x.id === id; });
+      if (!b) return;
+      var list = type === 'genre' ? (b.genres = b.genres || []) : (b.tags = b.tags || []);
+      if (list.indexOf(val) === -1) list.push(val);
+    });
+  }
+  ['bulkGenreSelect','bulkTagSelect'].forEach(function(id){
+    document.getElementById(id).addEventListener('change', function(){
+      applyBulkField(this, id === 'bulkGenreSelect' ? 'genre' : 'tag');
+      persist(); renderShelf();
+      this.value = '';
+      showToast('追加しました');
+    });
+  });
+
+  // 段（棚）を横にスクロールしたまま放っておくと、5秒後に左端へ自動で戻る。
   // ON/OFFはこのボタンで切り替えられる。
   var autoCenterEnabled = (state.autoCenter !== false);
-  document.getElementById('autoCenterBtn').classList.toggle('active', autoCenterEnabled);
+  document.getElementById('autoCenterState').textContent = autoCenterEnabled ? 'ON' : 'OFF';
   document.getElementById('autoCenterBtn').addEventListener('click', function(){
     autoCenterEnabled = !autoCenterEnabled;
     state.autoCenter = autoCenterEnabled;
-    this.classList.toggle('active', autoCenterEnabled);
+    document.getElementById('autoCenterState').textContent = autoCenterEnabled ? 'ON' : 'OFF';
     persist();
   });
   var recenterTimers = new WeakMap();
@@ -1420,31 +1572,142 @@
     });
     if (names.indexOf(current) !== -1) filterGenreSelect.value = current;
   }
-  function applyFilter(){
+  // ---- 本リスト表示（絞り込み結果を本棚をまたいで一覧で見る） ----
+  var listViewActive = false;
+  var toggleListViewBtn = document.getElementById('toggleListViewBtn');
+  toggleListViewBtn.addEventListener('click', function(){
+    listViewActive = !listViewActive;
+    this.classList.toggle('active', listViewActive);
+    casesRow.hidden = listViewActive;
+    document.getElementById('bookListView').hidden = !listViewActive;
+    if (listViewActive) renderBookList();
+  });
+
+  // ---- 🗜️ 検索結果を1つの本棚にまとめて表示（編集不可） ----
+  var collapseModeActive = false;
+  document.getElementById('toggleCollapseBtn').addEventListener('click', function(){
+    collapseModeActive = !collapseModeActive;
+    this.classList.toggle('active', collapseModeActive);
+    if (collapseModeActive){
+      // 編集系は一切できないようにする（このモードはあくまで閲覧用）
+      moveMode = false; document.getElementById('toggleMoveBtn').classList.remove('active');
+      if (editMode){ editMode = false; document.getElementById('toggleEditBtn').classList.remove('active'); document.getElementById('editTools').style.display = 'none'; }
+      if (bulkTagMode){ bulkTagMode = false; bulkSelectedIds = []; document.getElementById('toggleBulkTagBtn').classList.remove('active'); updateBulkTagBar(); }
+      if (listViewActive){ toggleListViewBtn.click(); }
+      document.getElementById('toggleEditBtn').disabled = true;
+      document.getElementById('toggleMoveBtn').disabled = true;
+      document.getElementById('toggleBulkTagBtn').disabled = true;
+    } else {
+      document.getElementById('toggleEditBtn').disabled = false;
+      document.getElementById('toggleMoveBtn').disabled = false;
+      document.getElementById('toggleBulkTagBtn').disabled = false;
+    }
+    renderShelf();
+  });
+  // 全ての本棚・段を1つの棚にまとめ、絞り込みに一致する本がある段だけを連続して
+  // 表示する。編集・移動は一切できない、閲覧専用のビュー。
+  function renderCollapsedSearchView(){
+    casesRow.innerHTML = '';
+    var filterOn = hasActiveFilter();
+    var unit = document.createElement('div');
+    unit.className = 'bookcase-unit';
+    var anyShown = false;
+    state.cases.forEach(function(c){
+      for (var r=0; r<c.rows; r++){
+        var shelfId = c.id + '_' + r;
+        var allItems = booksOnShelf(shelfId);
+        var matched = filterOn ? allItems.filter(bookMatchesFilter) : allItems;
+        if (!matched.length) continue;
+        anyShown = true;
+        var rowWrap = document.createElement('div'); rowWrap.className = 'shelf-row-wrap';
+        var block = document.createElement('div'); block.className = 'shelf-block';
+        var wrap = document.createElement('div'); wrap.className = 'shelf-books';
+        var rowSizes = shelfSizesFor(shelfId);
+        var w = { cover: rowSizes.coverW, spine: rowSizes.spineW };
+        matched.forEach(function(item, idx){
+          var el = buildItemEl(item, false, false, rowSizes);
+          el.style.gridColumn = (idx + 1);
+          el.addEventListener('click', function(){ openModal(item); });
+          wrap.appendChild(el);
+        });
+        wrap.style.gridTemplateColumns = matched.map(function(it){ return itemGridWidth(it, w) + 'px'; }).join(' ');
+        block.appendChild(wrap);
+        var plank = document.createElement('div'); plank.className = 'shelf-plank';
+        block.appendChild(plank);
+        rowWrap.appendChild(block);
+        unit.appendChild(rowWrap);
+      }
+    });
+    casesRow.appendChild(unit);
+    if (!anyShown){
+      var msg = document.createElement('p'); msg.className = 'edit-hint'; msg.style.padding = '20px';
+      msg.textContent = filterOn ? '絞り込みに一致する本がありません' : '本がありません';
+      casesRow.appendChild(msg);
+    }
+    updateStats();
+  }
+
+  function renderBookList(){
+    var container = document.getElementById('bookListView');
+    var filterOn = hasActiveFilter();
+    var books = state.books.filter(function(b){
+      if (b.isStamp || b.isText || b.isSign) return false;
+      return !filterOn || bookMatchesFilter(b);
+    });
+    books.sort(function(a,b){ return (a.title||'').localeCompare(b.title||'', 'ja'); });
+    container.innerHTML = '';
+    if (!books.length){
+      container.innerHTML = '<p class="edit-hint" style="margin:16px 0;">' + (filterOn ? '絞り込みに一致する本がありません' : '本がありません') + '</p>';
+      return;
+    }
+    var hint = document.createElement('p'); hint.className = 'edit-hint';
+    hint.style.margin = '8px 0 4px';
+    hint.textContent = books.length + '冊' + (filterOn ? '（絞り込み中）' : '') + ' ／ タップで詳細を開けます';
+    container.appendChild(hint);
+    books.forEach(function(b){
+      var row = document.createElement('div'); row.className = 'book-list-row';
+      var img = document.createElement('img'); img.src = b.cover || ''; img.onerror = function(){ this.style.display='none'; };
+      var dot = document.createElement('span'); dot.className = 'book-list-status-dot'; dot.style.background = statusDef(b.status).color;
+      var info = document.createElement('div'); info.className = 'book-list-info';
+      var title = document.createElement('div'); title.className = 'book-list-title'; title.textContent = b.title || '無題';
+      var meta = document.createElement('div'); meta.className = 'book-list-meta';
+      var tagsText = [].concat(b.genres||[], b.tags||[]).join(' / ');
+      meta.textContent = statusDef(b.status).label + (b.author ? ' ／ ' + b.author : '') + (tagsText ? ' ／ ' + tagsText : '');
+      info.appendChild(title); info.appendChild(meta);
+      row.appendChild(img); row.appendChild(dot); row.appendChild(info);
+      row.addEventListener('click', function(){ openModal(b); });
+      container.appendChild(row);
+    });
+  }
+
+  function bookMatchesFilter(b){
     var q = filterInput.value.trim().toLowerCase();
     var statuses = activeStatusFilters();
     var genre = filterGenreSelect.value;
-    if(!q && !statuses.length && !genre){
+    var textToSearch = (b.title + ' ' + (b.author||'') + ' ' + (b.genres?b.genres.join(' '):'') + ' ' + (b.tags?b.tags.join(' '):'')).toLowerCase();
+    var matchesText = !q || textToSearch.indexOf(q) !== -1;
+    var matchesStatus = !statuses.length || statuses.indexOf(b.status || 'owned') !== -1;
+    var matchesGenre = !genre || (b.genres && b.genres.indexOf(genre) !== -1);
+    return matchesText && matchesStatus && matchesGenre;
+  }
+  function hasActiveFilter(){
+    return !!(filterInput.value.trim() || activeStatusFilters().length || filterGenreSelect.value);
+  }
+  function applyFilter(){
+    if(!hasActiveFilter()){
       casesRow.classList.remove('is-filtered');
       casesRow.querySelectorAll('.book').forEach(function(el){ el.classList.remove('matched'); });
-      return;
+    } else {
+      casesRow.classList.add('is-filtered');
+      state.books.forEach(function(b){
+        if(b.isStamp || b.isText || b.isSign) return;
+        var el = casesRow.querySelector('.book[data-id="'+b.id+'"]');
+        if(!el) return;
+        el.classList.toggle('matched', bookMatchesFilter(b));
+      });
     }
-    casesRow.classList.add('is-filtered');
-    state.books.forEach(function(b){
-      if(b.isStamp || b.isText || b.isSign) return;
-      var el = casesRow.querySelector('.book[data-id="'+b.id+'"]');
-      if(!el) return;
-      // ジャンルも検索対象に含める
-      var textToSearch = (b.title + ' ' + (b.author||'') + ' ' + (b.genres?b.genres.join(' '):'') + ' ' + (b.tags?b.tags.join(' '):'')).toLowerCase();
-      var matchesText = !q || textToSearch.indexOf(q) !== -1;
-      var matchesStatus = !statuses.length || statuses.indexOf(b.status || 'owned') !== -1;
-      var matchesGenre = !genre || (b.genres && b.genres.indexOf(genre) !== -1);
-      if(matchesText && matchesStatus && matchesGenre){
-        el.classList.add('matched');
-      } else {
-        el.classList.remove('matched');
-      }
-    });
+    if (listViewActive) renderBookList();
+    if (collapseModeActive) renderShelf();
   }
 
   document.getElementById('addCaseBtnHeader').addEventListener('click', function(){
@@ -2421,6 +2684,14 @@
     el.dataset.id = book.id;
     el.style.gridColumn = (book.slot + 1);
     if (selectedItem && selectedItem.id === book.id) el.classList.add('book--picked');
+    if (bulkTagMode){
+      el.classList.add('bulk-selectable');
+      if (bulkSelectedIds.indexOf(book.id) !== -1){
+        el.classList.add('bulk-selected');
+        var check = document.createElement('div'); check.className = 'bulk-check'; check.textContent = '✓';
+        el.appendChild(check);
+      }
+    }
 
     var color = book.spineColor || defaultSpineColor(book);
     var sd = statusDef(book.status);
@@ -2563,6 +2834,7 @@
   function renderShelf(){
     if(!document.getElementById('view-bookshelf').classList.contains('active')) return;
     if (state.cases.length === 0) state.cases.push({ id:'c'+(nextCaseNum++), rows:1 });
+    if (collapseModeActive){ renderCollapsedSearchView(); return; }
     casesRow.innerHTML = '';
     var needsPersist = false;
 
@@ -2705,6 +2977,7 @@
     updateStats(); 
     if (casesRow.classList.contains('is-filtered')) applyFilter(); 
     if (needsPersist) persist();
+    if (listViewActive) renderBookList();
   }
 
   function finalizeGrids(){
@@ -2772,6 +3045,11 @@
   function attachDragAndClick(el, item){
     el.addEventListener('click', function(e){
       if (item.isStamp || item.isSign) return; 
+
+      if (bulkTagMode) {
+        toggleBulkSelect(item.id);
+        return;
+      }
 
       if (moveMode) {
         if (selectedItem && selectedItem.id === item.id) {
