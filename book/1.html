@@ -199,9 +199,6 @@
   }
   .book{ justify-self:start; }
   .slot-preview{ align-self:stretch; }
-  .shelf-books.empty::after{
-    content:'まだ本がありません'; color:var(--text-dim); font-size:13px; padding:0 6px 20px;
-  }
   
   /* 棚板 */
   .shelf-plank{
@@ -214,10 +211,19 @@
 
   /* 大きな帯サイン */
   .sign-bar{
-    width:100%; padding:12px 16px; margin-bottom:8px;
+    width:100%; padding:12px 16px; margin-bottom:8px; min-height:52px;
+    display:flex; align-items:center; justify-content:center;
     color:#fff; font-weight:800; font-family:'Shippori Mincho',serif; font-size:20px;
     text-align:center; border-radius:4px; box-shadow:0 6px 14px rgba(0,0,0,.5);
     box-sizing:border-box; cursor:pointer;
+  }
+  .sign-bar.landscape-span{ width: calc(200% + 10px); position:relative; z-index:5; }
+  .row-pair.spanned{ gap:0; }
+  .sign-span-handle{
+    position:absolute; right:6px; bottom:4px; width:22px; height:22px;
+    background:rgba(255,255,255,.25); border-radius:50%; font-size:13px;
+    display:flex; align-items:center; justify-content:center; cursor:ew-resize;
+    touch-action:none; z-index:6;
   }
 
   /* 段 */
@@ -976,14 +982,14 @@
 
 <div class="modal hidden" id="signModal">
   <div class="modal-card">
-    <h2 style="margin-top:0; font-size:16px;">サインの文字（空欄でも作れます）</h2>
+    <h2 style="margin-top:0; font-size:16px;">サイン（空欄でも作れます）</h2>
     <div class="field">
       <input id="signTextInput" list="signHistoryList" placeholder="例：社会 政治（空欄で色帯だけにできます）">
       <datalist id="signHistoryList"></datalist>
     </div>
-    <div class="field">
-      <label>色</label>
-      <input type="color" id="signColorInput">
+    <div class="field" style="display:flex; gap:20px;">
+      <label style="display:flex; align-items:center; gap:8px; font-size:12px; margin:0;">背景 <input type="color" id="signColorInput"></label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:12px; margin:0;">文字 <input type="color" id="signTextColorInput"></label>
     </div>
     <div class="modal-actions">
       <button class="btn ghost" id="signCancelBtn">キャンセル</button>
@@ -1149,6 +1155,11 @@
             var rowIndex = m ? parseInt(m[2],10) : 0;
             b.y = Math.min(0.9, (b.y || 0.05) + rowIndex * 0.12);
             delete b.shelfId;
+          }
+          // 縦横の区別がまだ無い古いスタンプ・テキストは、縦画面専用として
+          // 確定させる（縦横で完全に別集合にするため、両方に出す後方互換は廃止）
+          if ((b.isStamp || b.isText) && !b.orientation){
+            b.orientation = 'portrait';
           }
           if (b.z && b.z > globalStampZ) globalStampZ = b.z;
         });
@@ -2159,7 +2170,8 @@
     signEditorTarget = shelfId;
     var existing = state.shelfSigns[shelfId];
     document.getElementById('signTextInput').value = existing ? existing.text : '';
-    document.getElementById('signColorInput').value = existing ? existing.color : '#445c42';
+    document.getElementById('signColorInput').value = existing ? (existing.color || tagColor(existing.text||'')) : '#445c42';
+    document.getElementById('signTextColorInput').value = existing ? (existing.textColor || '#ffffff') : '#ffffff';
     document.getElementById('signDeleteBtn').hidden = !existing;
     refreshSignHistoryList();
     document.getElementById('signModal').classList.remove('hidden');
@@ -2178,8 +2190,10 @@
     // wording is a valid "sign" too
     var text = document.getElementById('signTextInput').value.trim();
     var color = document.getElementById('signColorInput').value;
+    var textColor = document.getElementById('signTextColorInput').value;
     registerSignHistory(text);
-    state.shelfSigns[signEditorTarget] = { text: text, color: color };
+    var existing = state.shelfSigns[signEditorTarget];
+    state.shelfSigns[signEditorTarget] = Object.assign({}, existing, { text: text, color: color, textColor: textColor });
     persist(); renderShelf();
     document.getElementById('signModal').classList.add('hidden');
   });
@@ -2847,6 +2861,31 @@
   function effectiveSlot(b){
     return (isLandscape() && b.landscapeSlot != null) ? b.landscapeSlot : b.slot;
   }
+  // 横画面で2段ペア表示になった時、隣り合う相手の段のshelfIdを返す
+  // (0番目と1番目が組、2番目と3番目が組…という並び)
+  function pairPartnerShelfId(shelfId){
+    var m = /^(.*)_(\d+)$/.exec(shelfId);
+    if (!m) return null;
+    var caseId = m[1], rowIndex = parseInt(m[2], 10);
+    var c = state.cases.find(function(x){ return x.id === caseId; });
+    if (!c) return null;
+    var partnerIndex = (rowIndex % 2 === 0) ? rowIndex + 1 : rowIndex - 1;
+    if (partnerIndex < 0 || partnerIndex >= c.rows) return null;
+    return caseId + '_' + partnerIndex;
+  }
+  function toggleSignSpan(shelfId, spanOn){
+    var sign = state.shelfSigns[shelfId];
+    if (!sign) return;
+    if (spanOn){
+      var partner = pairPartnerShelfId(shelfId);
+      if (!partner){ showToast('隣の段がありません'); return; }
+      if (state.shelfSigns[partner]){ showToast('隣の段にサインがあるため伸ばせません'); return; }
+      sign.landscapeSpan = true;
+    } else {
+      delete sign.landscapeSpan;
+    }
+    persist(); renderShelf();
+  }
   function booksOnShelf(shelfId){
     return state.books.filter(b => effectiveShelfId(b) === shelfId && !b.isSign && !b.isStamp && !b.isText)
       .sort((a,b) => effectiveSlot(a) - effectiveSlot(b));
@@ -3094,14 +3133,43 @@
           signBar.className = 'sign-bar';
           signBar.textContent = sign.text;
           signBar.style.background = sign.color || tagColor(sign.text);
+          signBar.style.color = sign.textColor || '#fff';
           if (editMode) signBar.addEventListener('click', function(){ openSignEditor(shelfId); });
+
+          if (isLandscape() && sign.landscapeSpan && pairPartnerShelfId(shelfId) && !state.shelfSigns[pairPartnerShelfId(shelfId)]){
+            signBar.classList.add('landscape-span');
+          }
+          if (editMode && isLandscape()){
+            let shelfIdForHandle = shelfId;
+            var spanHandle = document.createElement('div');
+            spanHandle.className = 'sign-span-handle';
+            spanHandle.textContent = '↔';
+            spanHandle.title = '引っ張って隣の段まで伸ばす';
+            spanHandle.addEventListener('click', function(e){ e.stopPropagation(); });
+            spanHandle.addEventListener('pointerdown', function(e){
+              e.stopPropagation(); e.preventDefault();
+              spanHandle.setPointerCapture(e.pointerId);
+              var startX = e.clientX;
+              function onUp(ev){
+                spanHandle.removeEventListener('pointerup', onUp);
+                var dx = ev.clientX - startX;
+                var current = !!state.shelfSigns[shelfIdForHandle].landscapeSpan;
+                if (dx > 40 && !current) toggleSignSpan(shelfIdForHandle, true);
+                else if (dx < -40 && current) toggleSignSpan(shelfIdForHandle, false);
+              }
+              spanHandle.addEventListener('pointerup', onUp);
+            });
+            signBar.appendChild(spanHandle);
+          }
+
           block.appendChild(signBar);
         }
 
         if (editMode) {
           var ctrl = document.createElement('div'); ctrl.className = 'shelf-controls';
           var btn = document.createElement('button');
-          btn.textContent = sign ? 'サイン編集' : '+サイン';
+          btn.textContent = sign ? '✎' : '＋サイン';
+          btn.title = sign ? 'サインを編集' : 'サインを追加';
           btn.onclick = function(){ openSignEditor(shelfId); };
           ctrl.appendChild(btn); block.appendChild(ctrl);
         }
@@ -3209,6 +3277,9 @@
           if (rowWraps[pi+1]){
             var pair = document.createElement('div');
             pair.className = 'row-pair';
+            if (rowWraps[pi].querySelector('.sign-bar.landscape-span') || rowWraps[pi+1].querySelector('.sign-bar.landscape-span')){
+              pair.classList.add('spanned');
+            }
             pair.appendChild(rowWraps[pi]);
             pair.appendChild(rowWraps[pi+1]);
             unit.appendChild(pair);
@@ -3220,10 +3291,9 @@
         rowWraps.forEach(function(rw){ unit.appendChild(rw); });
       }
 
-      // 既存（向き未設定）のスタンプは後方互換のため両方の向きで表示する。
-      // 新しく追加したものは、追加した向きだけに表示される。
+      // 新旧問わず、スタンプ・テキストは自分の向きだけに表示する（完全に別集合）
       var curOrient = isLandscape() ? 'landscape' : 'portrait';
-      var freeItems = state.books.filter(b => b.caseId === c.id && (b.isStamp || b.isText) && (!b.orientation || b.orientation === curOrient));
+      var freeItems = state.books.filter(b => b.caseId === c.id && (b.isStamp || b.isText) && b.orientation === curOrient);
       if (freeItems.length){
         var freeLayer = document.createElement('div');
         freeLayer.className = 'free-layer';
@@ -3251,10 +3321,12 @@
         var occ = {};
         items.forEach(function(b){ occ[effectiveSlot(b)] = b; });
         var maxSlot = items.length ? Math.max.apply(null, items.map(effectiveSlot)) : -1;
-        // 実際にある本の分だけ詰めるのが基本方針だが、移動モード中だけは
-        // 「今ある本より右」に置けるよう、末尾に空きマスを1つだけ復活させる
-        // （そうしないと隙間を作ったり本棚の右端に広げたりできなくなる）
-        var cols = Math.max(maxSlot + (moveMode ? 2 : 1), 1);
+        // 実際にある本の分だけ詰めるのが基本方針だが、移動モード中だけは、
+        // その段に設定した表示サイズ（横に並ぶ数）ぶんを丸ごと置き場所として
+        // 確保する。これで、本を好きな場所に置いて隙間を作ったり、まだ本が
+        // 無い右側にも置けるようになる。
+        var capacity = moveMode ? shelfSizeCounts(shelfId).spineCount : 0;
+        var cols = Math.max(maxSlot + 1, capacity, 1);
         var widths = [];
         for (var i=0;i<cols;i++) widths.push(itemGridWidth(occ[i], w));
         el.style.gridTemplateColumns = widths.map(x => x+'px').join(' ');
