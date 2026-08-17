@@ -486,6 +486,7 @@
   }
   .snap-guide-v{ width: 1px; }
   .snap-guide-h{ height: 1px; }
+  .cases-row.book-only-move .free-item{ pointer-events: none; }
   #cropStage{
     position: relative; width: 100%; max-width: 240px; aspect-ratio: 2 / 3;
     margin: 0 auto; overflow: hidden; background: #111; border-radius: 4px;
@@ -3528,6 +3529,9 @@
     if(!document.getElementById('view-bookshelf').classList.contains('active')) return;
     if (state.cases.length === 0) state.cases.push({ id:'c'+(nextCaseNum++), rows:1 });
     if (collapseModeActive){ renderCollapsedSearchView(); return; }
+    // 「☻ 移動対象: 本のみ」中は、スタンプ・テキストが本の上に重なってタップを
+    // 奪ってしまわないよう、スタンプ側のタップを素通しにする
+    casesRow.classList.toggle('book-only-move', moveMode && moveFilterMode === 'book');
     casesRow.innerHTML = '';
     var needsPersist = false;
 
@@ -3847,6 +3851,14 @@
         return;
       }
 
+      // 表示切替(表紙/背)がONの間は、✥移動モード中でもこちらを優先する
+      // （✥パネル内にあるボタンなので、両方ONの状態が普通に起こりうるため）
+      if (flipMode) {
+        item.displayMode = (item.displayMode === 'cover') ? 'spine' : 'cover';
+        persist(); renderShelf();
+        return;
+      }
+
       if (moveMode && moveFilterMode !== 'stamp') {
         if (selectedItem && selectedItem.id === item.id) {
           selectedItem = null; 
@@ -3868,12 +3880,6 @@
           trashArea.classList.add('show');
           renderShelf();
         }
-        return;
-      }
-
-      if (flipMode) {
-        item.displayMode = (item.displayMode === 'cover') ? 'spine' : 'cover';
-        persist(); renderShelf();
         return;
       }
 
