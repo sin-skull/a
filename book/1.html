@@ -753,6 +753,26 @@
     <button class="theme-btn" id="refetchAllBtn" type="button" style="margin-bottom:8px;">🔄 発売日など情報を一括再取得</button>
     <button class="theme-btn" id="clearHistoryBtn" type="button">🗑 スタンプ・サイン履歴を消去</button>
   </div>
+
+  <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">サポート</div>
+  <div style="padding: 10px 20px;">
+    <button class="theme-btn" id="showTermsBtn" type="button" style="margin-bottom:8px;">📄 利用規約・免責事項を見る</button>
+    <button class="theme-btn" id="contactFormBtn" type="button" style="margin-bottom:8px;">✉️ お問い合わせ</button>
+    <button class="theme-btn" id="surveyFormBtn" type="button">📝 アンケートに答える</button>
+  </div>
+</div>
+
+<!-- 初回起動時の利用規約同意モーダル（同意するまでアプリ操作不可） -->
+<div class="modal hidden" id="termsModal">
+  <div class="modal-card" style="max-width:460px;">
+    <h2 id="termsModalTitle" style="margin-top:0; font-size:16px;">利用規約および免責事項</h2>
+    <div id="termsModalBody" style="font-size:12.5px; line-height:1.7; max-height:50vh; overflow-y:auto; white-space:pre-wrap; border:1px solid var(--accent); border-radius:6px; padding:10px;"></div>
+    <p class="edit-hint" id="termsModalGateHint" style="margin-top:10px;">内容をご確認のうえ、同意いただける場合のみアプリをご利用いただけます。</p>
+    <div class="modal-actions">
+      <button class="btn ghost" id="termsModalCloseBtn" hidden>閉じる</button>
+      <button class="btn" id="termsModalAgreeBtn">同意して使い始める</button>
+    </div>
+  </div>
 </div>
 
 <!-- ヘッダー -->
@@ -1203,7 +1223,8 @@
     flipMode: false, // 表示切替(表紙/背)のON/OFF
     listViewActive: false, // 📋本リスト表示のON/OFF
     currentSortCriterion: 'kana', // 本リストの並び順
-    bulkDisplayMode: 'cover' // 追加分（スキャン・検索）の初期表示
+    bulkDisplayMode: 'cover', // 追加分（スキャン・検索）の初期表示
+    termsAccepted: false // 利用規約に同意済みか
   };
   var searchQueue = []; 
   var editMode = false;
@@ -1300,6 +1321,7 @@
         state.listViewActive = !!p.listViewActive;
         state.currentSortCriterion = p.currentSortCriterion || 'kana';
         state.bulkDisplayMode = (p.bulkDisplayMode === 'spine') ? 'spine' : 'cover';
+        state.termsAccepted = !!p.termsAccepted;
         
         state.books = state.books.filter(function(b){
           if (b.isSign){
@@ -4567,7 +4589,102 @@
     if (/^\d{6}$/.test(s)) return s.slice(0,4)+'-'+s.slice(4,6);
     return s; // already YYYY-MM-DD / YYYY-MM / YYYY or some other readable form
   }
+  // ========== 利用規約・お問い合わせ・アンケート ==========
+  // フォームが出来たらここにURLを入れる（空のままだと「準備中です」と表示される）
+  var CONTACT_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScULeTgx4UaIFLwe-eycJNr1iC2bfMwpZ313ufCOkhyX-4NvA/viewform'; // お問い合わせ（Googleフォーム）
+  var SURVEY_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSe1Okm3HPyaPaAQwBc4gXhkdOsyiwlXlvALXHsYvwVlrZDQUQ/viewform';  // アンケート（Googleフォーム）
+
+  var TERMS_TEXT =
+"最終更新日：2026年8月18日\n\n" +
+"本規約は、「マイ本棚」（以下「本サービス」といいます）の利用条件を定めるものです。本サービスをご利用いただいた場合、本規約に同意いただいたものとみなします。\n\n" +
+"■第1条（本サービスの内容）\n" +
+"1. 本サービスは、個人が所有する書籍・グッズ等を仮想的な本棚に登録・整理・記録するための、無料の個人向けツールです。\n" +
+"2. 本サービスはブラウザ上で完結するアプリケーションであり、登録された情報（書籍データ、画像、メモ等）はご利用の端末内（ローカルストレージ）にのみ保存されます。開発者が運営するサーバーに送信・保存されることはありません。\n" +
+"3. そのため、端末の初期化やブラウザのデータ削除、機種変更等によりデータが失われた場合、開発者は復元の義務を負いません。バックアップ機能をご利用の上、必要に応じてご自身で保管してください。\n\n" +
+"■第2条（書誌情報・書影について）\n" +
+"1. 本サービスがISBN・JANコードまたはタイトルから書籍を検索する際、書誌情報（タイトル・著者・出版社・発売日・あらすじ等）および書影（表紙画像）は、以下の外部サービスから取得しています。\n" +
+"　・openBD API（カーリル・版元ドットコムが提供）\n" +
+"　・Google Books API（Google LLCが提供）\n" +
+"　・上記から書影が取得できない場合の補助的な取得先として、版元ドットコム（hanmoto.com）が公開している画像URL\n" +
+"2. これらの書誌情報・書影の著作権、商標権その他の知的財産権は、各著作者・出版社・版元ドットコム・Google LLC、またはその他の正当な権利者に帰属します。本サービスはこれらの情報を各APIの提供する範囲・条件の中で表示しているものであり、開発者のサーバー上に画像を複製・保存し再配布するものではありません。\n" +
+"3. Google Books APIの利用にあたっては、Googleの定めるブランディングガイドラインに従い、検索結果に「Powered by Google」の表示、および各書籍からGoogle Booksへのリンクを付しています。\n" +
+"4. openBD APIが提供する書誌・書影情報は「本の販促・紹介目的」に限り利用が認められています。本サービスは、ユーザーが自身の蔵書を記録・紹介する目的での利用として、この条件の範囲内でAPIを利用しています。\n" +
+"5. これらの外部サービスの仕様変更、提供終了、またはデータの変更・削除により、書影や書誌情報が正しく表示されなくなる場合があります。開発者はこれについて責任を負いません。\n\n" +
+"■第3条（ユーザーが個別に設定する画像について）\n" +
+"1. 本サービスでは、ISBN等のコードを持たない書籍（同人誌・自作の本・劇場特典等）について、ユーザー自身が写真の撮影・端末内ファイルの選択・画像URLの入力により、表紙画像を個別に設定できる機能を提供しています。\n" +
+"2. この方法で設定された画像については、開発者はその著作権・肖像権その他の権利関係を確認・保証しません。ユーザーは、自身が権利を有する画像、または権利者の許諾を得た画像、もしくは私的利用の範囲で認められる画像のみを使用するものとし、これに起因する一切の責任はユーザー自身が負うものとします。\n" +
+"3. 開発者は、これらの画像についても端末内にのみ保存され、開発者のサーバーには送信・保存されないことを確認しています。\n\n" +
+"■第4条（背表紙・本棚の表示デザインについて）\n" +
+"本サービスにおいて棚に並ぶ「本」のオブジェクト（背表紙・アイコン等の見た目）は、書籍タイトル等の文字情報をもとにシステムが自動生成するオリジナルの表示であり、実際の書籍の背表紙デザイン・装丁・固有フォント等を複製・模倣するものではありません。\n\n" +
+"■第5条（著作権に関するお申し出について）\n" +
+"1. 本サービスはサーバー上でコンテンツを配信する形態のサービスではなく、各利用者の端末上でプログラムが動作し、その都度openBD API・Google Books API等に直接問い合わせて書誌情報・書影を取得・表示する仕組みです。\n" +
+"2. 権利者ご本人またはその代理人より、特定の書籍（ISBN・JANコード等）または特定の著者・作品について、本サービスでの取り扱いの取りやめを求めるお申し出があった場合、開発者は事実関係を確認のうえ、該当するコードまたはキーワードをプログラム内の登録禁止リストに追加します。\n" +
+"3. 登録禁止リストに追加された書籍については、以降配布するバージョンのプログラムにおいて新規の検索・登録ができなくなるほか、既に登録済みの場合は次回起動時に自動的に本棚から取り下げられます。\n" +
+"4. ただし、この対応は新しいバージョンのプログラムを利用している場合にのみ有効です。既に配布・利用されている過去のバージョンのプログラムにまで遡って適用されるものではないことをご了承ください。\n" +
+"5. 書誌情報・書影データそのものの提供停止・修正については、データの提供元であるopenBDプロジェクトまたはGoogle LLCに対して直接お申し出いただくことも可能です。各提供元の連絡先は、それぞれの公式サイトをご確認ください。\n" +
+"6. お申し出は、サイドメニューの「お問い合わせ」からもご連絡いただけます。\n\n" +
+"■第6条（禁止事項）\n" +
+"ユーザーは、本サービスの利用にあたり、以下の行為を行ってはならないものとします。\n" +
+"1. 法令または公序良俗に違反する行為\n" +
+"2. 本サービスを通じて取得した書誌情報・書影を、本来の目的（個人の蔵書管理）を超えて複製・再配布・商用利用する行為\n" +
+"3. 他者の著作権・肖像権その他の権利を侵害する画像を、ユーザー自身の設定機能を用いてアップロードする行為\n" +
+"4. 本サービスの逆コンパイル・改変・不正な方法での利用、その他運営を妨げる行為\n\n" +
+"■第7条（免責事項）\n" +
+"1. 本サービスは無償で提供されるものであり、開発者は本サービスの内容の正確性、完全性、有用性、特定目的への適合性についていかなる保証も行いません。\n" +
+"2. 本サービスの利用（第三者への紹介・共有を含む）により生じたいかなる損害（データの消失、外部APIの仕様変更による表示不具合等を含みますがこれに限りません）についても、開発者は一切の責任を負いません。\n" +
+"3. 本サービスは、予告なくその内容の変更、提供の中断、または提供の終了を行うことがあります。\n\n" +
+"■第8条（本規約の変更）\n" +
+"開発者は、必要と判断した場合、ユーザーへの個別の通知を行うことなく本規約を変更できるものとします。変更後の規約は、本サービス上に表示された時点から効力を生じるものとします。\n\n" +
+"■第9条（準拠法）\n" +
+"本規約の解釈にあたっては、日本法を準拠法とします。\n\n" +
+"■お問い合わせ・アンケート\n" +
+"本規約に関するお問い合わせ、第5条に基づくお申し出、ご意見・ご感想、不具合報告は、サイドメニューの「お問い合わせ」からGoogleフォームにて受け付けています。任意でアンケートにもご協力いただけます（サイドメニュー「アンケートに答える」）。\n\n" +
+"Book data and cover images are provided by openBD API and Google Books API.\n" +
+"Powered by Google";
+
+  // ========== NGリスト（取得・登録を禁止する書籍） ==========
+  // 権利者からお申し出があった場合など、ここにISBN/JANコードやキーワード
+  // （著者名・タイトルの一部など）を追加すると、以後そのコード・キーワードに
+  // 一致する本は検索・自動取得できなくなり、既に登録済みの本も起動時に
+  // 自動でゴミ箱（本の履歴）へ移動される。コードはHTMLファイルを直接編集して追加する。
+  var NG_CODES = [
+    // '9784XXXXXXXXX',
+  ];
+  var NG_KEYWORDS = [
+    // '著者名やタイトルの一部',
+  ];
+  function isNgCode(code){
+    if(!code) return false;
+    var c = String(code).replace(/-/g,'');
+    return NG_CODES.indexOf(c) !== -1;
+  }
+  function matchesNgKeyword(text){
+    if(!text) return false;
+    return NG_KEYWORDS.some(function(kw){ return kw && String(text).indexOf(kw) !== -1; });
+  }
+  function isNgBook(info){
+    if(!info) return false;
+    if (isNgCode(info.isbn)) return true;
+    if (matchesNgKeyword(info.title) || matchesNgKeyword(info.author)) return true;
+    return false;
+  }
+  // 起動時：登録済みの本の中にNGに一致するものがあれば、自動でゴミ箱へ移動する
+  function purgeNgBooksFromShelf(){
+    var targets = state.books.filter(function(b){
+      return !b.isStamp && !b.isText && !b.isSign && isNgBook(b);
+    });
+    if (!targets.length) return;
+    softDeleteBooks(targets);
+    var ids = targets.map(function(b){ return b.id; });
+    state.books = state.books.filter(function(b){ return ids.indexOf(b.id) === -1; });
+    persist();
+    showToast(targets.length + '冊の本がNGリストに該当したため、本棚から取り下げました');
+  }
+
   async function fetchBookInfo(query){
+    if (isNgCode(query)){
+      return { ng: true, title: '（この本は登録できません）' };
+    }
     var isIsbn = /^[0-9Xx]+$/.test(query.replace(/-/g,''));
     var resObj = { title: '', author: '', publisher: '', cover: '', description: '', pubdate: '', displayMode: bulkDisplayMode, size: 'm', tags: [], genres: [], status: 'owned', bgTag: null };
     
@@ -4599,6 +4716,7 @@
       }
       if(!resObj.cover) resObj.cover = 'https://www.hanmoto.com/bd/img/'+isbn+'.jpg';
       if(!resObj.title) resObj.title = '未登録本 (ISBN:'+isbn+')';
+      if (isNgBook(resObj)) return { ng: true, title: '（この本は登録できません）' };
       return resObj;
     } else {
       try {
@@ -4613,6 +4731,7 @@
           resObj.pubdate = info2.publishedDate || '';
         } else resObj.title = query + ' (情報なし)';
       } catch(e) { resObj.title = query; }
+      if (isNgBook(resObj)) return { ng: true, title: '（この本は登録できません）' };
       return resObj;
     }
   }
@@ -4635,6 +4754,7 @@
       showToast('情報を再取得中… (' + (i+1) + '/' + targets.length + ')');
       try{
         var info = await fetchBookInfo(b.isbn);
+        if (info.ng) continue;
         var changed = false;
         if (!b.pubdate && info.pubdate){ b.pubdate = info.pubdate; changed = true; }
         if (!b.cover && info.cover){ b.cover = info.cover; changed = true; }
@@ -4690,9 +4810,14 @@
   document.getElementById('mc-addToQueueBtn').addEventListener('click', function(){
     var title = document.getElementById('mc-title').value.trim();
     if(!title){ showToast('タイトルを入力してください'); return; }
+    var author = document.getElementById('mc-author').value.trim();
+    if (matchesNgKeyword(title) || matchesNgKeyword(author)){
+      showToast('この内容はNGリストに該当するため登録できません');
+      return;
+    }
     var info = {
       title: title,
-      author: document.getElementById('mc-author').value.trim(),
+      author: author,
       publisher: document.getElementById('mc-publisher').value.trim(),
       cover: document.getElementById('mc-cover-url').value.trim(),
       description: '',
@@ -4717,14 +4842,17 @@
     if (!lines.length) return;
     var btn = this;
     btn.disabled = true;
+    var ngCount = 0;
     for (var i=0; i<lines.length; i++){
       btn.textContent = '...(' + (i+1) + '/' + lines.length + ')';
       var info = await fetchBookInfo(lines[i]);
-      searchQueue.push(info); renderQueue();
+      if (info.ng){ ngCount++; }
+      else { searchQueue.push(info); renderQueue(); }
       if (i < lines.length - 1) await new Promise(function(r){ setTimeout(r, 300); }); // APIに優しく
     }
     document.getElementById('manualIsbn').value = '';
     btn.disabled = false; btn.textContent = '検索';
+    if (ngCount) showToast(ngCount + '件はNGリストに該当したため追加できませんでした');
   });
 
   document.getElementById('bulkAddBtn').addEventListener('click', function(){
@@ -4786,6 +4914,7 @@
       lastScanned = code; lastScannedTime = now;
       showToast(code + ' 読取完了');
       var info = await fetchBookInfo(code);
+      if (info.ng){ showToast('この本はNGリストに該当するため追加できません'); return; }
       searchQueue.push(info); renderQueue();
     });
   }
@@ -4796,13 +4925,55 @@
   document.querySelectorAll('.modal').forEach(function(modal){
     modal.addEventListener('click', function(e){
       if (e.target !== modal) return; // カード自体や中の要素のタップでは閉じない
+      if (modal.id === 'termsModal' && modal.dataset.gating === 'true') return; // 同意するまでは背景タップで閉じさせない
       if (modal.id === 'bookModal') document.getElementById('bm-close').click();
       else modal.classList.add('hidden');
     });
   });
 
+  // ========== 利用規約モーダル・お問い合わせ・アンケート ==========
+  function openTermsModal(gating){
+    document.getElementById('termsModalBody').textContent = TERMS_TEXT;
+    var modal = document.getElementById('termsModal');
+    modal.dataset.gating = gating ? 'true' : 'false';
+    document.getElementById('termsModalGateHint').hidden = !gating;
+    document.getElementById('termsModalAgreeBtn').hidden = !gating;
+    document.getElementById('termsModalCloseBtn').hidden = !!gating;
+    modal.classList.remove('hidden');
+  }
+  document.getElementById('termsModalAgreeBtn').addEventListener('click', function(){
+    state.termsAccepted = true; persist();
+    document.getElementById('termsModal').classList.add('hidden');
+  });
+  document.getElementById('termsModalCloseBtn').addEventListener('click', function(){
+    document.getElementById('termsModal').classList.add('hidden');
+  });
+  document.getElementById('showTermsBtn').addEventListener('click', function(){
+    sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
+    openTermsModal(false);
+  });
+
+  // お問い合わせ・アンケートは外部（Googleフォーム）へ移動するので、
+  // 移動前に一度確認を挟む
+  function openExternalForm(url, label){
+    if (!url){ showToast(label + 'は準備中です'); return; }
+    if (confirm(label + '（外部サイト）を新しいタブで開きます。よろしいですか？')){
+      window.open(url, '_blank', 'noopener');
+    }
+  }
+  document.getElementById('contactFormBtn').addEventListener('click', function(){
+    sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
+    openExternalForm(CONTACT_FORM_URL, 'お問い合わせフォーム');
+  });
+  document.getElementById('surveyFormBtn').addEventListener('click', function(){
+    sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
+    openExternalForm(SURVEY_FORM_URL, 'アンケート');
+  });
+
   // ========== 初期化 ==========
   loadState();
+  purgeNgBooksFromShelf();
+  if (!state.termsAccepted) openTermsModal(true);
   document.getElementById('headerTitle').value = state.shelfTitle;
   flipMode = state.flipMode;
   popStage = state.popStage;
