@@ -486,6 +486,13 @@
   }
   .snap-guide-v{ width: 1px; }
   .snap-guide-h{ height: 1px; }
+  #cropStage{
+    position: relative; width: 100%; max-width: 240px; aspect-ratio: 2 / 3;
+    margin: 0 auto; overflow: hidden; background: #111; border-radius: 4px;
+    touch-action: none; user-select: none;
+  }
+  #cropImg{ position: absolute; left: 0; top: 0; max-width: none; pointer-events: none; }
+  #cropZoom{ width: 100%; margin-top: 14px; }
 
   /* ---------- 検索・追加ビュー ---------- */
   .search-container { padding: 16px; }
@@ -825,7 +832,7 @@
     </div>
     <div class="edit-tools" id="moveTools" style="display: none;">
       <button class="btn ghost" id="flipModeBtn">表示切替(表紙/背): OFF</button>
-      <button class="btn ghost" id="stampOnlyMoveBtn">☻ スタンプのみ移動: OFF</button>
+      <button class="btn ghost" id="stampOnlyMoveBtn">☻ 移動対象: 全部</button>
     </div>
 
     <div class="cases-row" id="casesRow"></div>
@@ -892,6 +899,9 @@
             <input type="text" id="mc-cover-url" placeholder="または画像URLを入力" style="flex:1;">
           </div>
           <input type="file" id="mc-cover-file-input" accept="image/*" hidden>
+          <div style="margin-top: 6px;">
+            <a id="mc-google-img" href="#" target="_blank" rel="noopener" class="google-img-link">Google画像検索で探す ↗</a>
+          </div>
           <div id="mc-cover-preview" style="margin-top:8px;"></div>
         </div>
         <button class="btn" id="mc-addToQueueBtn" type="button" style="width:100%; margin-top:4px;">この内容でキューに追加</button>
@@ -1114,6 +1124,21 @@
   </div>
 </div>
 
+<div class="modal hidden" id="cropModal">
+  <div class="modal-card" style="max-width:340px;">
+    <h2 style="margin-top:0; font-size:16px;">表紙をトリミング</h2>
+    <div id="cropStage">
+      <img id="cropImg" alt="">
+    </div>
+    <input type="range" id="cropZoom" min="100" max="300" value="100">
+    <p class="edit-hint" style="margin:8px 0 0;">ドラッグで位置調整、スライダーで拡大縮小できます</p>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cropCancelBtn">キャンセル</button>
+      <button class="btn" id="cropConfirmBtn">この範囲で使う</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast hidden" id="toast"></div>
 
 <!-- 削除用ゴミ箱エリア -->
@@ -1183,7 +1208,9 @@
   var editMode = false;
   var flipMode = false;
   var moveMode = false;
-  var stampOnlyMoveMode = false;
+  var moveFilterMode = 'all'; // ✥移動モードの対象: 'all' | 'book' | 'stamp'
+  var MOVE_FILTER_LABELS = { all: '全部', book: '本のみ', stamp: 'スタンプのみ' };
+  var MOVE_FILTER_NEXT = { all: 'book', book: 'stamp', stamp: 'all' };
   var headerExpanded = false;
   var selectedItem = null; 
   var nextCaseNum = 2;
@@ -1571,10 +1598,9 @@
     moveMode = !moveMode;
     this.classList.toggle('active', moveMode);
     document.getElementById('moveTools').style.display = moveMode ? 'flex' : 'none';
-    if (!moveMode && stampOnlyMoveMode){
-      stampOnlyMoveMode = false;
-      document.getElementById('stampOnlyMoveBtn').textContent = '☻ スタンプのみ移動: OFF';
-      document.getElementById('stampOnlyMoveBtn').classList.add('ghost');
+    if (!moveMode && moveFilterMode !== 'all'){
+      moveFilterMode = 'all';
+      document.getElementById('stampOnlyMoveBtn').textContent = '☻ 移動対象: 全部';
     }
     selectedItem = null;
     trashArea.classList.remove('show');
@@ -1585,10 +1611,11 @@
     }
     renderShelf();
   });
+  // タップするたびに 全部 → 本のみ → スタンプのみ → 全部... と切り替わる
   document.getElementById('stampOnlyMoveBtn').addEventListener('click', function(){
-    stampOnlyMoveMode = !stampOnlyMoveMode;
-    this.textContent = '☻ スタンプのみ移動: ' + (stampOnlyMoveMode ? 'ON' : 'OFF');
-    this.classList.toggle('ghost', !stampOnlyMoveMode);
+    moveFilterMode = MOVE_FILTER_NEXT[moveFilterMode];
+    this.textContent = '☻ 移動対象: ' + MOVE_FILTER_LABELS[moveFilterMode];
+    renderShelf();
   });
 
   // ---- 🏷️ 一括タグ付け ----
@@ -2423,6 +2450,97 @@
   document.getElementById('stampFileInput').addEventListener('change', function(){
     readImageFile(this.files[0]); this.value = '';
     document.getElementById('stampMenu').classList.add('hidden');
+  });
+
+  // ---- 表紙用：写真/ファイルのトリミングツール ----
+  // 本の表紙は縦2:3固定なので、選んだ画像をその比率に合わせて
+  // 位置調整（ドラッグ）・拡大縮小（スライダー）してから使えるようにする
+  var cropModal = document.getElementById('cropModal');
+  var cropStage = document.getElementById('cropStage');
+  var cropImg = document.getElementById('cropImg');
+  var cropZoom = document.getElementById('cropZoom');
+  var cropState = null; // { naturalW, naturalH, baseScale, zoom, panX, panY }
+  var cropOnConfirm = null;
+
+  function openCropModal(dataUrl, onConfirm){
+    cropOnConfirm = onConfirm;
+    cropZoom.value = 100;
+    cropImg.onload = function(){
+      var stageW = cropStage.clientWidth, stageH = cropStage.clientHeight;
+      var naturalW = cropImg.naturalWidth, naturalH = cropImg.naturalHeight;
+      var baseScale = Math.max(stageW / naturalW, stageH / naturalH);
+      cropState = { naturalW: naturalW, naturalH: naturalH, baseScale: baseScale, zoom: 1, panX: 0, panY: 0 };
+      applyCropTransform();
+    };
+    cropImg.src = dataUrl;
+    cropModal.classList.remove('hidden');
+  }
+  function applyCropTransform(){
+    if (!cropState) return;
+    var stageW = cropStage.clientWidth, stageH = cropStage.clientHeight;
+    var w = cropState.naturalW * cropState.baseScale * cropState.zoom;
+    var h = cropState.naturalH * cropState.baseScale * cropState.zoom;
+    // 画像が常にステージ全体を覆うように、パン量をクランプする
+    var minX = Math.min(0, stageW - w), maxX = 0;
+    var minY = Math.min(0, stageH - h), maxY = 0;
+    cropState.panX = Math.max(minX, Math.min(maxX, cropState.panX));
+    cropState.panY = Math.max(minY, Math.min(maxY, cropState.panY));
+    cropImg.style.width = w + 'px';
+    cropImg.style.height = h + 'px';
+    cropImg.style.left = cropState.panX + 'px';
+    cropImg.style.top = cropState.panY + 'px';
+  }
+  cropZoom.addEventListener('input', function(){
+    if (!cropState) return;
+    cropState.zoom = this.value / 100;
+    applyCropTransform();
+  });
+  (function(){
+    var dragging = false, startX = 0, startY = 0, startPanX = 0, startPanY = 0;
+    cropStage.addEventListener('pointerdown', function(e){
+      if (!cropState) return;
+      dragging = true;
+      startX = e.clientX; startY = e.clientY;
+      startPanX = cropState.panX; startPanY = cropState.panY;
+      cropStage.setPointerCapture(e.pointerId);
+    });
+    cropStage.addEventListener('pointermove', function(e){
+      if (!dragging || !cropState) return;
+      cropState.panX = startPanX + (e.clientX - startX);
+      cropState.panY = startPanY + (e.clientY - startY);
+      applyCropTransform();
+    });
+    cropStage.addEventListener('pointerup', function(){ dragging = false; });
+    cropStage.addEventListener('pointercancel', function(){ dragging = false; });
+  })();
+  document.getElementById('cropCancelBtn').addEventListener('click', function(){
+    cropModal.classList.add('hidden');
+    cropOnConfirm = null; cropState = null;
+  });
+  document.getElementById('cropConfirmBtn').addEventListener('click', function(){
+    if (!cropState){ cropModal.classList.add('hidden'); return; }
+    var stageW = cropStage.clientWidth, stageH = cropStage.clientHeight;
+    var dispScale = cropState.naturalW * cropState.baseScale * cropState.zoom / cropState.naturalW; // px per natural px
+    var srcX = -cropState.panX / dispScale;
+    var srcY = -cropState.panY / dispScale;
+    var srcW = stageW / dispScale;
+    var srcH = stageH / dispScale;
+    var OUT_W = 480, OUT_H = 720; // 2:3固定
+    var canvas = document.createElement('canvas');
+    canvas.width = OUT_W; canvas.height = OUT_H;
+    var ctx = canvas.getContext('2d');
+    try{
+      ctx.drawImage(cropImg, srcX, srcY, srcW, srcH, 0, 0, OUT_W, OUT_H);
+      var result = canvas.toDataURL('image/jpeg', 0.85);
+      cropModal.classList.add('hidden');
+      var cb = cropOnConfirm; cropOnConfirm = null; cropState = null;
+      if (cb) cb(result);
+    }catch(e){
+      console.error('crop error', e);
+      showToast('トリミングに失敗しました');
+      cropModal.classList.add('hidden');
+      cropOnConfirm = null; cropState = null;
+    }
   });
 
   // ---- ☻ スタンプメニュー ----
@@ -3354,7 +3472,7 @@
       el.appendChild(sticker);
     }
 
-    if (moveMode) attachFreeItemHandles(el, fi);
+    if (moveMode && moveFilterMode !== 'book') attachFreeItemHandles(el, fi);
     return el;
   }
 
@@ -3729,7 +3847,7 @@
         return;
       }
 
-      if (moveMode && !stampOnlyMoveMode) {
+      if (moveMode && moveFilterMode !== 'stamp') {
         if (selectedItem && selectedItem.id === item.id) {
           selectedItem = null; 
           trashArea.classList.remove('show'); // 選択解除で隠す
@@ -3804,6 +3922,7 @@
       let freeItemNode = e.target.closest('.free-item');
       if (freeItemNode && !e.target.closest('.resize-handle, .rotate-handle')) {
           if (!moveMode && !editMode) return; // 閲覧中は何もしない
+          if (moveMode && moveFilterMode === 'book') return; // 「本のみ移動」中はスタンプ・テキストを触らせない
           e.stopPropagation(); 
           
           if (activeFreeItemNode && activeFreeItemNode !== freeItemNode) {
@@ -4237,24 +4356,34 @@
   });
 
   document.getElementById('bm-close').addEventListener('click', function(){
-    if(curItem){
-      curItem.memo = document.getElementById('bm-memo').value;
-      if(editMode){
-        curItem.description = document.getElementById('bm-synopsis-input').value;
-        curItem.cover = document.getElementById('bm-cover-input').value;
-        var st = document.getElementById('bm-status');
-        if(st) curItem.status = st.value;
+    try{
+      if(curItem){
+        curItem.memo = document.getElementById('bm-memo').value;
+        if(editMode){
+          curItem.description = document.getElementById('bm-synopsis-input').value;
+          curItem.cover = document.getElementById('bm-cover-input').value;
+          var st = document.getElementById('bm-status');
+          if(st) curItem.status = st.value;
+        }
+        persist(); renderShelf();
       }
-      persist(); renderShelf();
+    }catch(e){
+      console.error('bm-close save error', e);
+      showToast('保存中に問題が起きましたが、閉じます');
     }
     document.getElementById('bookModal').classList.add('hidden');
   });
   
   document.getElementById('bm-delete').addEventListener('click', function(){
     if(curItem && confirm('削除しますか？')){
-      softDeleteBooks([curItem]);
-      state.books = state.books.filter(b => b.id !== curItem.id);
-      persist(); renderShelf();
+      try{
+        softDeleteBooks([curItem]);
+        state.books = state.books.filter(b => b.id !== curItem.id);
+        persist(); renderShelf();
+      }catch(e){
+        console.error('bm-delete error', e);
+        showToast('削除中に問題が起きましたが、閉じます');
+      }
       document.getElementById('bookModal').classList.add('hidden');
     }
   });
@@ -4281,10 +4410,12 @@
     if(!file) return;
     var reader = new FileReader();
     reader.onload = function(){
-      var input = document.getElementById('bm-cover-input');
-      input.value = reader.result;
-      input.dispatchEvent(new Event('change'));
-      showToast('表紙を更新しました');
+      openCropModal(reader.result, function(cropped){
+        var input = document.getElementById('bm-cover-input');
+        input.value = cropped;
+        input.dispatchEvent(new Event('change'));
+        showToast('表紙を更新しました');
+      });
     };
     reader.onerror = function(){ showToast('画像を読み込めませんでした'); };
     reader.readAsDataURL(file);
@@ -4530,13 +4661,25 @@
     if(!file) return;
     var reader = new FileReader();
     reader.onload = function(){
-      document.getElementById('mc-cover-url').value = reader.result;
-      mcRefreshCoverPreview();
+      openCropModal(reader.result, function(cropped){
+        document.getElementById('mc-cover-url').value = cropped;
+        mcRefreshCoverPreview();
+      });
     };
     reader.onerror = function(){ showToast('画像を読み込めませんでした'); };
     reader.readAsDataURL(file);
   });
   document.getElementById('mc-cover-url').addEventListener('input', mcRefreshCoverPreview);
+
+  function updateMcGoogleImgLink(){
+    var title = document.getElementById('mc-title').value.trim();
+    var author = document.getElementById('mc-author').value.trim();
+    document.getElementById('mc-google-img').href =
+      'https://www.google.com/search?tbm=isch&q=' + encodeURIComponent((title||'') + ' ' + (author||'') + ' 表紙');
+  }
+  document.getElementById('mc-title').addEventListener('input', updateMcGoogleImgLink);
+  document.getElementById('mc-author').addEventListener('input', updateMcGoogleImgLink);
+  updateMcGoogleImgLink();
 
   document.getElementById('mc-addToQueueBtn').addEventListener('click', function(){
     var title = document.getElementById('mc-title').value.trim();
@@ -4559,6 +4702,7 @@
     ['mc-title','mc-author','mc-publisher','mc-pubdate','mc-cover-url'].forEach(function(id){ document.getElementById(id).value = ''; });
     document.getElementById('mc-status').value = 'owned';
     document.getElementById('mc-cover-preview').innerHTML = '';
+    updateMcGoogleImgLink();
   });
 
   document.getElementById('manualSearchBtn').addEventListener('click', async function(){
