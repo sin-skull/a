@@ -41,7 +41,7 @@
     .ui-container { position: relative; background: var(--card); border-top: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
     
     .panels { display: none; background: var(--card); border-bottom: 1px solid var(--border); padding: 16px; max-height: 40dvh; overflow-y: auto; }
-    .panels.active { display: block; }
+    .panels.active { display: block; } /* ←この表示がバグで機能していませんでした */
     .panel { display: none; flex-direction: column; gap: 16px; }
     .panel.active { display: flex; }
 
@@ -67,12 +67,10 @@
     input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
     input[type="color"]::-webkit-color-swatch { border: 1px solid var(--border); border-radius: 4px; }
 
-    /* ギャラリーUI */
     .gallery-list { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; }
     .gallery-item { width: 60px; height: 60px; border-radius: 4px; border: 2px solid transparent; cursor: pointer; object-fit: cover; flex-shrink: 0; background: #111; }
     .gallery-item.active { border-color: var(--accent); }
     
-    /* トリミングモーダル */
     #cropModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; }
     #cropModal.active { display: flex; }
     .crop-container { flex: 1; overflow: hidden; background: #111; }
@@ -89,7 +87,6 @@
 </head>
 <body>
 
-<!-- トリミングモーダル -->
 <div id="cropModal">
   <div class="crop-container"><img id="cropImage" src="" alt="Picture"></div>
   <div class="crop-actions">
@@ -108,17 +105,15 @@
   </div>
 
   <div class="ui-container">
-    <div class="panels" id="panelsContainer">
+    <!-- スマホで初期表示させるために最初から active を付けておく -->
+    <div class="panels active" id="panelsContainer">
       
-      <!-- データ・ギャラリーパネル -->
       <div class="panel active" id="panel-gallery">
         <label class="btn">📁 新しい画像を追加 / 撮影
           <input type="file" id="fileInput" accept="image/*">
         </label>
         <div class="control-header"><span>プロジェクト画像リスト</span></div>
-        <div class="gallery-list" id="galleryList">
-          <!-- サムネイルが追加されます -->
-        </div>
+        <div class="gallery-list" id="galleryList"></div>
         <div class="control-item" style="border-top: 1px solid #444; padding-top: 10px;">
           <button class="btn btn-success" id="exportPdfBtn">📑 全画像をPDF化</button>
           <button class="btn btn-outline" id="saveDataBtn">💾 データを保存 (JSON)</button>
@@ -128,17 +123,16 @@
         </div>
       </div>
 
-      <!-- 画像調整パネル -->
       <div class="panel" id="panel-image">
-        <button class="btn btn-success" id="downloadPngBtn">⬇️ 現在の画像を保存 (PNG)</button>
-        <button class="btn btn-danger" id="deleteImgBtn">🗑️ 現在の画像を削除</button>
+        <button class="btn btn-success" id="downloadPngBtn">⬇️ 画像を保存 (PNG)</button>
+        <button class="btn btn-success" id="downloadSvgBtn" style="margin-top: 8px;">♾️ 画像を保存 (SVG)</button>
+        <button class="btn btn-danger" id="deleteImgBtn" style="margin-top: 8px;">🗑️ 現在の画像を削除</button>
         <div class="control-item" style="margin-top: 10px;">
           <div class="control-header"><span>元画像 不透明度</span><span id="origAlphaVal">100%</span></div>
           <input type="range" id="origAlpha" min="0" max="100" value="100">
         </div>
       </div>
 
-      <!-- カラーパネル -->
       <div class="panel" id="panel-color">
         <div class="control-item">
           <div class="control-header"><span>面の単純化 (1で単色背景)</span><span id="colorVal">4</span></div>
@@ -159,7 +153,6 @@
         </div>
       </div>
 
-      <!-- 線画パネル -->
       <div class="panel" id="panel-line">
         <div class="control-item">
           <div class="control-header"><span>線の抽出感度</span><span id="edgeVal">50</span></div>
@@ -172,7 +165,6 @@
       </div>
     </div>
 
-    <!-- ツールバー -->
     <div class="toolbar">
       <button class="tool-btn active" data-target="panel-gallery"><span>📁</span><span>ファイル</span></button>
       <button class="tool-btn" data-target="panel-image"><span>🖼️</span><span>画像調整</span></button>
@@ -183,28 +175,37 @@
 </div>
 
 <script>
-// --- 状態管理 (State) ---
-let appData = {
-  images: [], // { id, originalBase64, finalBase64, settings }
-  currentId: null
-};
+let appData = { images: [], currentId: null };
 let currentWidth = 0; let currentHeight = 0;
 let originalImageData = null;
 
-// UI タブ切替
+// --- バグ修正箇所：UI タブ切替ロジック ---
 const toolBtns = document.querySelectorAll('.tool-btn');
 const panels = document.querySelectorAll('.panel');
+const panelsContainer = document.getElementById('panelsContainer'); // これを追加
+
 toolBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     const target = btn.getAttribute('data-target');
+    const isMobile = window.innerWidth < 768;
+
+    // スマホでアクティブなボタンをもう一度押した時は閉じる
+    if (isMobile && btn.classList.contains('active')) {
+      btn.classList.remove('active');
+      panelsContainer.classList.remove('active'); // バグ原因：ここが抜けていた
+      document.getElementById(target).classList.remove('active');
+      return;
+    }
+
     toolBtns.forEach(b => b.classList.remove('active'));
     panels.forEach(p => p.classList.remove('active'));
+    
     btn.classList.add('active');
+    panelsContainer.classList.add('active'); // バグ原因：ここが抜けていた
     document.getElementById(target).classList.add('active');
   });
 });
 
-// キャンバス準備
 const cOrig = document.getElementById('originalCanvas');
 const cColor = document.getElementById('colorCanvas');
 const cLine = document.getElementById('lineCanvas');
@@ -212,7 +213,6 @@ const ctxOrig = cOrig.getContext('2d', { willReadFrequently: true });
 const ctxColor = cColor.getContext('2d', { willReadFrequently: true });
 const ctxLine = cLine.getContext('2d', { willReadFrequently: true });
 
-// --- トリミング (Cropper.js) ロジック ---
 let cropper = null;
 const cropModal = document.getElementById('cropModal');
 const cropImage = document.getElementById('cropImage');
@@ -228,7 +228,7 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
     cropper = new Cropper(cropImage, { viewMode: 1, autoCropArea: 1 });
   };
   reader.readAsDataURL(file);
-  e.target.value = ''; // リセット
+  e.target.value = '';
 });
 
 document.getElementById('cropCancel').addEventListener('click', () => {
@@ -238,7 +238,6 @@ document.getElementById('cropCancel').addEventListener('click', () => {
 
 document.getElementById('cropConfirm').addEventListener('click', () => {
   if (!cropper) return;
-  // リソース節約のため最大800pxにリサイズして切り抜き
   const canvas = cropper.getCroppedCanvas({ maxWidth: 800, maxHeight: 800 });
   const base64 = canvas.toDataURL('image/png');
   cropModal.classList.remove('active');
@@ -255,18 +254,15 @@ document.getElementById('cropConfirm').addEventListener('click', () => {
   };
   appData.images.push(newItem);
   appData.currentId = newItem.id;
-  renderGallery();
-  loadCurrentItem();
+  renderGallery(); loadCurrentItem();
 });
 
-// --- ギャラリー＆状態更新ロジック ---
 function renderGallery() {
   const list = document.getElementById('galleryList');
   list.innerHTML = '';
   appData.images.forEach(item => {
     const img = document.createElement('img');
     img.className = `gallery-item ${item.id === appData.currentId ? 'active' : ''}`;
-    // サムネイルは最終結果か、なければオリジナル
     img.src = item.finalBase64 || item.originalBase64;
     img.onclick = () => { appData.currentId = item.id; renderGallery(); loadCurrentItem(); };
     list.appendChild(img);
@@ -282,7 +278,6 @@ function loadCurrentItem() {
     originalImageData = null;
     return;
   }
-  // UIに設定を復元
   document.getElementById('colorSteps').value = item.settings.colorSteps;
   document.getElementById('edgeThreshold').value = item.settings.edgeThreshold;
   document.getElementById('bgColor').value = item.settings.bgColor;
@@ -303,12 +298,11 @@ function loadCurrentItem() {
     
     ctxOrig.drawImage(img, 0, 0);
     originalImageData = ctxOrig.getImageData(0, 0, currentWidth, currentHeight);
-    processImage(); // 再描画
+    processImage(); 
   };
   img.src = item.originalBase64;
 }
 
-// --- 画像処理ロジック (コア) ---
 function hexToRgb(hex) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : { r: 255, g: 255, b: 255 };
@@ -318,9 +312,8 @@ function processImage() {
   if (!originalImageData) return;
   const steps = parseInt(document.getElementById('colorSteps').value, 10);
   const threshold = parseInt(document.getElementById('edgeThreshold').value, 10);
-  const bgColorHex = document.getElementById('bgColor').value;
+  const customBg = hexToRgb(document.getElementById('bgColor').value);
   const isTransparent = document.getElementById('bgTransparent').checked;
-  const customBg = hexToRgb(bgColorHex);
   const w = currentWidth; const h = currentHeight;
   
   const colorData = new Uint8ClampedArray(originalImageData.data);
@@ -362,8 +355,6 @@ function processImage() {
     }
   }
   ctxLine.putImageData(lineImgData, 0, 0);
-  
-  // 現在の設定と完成画像をStateに保存
   saveCurrentState();
 }
 
@@ -380,7 +371,6 @@ function saveCurrentState() {
     lineAlpha: document.getElementById('lineAlpha').value
   };
   
-  // 見た目通りの合成画像を生成して保存
   const tempCanvas = document.createElement('canvas');
   tempCanvas.width = currentWidth; tempCanvas.height = currentHeight;
   const ctx = tempCanvas.getContext('2d');
@@ -390,13 +380,10 @@ function saveCurrentState() {
   if (item.settings.lineAlpha > 0) { ctx.globalAlpha = item.settings.lineAlpha / 100; ctx.drawImage(cLine, 0, 0); }
   
   item.finalBase64 = tempCanvas.toDataURL('image/png');
-  
-  // ギャラリーのサムネイルだけを静かに更新
   const activeThumb = document.querySelector('.gallery-item.active');
   if(activeThumb) activeThumb.src = item.finalBase64;
 }
 
-// パラメータ変更イベント
 ['colorSteps', 'edgeThreshold'].forEach(id => {
   document.getElementById(id).addEventListener('input', (e) => {
     document.getElementById(id === 'colorSteps' ? 'colorVal' : 'edgeVal').innerText = e.target.value;
@@ -422,12 +409,9 @@ alphaControls.forEach(ctrl => {
 function updateUIValues() {
   document.getElementById('colorVal').innerText = document.getElementById('colorSteps').value;
   document.getElementById('edgeVal').innerText = document.getElementById('edgeThreshold').value;
-  alphaControls.forEach(ctrl => {
-    document.getElementById(ctrl.label).innerText = document.getElementById(ctrl.id).value + '%';
-  });
+  alphaControls.forEach(ctrl => { document.getElementById(ctrl.label).innerText = document.getElementById(ctrl.id).value + '%'; });
 }
 
-// --- ボタン機能 ---
 document.getElementById('deleteImgBtn').addEventListener('click', () => {
   if(!appData.currentId) return;
   appData.images = appData.images.filter(i => i.id !== appData.currentId);
@@ -444,18 +428,32 @@ document.getElementById('downloadPngBtn').addEventListener('click', () => {
   link.click();
 });
 
-// JSONエクスポート (セーブ)
+// --- 新規追加：SVGエクスポート機能 ---
+document.getElementById('downloadSvgBtn').addEventListener('click', () => {
+  const item = appData.images.find(i => i.id === appData.currentId);
+  if (!item) return alert('画像がありません。');
+  
+  // 現在の画像をSVG空間に埋め込む手法
+  const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${currentWidth}" height="${currentHeight}">
+    <image href="${item.finalBase64}" width="${currentWidth}" height="${currentHeight}"/>
+  </svg>`;
+  
+  const blob = new Blob([svgString], {type: "image/svg+xml"});
+  const link = document.createElement('a');
+  link.download = `draft_${item.id}.svg`;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+});
+
 document.getElementById('saveDataBtn').addEventListener('click', () => {
   if (appData.images.length === 0) return alert('保存するデータがありません。');
-  const jsonStr = JSON.stringify(appData);
-  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(appData)], { type: 'application/json' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = `studio_project_${Date.now()}.json`;
   link.click();
 });
 
-// JSONインポート (ロード)
 document.getElementById('loadDataInput').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -463,17 +461,13 @@ document.getElementById('loadDataInput').addEventListener('change', (e) => {
   reader.onload = (event) => {
     try {
       const data = JSON.parse(event.target.result);
-      if (data && data.images) {
-        appData = data;
-        renderGallery(); loadCurrentItem();
-      }
+      if (data && data.images) { appData = data; renderGallery(); loadCurrentItem(); }
     } catch (err) { alert('不正なファイル形式です。'); }
   };
   reader.readText(file);
   e.target.value = '';
 });
 
-// PDFエクスポート
 document.getElementById('exportPdfBtn').addEventListener('click', () => {
   if (appData.images.length === 0) return alert('PDF化する画像がありません。');
   const { jsPDF } = window.jspdf;
@@ -483,22 +477,15 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
 
   appData.images.forEach((item, index) => {
     if (index > 0) pdf.addPage();
-    // Base64からサイズを取得して比率を維持
     const imgProps = pdf.getImageProperties(item.finalBase64);
     const ratio = imgProps.width / imgProps.height;
-    let finalWidth = pdfWidth - 20; // 余白10mmずつ
+    let finalWidth = pdfWidth - 20;
     let finalHeight = finalWidth / ratio;
-    
-    if (finalHeight > pdfHeight - 20) {
-      finalHeight = pdfHeight - 20;
-      finalWidth = finalHeight * ratio;
-    }
+    if (finalHeight > pdfHeight - 20) { finalHeight = pdfHeight - 20; finalWidth = finalHeight * ratio; }
     const x = (pdfWidth - finalWidth) / 2;
     const y = (pdfHeight - finalHeight) / 2;
-    
     pdf.addImage(item.finalBase64, 'PNG', x, y, finalWidth, finalHeight);
   });
-  
   pdf.save(`draft_book_${Date.now()}.pdf`);
 });
 </script>
