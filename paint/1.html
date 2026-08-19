@@ -20,6 +20,7 @@
       margin: 0; padding: 0; background-color: var(--bg); color: var(--text);
       font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column;
       height: 100dvh;
+      -webkit-touch-callout: none; /* 全体の長押しを禁止 */
     }
 
     .app-container { display: flex; flex-direction: column; height: 100%; width: 100%; }
@@ -30,10 +31,16 @@
       background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
     }
 
-    canvas { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
-    #originalCanvas { position: absolute; z-index: 1; }
-    #colorCanvas { position: absolute; z-index: 2; pointer-events: none; }
-    #lineCanvas { position: absolute; z-index: 3; pointer-events: none; }
+    /* 変更点: キャンバスは処理用として裏に隠す */
+    canvas { display: none; }
+    
+    /* 変更点: 表示と長押し保存用の実体画像 */
+    #touchExportImage {
+      max-width: 100%; max-height: 100%; object-fit: contain; display: block; z-index: 10;
+      -webkit-touch-callout: default !important; /* ここだけスマホの長押しメニューを許可 */
+      pointer-events: auto;
+    }
+
     .canvas-wrapper { position: relative; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; }
 
     .ui-container { position: relative; background: var(--card); border-top: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
@@ -69,19 +76,10 @@
     .gallery-item { width: 60px; height: 60px; border-radius: 4px; border: 2px solid transparent; cursor: pointer; object-fit: cover; flex-shrink: 0; background: #111; }
     .gallery-item.active { border-color: var(--accent); }
     
-    /* フルスクリーン・モーダル用（トリミング & 保存用） */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; }
-    .modal.active { display: flex; }
-    
-    /* 保存プレビュー用モーダル */
-    .save-modal-content { background: var(--card); padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; box-sizing: border-box; }
-    .save-modal-content h3 { margin-top: 0; margin-bottom: 8px; color: var(--text); }
-    .save-modal-content p { font-size: 13px; color: #ffeb3b; margin-bottom: 16px; line-height: 1.4; }
-    #resultImageContainer { flex: 1; display: flex; justify-content: center; align-items: center; background: #fff; padding: 10px; border-radius: 4px; overflow: hidden; margin-bottom: 16px; }
-    #resultImageContainer img { max-width: 100%; max-height: 50vh; object-fit: contain; }
-
-    .crop-container { flex: 1; overflow: hidden; background: #111; width: 100%; }
-    .crop-actions { display: flex; padding: 16px; gap: 10px; background: #222; width: 100%; box-sizing: border-box; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+    #cropModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; }
+    #cropModal.active { display: flex; }
+    .crop-container { flex: 1; overflow: hidden; background: #111; }
+    .crop-actions { display: flex; padding: 16px; gap: 10px; background: #222; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
 
     @media (min-width: 768px) {
       .app-container { flex-direction: row-reverse; }
@@ -94,8 +92,7 @@
 </head>
 <body>
 
-<!-- トリミングモーダル -->
-<div id="cropModal" class="modal">
+<div id="cropModal">
   <div class="crop-container"><img id="cropImage" src="" alt="Picture"></div>
   <div class="crop-actions">
     <button class="btn btn-outline" id="cropCancel">キャンセル</button>
@@ -103,22 +100,15 @@
   </div>
 </div>
 
-<!-- 保存回避用モーダル（確実な長押し保存用） -->
-<div id="saveResultModal" class="modal">
-  <div class="save-modal-content">
-    <h3>✅ 画像を生成しました</h3>
-    <p>自動ダウンロードが始まらない場合は、下の画像を<strong>長押し</strong>して「写真に追加」または「画像を保存」を選択してください。</p>
-    <div id="resultImageContainer"></div>
-    <button class="btn btn-outline" id="closeSaveModal">閉じる</button>
-  </div>
-</div>
-
 <div class="app-container">
   <div class="viewport">
     <div class="canvas-wrapper">
+      <!-- 処理用の隠しキャンバス -->
       <canvas id="originalCanvas"></canvas>
       <canvas id="colorCanvas"></canvas>
       <canvas id="lineCanvas"></canvas>
+      <!-- 表示＆長押し保存用画像 -->
+      <img id="touchExportImage" alt="💡画像を長押しして「写真に追加」できます">
     </div>
   </div>
 
@@ -141,9 +131,16 @@
       </div>
 
       <div class="panel" id="panel-image">
-        <button class="btn btn-success" id="downloadPngBtn">⬇️ 画像を保存 (PNG)</button>
-        <button class="btn btn-success" id="downloadSvgBtn" style="margin-top: 8px;">♾️ 画像を保存 (SVG)</button>
+        <!-- 案内文を追加 -->
+        <div style="text-align:center; color:#4caf50; font-size:13px; font-weight:bold; margin-bottom:4px;">
+          💡 画面の画像を長押しで写真に保存できます
+        </div>
+        
+        <!-- PC・Android向けのDLボタンは残す -->
+        <button class="btn btn-outline" id="downloadPngBtn">⬇️ 画像を直接ダウンロード (PC用)</button>
+        <button class="btn btn-outline" id="downloadSvgBtn" style="margin-top: 8px;">♾️ SVGでダウンロード</button>
         <button class="btn btn-danger" id="deleteImgBtn" style="margin-top: 8px;">🗑️ 現在の画像を削除</button>
+        
         <div class="control-item" style="margin-top: 10px;">
           <div class="control-header"><span>元画像 不透明度</span><span id="origAlphaVal">100%</span></div>
           <input type="range" id="origAlpha" min="0" max="100" value="100">
@@ -196,7 +193,6 @@ let appData = { images: [], currentId: null };
 let currentWidth = 0; let currentHeight = 0;
 let originalImageData = null;
 
-// UI タブ切替
 const toolBtns = document.querySelectorAll('.tool-btn');
 const panels = document.querySelectorAll('.panel');
 const panelsContainer = document.getElementById('panelsContainer');
@@ -225,6 +221,7 @@ const cLine = document.getElementById('lineCanvas');
 const ctxOrig = cOrig.getContext('2d', { willReadFrequently: true });
 const ctxColor = cColor.getContext('2d', { willReadFrequently: true });
 const ctxLine = cLine.getContext('2d', { willReadFrequently: true });
+const touchExportImage = document.getElementById('touchExportImage');
 
 let cropper = null;
 const cropModal = document.getElementById('cropModal');
@@ -288,6 +285,7 @@ function loadCurrentItem() {
     ctxOrig.clearRect(0,0,cOrig.width,cOrig.height);
     ctxColor.clearRect(0,0,cColor.width,cColor.height);
     ctxLine.clearRect(0,0,cLine.width,cLine.height);
+    touchExportImage.src = "";
     originalImageData = null;
     return;
   }
@@ -305,9 +303,6 @@ function loadCurrentItem() {
   img.onload = () => {
     currentWidth = img.width; currentHeight = img.height;
     [cOrig, cColor, cLine].forEach(c => { c.width = currentWidth; c.height = currentHeight; });
-    cOrig.style.opacity = item.settings.origAlpha / 100;
-    cColor.style.opacity = item.settings.colorAlpha / 100;
-    cLine.style.opacity = item.settings.lineAlpha / 100;
     
     ctxOrig.drawImage(img, 0, 0);
     originalImageData = ctxOrig.getImageData(0, 0, currentWidth, currentHeight);
@@ -393,6 +388,10 @@ function saveCurrentState() {
   if (item.settings.lineAlpha > 0) { ctx.globalAlpha = item.settings.lineAlpha / 100; ctx.drawImage(cLine, 0, 0); }
   
   item.finalBase64 = tempCanvas.toDataURL('image/png');
+  
+  // 常に表示されている img タグに流し込む（これが長押し保存を可能にします）
+  touchExportImage.src = item.finalBase64;
+  
   const activeThumb = document.querySelector('.gallery-item.active');
   if(activeThumb) activeThumb.src = item.finalBase64;
 }
@@ -407,15 +406,14 @@ document.getElementById('bgColor').addEventListener('input', processImage);
 document.getElementById('bgTransparent').addEventListener('change', processImage);
 
 const alphaControls = [
-  { id: 'origAlpha', target: cOrig, label: 'origAlphaVal' },
-  { id: 'colorAlpha', target: cColor, label: 'colorAlphaVal' },
-  { id: 'lineAlpha', target: cLine, label: 'lineAlphaVal' }
+  { id: 'origAlpha', label: 'origAlphaVal' },
+  { id: 'colorAlpha', label: 'colorAlphaVal' },
+  { id: 'lineAlpha', label: 'lineAlphaVal' }
 ];
 alphaControls.forEach(ctrl => {
   document.getElementById(ctrl.id).addEventListener('input', (e) => {
     document.getElementById(ctrl.label).innerText = e.target.value + '%';
-    ctrl.target.style.opacity = e.target.value / 100;
-    saveCurrentState();
+    saveCurrentState(); // キャンバスのCSSを弄るのをやめて、実体画像を即座に再生成する
   });
 });
 
@@ -433,30 +431,13 @@ document.getElementById('deleteImgBtn').addEventListener('click', () => {
 });
 
 // ==========================================
-// 確実なダウンロード ＆ 長押し保存モーダル処理
+// PC/一部Android向けの直接ダウンロード機能
 // ==========================================
-
-const saveResultModal = document.getElementById('saveResultModal');
-const resultImageContainer = document.getElementById('resultImageContainer');
-
-document.getElementById('closeSaveModal').addEventListener('click', () => {
-  saveResultModal.classList.remove('active');
-});
-
-function showSaveModal(dataUri) {
-  resultImageContainer.innerHTML = ''; // クリア
-  const img = new Image();
-  img.src = dataUri;
-  resultImageContainer.appendChild(img);
-  saveResultModal.classList.add('active');
-}
-
 function triggerDownload(url, filename) {
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
   document.body.appendChild(link); 
-  // 一部のブラウザがDOM更新を待つためにsetTimeoutでクリック
   setTimeout(() => {
     link.click();
     setTimeout(() => document.body.removeChild(link), 1000);
@@ -467,7 +448,6 @@ document.getElementById('downloadPngBtn').addEventListener('click', () => {
   const item = appData.images.find(i => i.id === appData.currentId);
   if (!item || !item.finalBase64) return alert('画像がありません。');
   
-  // 1. 自動ダウンロードを試みる
   try {
     const arr = item.finalBase64.split(',');
     const mime = arr[0].match(/:(.*?);/)[1];
@@ -478,11 +458,8 @@ document.getElementById('downloadPngBtn').addEventListener('click', () => {
     const blob = new Blob([u8arr], {type: mime});
     const url = URL.createObjectURL(blob);
     triggerDownload(url, `draft_${item.id}.png`);
-    setTimeout(() => URL.revokeObjectURL(url), 10000); // 余裕を持って解放
-  } catch (e) { console.error("Auto download failed", e); }
-  
-  // 2. 確実に保存させるためのプレビューモーダルを表示
-  showSaveModal(item.finalBase64);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch (e) { alert("ダウンロードに失敗しました。画像を直接長押しして保存してください。"); }
 });
 
 document.getElementById('downloadSvgBtn').addEventListener('click', () => {
@@ -493,17 +470,12 @@ document.getElementById('downloadSvgBtn').addEventListener('click', () => {
     <image href="${item.finalBase64}" width="${currentWidth}" height="${currentHeight}"/>
   </svg>`;
   
-  // 1. 自動ダウンロード
   try {
     const blob = new Blob([svgString], {type: "image/svg+xml"});
     const url = URL.createObjectURL(blob);
     triggerDownload(url, `draft_${item.id}.svg`);
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   } catch(e) { console.error(e); }
-
-  // 2. モーダル用にData URIへ変換して表示（長押し保存可能にする）
-  const svgDataUri = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgString);
-  showSaveModal(svgDataUri);
 });
 
 document.getElementById('saveDataBtn').addEventListener('click', () => {
