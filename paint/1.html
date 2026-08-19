@@ -2,152 +2,217 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2D下書き・構図ジェネレーター (完成版)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>2D下書き・構図ジェネレーター (プロ仕様UI版)</title>
   <style>
     /* 
     ================================================
     開発日記ログ (統合版)
-    日時: 2026年8月20日 05:06 JST  
-    タイトル: 写真からの2D下書き線抽出ツールの変遷と完成
+    日時: 2026年8月20日 05:17 JST  
+    タイトル: 背景色カスタム機能とアイビスペイント風UIへの刷新
     
     【これまでの開発経緯と決定事項】
     1. プロジェクト開始:
        生成AIを使わず、写真からイラストのアタリや主線となる美しい線を抽出する軽量ツールの作成を開始。
-    2. 画像処理エンジンの挫折と転換:
-       当初はOpenCV.js（DoG法など）を導入したが、スマホブラウザ（Safari等）では9MBの通信やメモリ制限によりロードが停止する致命的な問題が発生。
-       ネット回線に依存する設計を放棄し、HTML+Vanilla JS（標準Canvas API）のみで完結する超軽量・オフライン動作型へと方針を大転換した。
-    3. 最終UI・機能の実装 (今回):
-       - レイヤー構造を3層（下から：元画像、カラー面、線画）に拡張。
-       - それぞれの不透明度を個別に調整可能にし、トレース台のような使い勝手を実現。
-       - カラー単純化のレベル1を「白背景（カラー面なし）」として定義。これにより、「うっすら透かした元画像 ＋ 抽出した黒線」という下書きに最適な表示モードを可能にした。
+    2. エンジンの挫折と完全オフライン化:
+       OpenCV.jsのスマホでの通信・メモリ問題を回避するため、外部通信を放棄。HTML+Vanilla JS（Canvas API）のみで完結する超軽量・オフライン動作型へ大転換。
+    3. UIのプロ仕様化と新機能 (今回):
+       - 課題: 設定スライダーが増えすぎ、画面を圧迫していた。
+       - 解決: アイビスペイントのような「ツールバー切替式」のUIを採用。スマホでは下部固定バーからポップアップ、PCでは左サイドバーとして自動レイアウトされるレスポンシブ設計を導入。
+       - 新機能: 「カラー単純化レベル1（ベタ塗り）」の際、背景色をカラーピッカーで自由に変更できる機能を追加。トレースや下書き時の視認性が劇的に向上した。
     ================================================
     */
 
     :root {
-      --bg: #1e1e24;
+      --bg: #18181c;
       --card: #2b2b36;
       --text: #f0f0f5;
       --accent: #4f8cff;
+      --accent-hover: #3a6ecc;
+      --border: #3e3e4a;
+      --ui-height: 60px; /* スマホ用下部バーの高さ */
     }
+    
     body {
       margin: 0;
-      padding: 20px;
+      padding: 0;
       background-color: var(--bg);
       color: var(--text);
       font-family: sans-serif;
-    }
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
+      overflow: hidden; /* スクロール禁止（アプリ風） */
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      height: 100vh;
     }
-    .controls {
-      background: var(--card);
-      padding: 16px;
-      border-radius: 8px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      align-items: center;
-    }
-    .control-item {
+
+    /* 
+     * --- レイアウト（スマホデフォルト） ---
+     */
+    .app-container {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      font-size: 14px;
+      height: 100%;
+      width: 100%;
     }
+
     .viewport {
+      flex: 1;
       position: relative;
       background: #111;
-      border-radius: 8px;
-      overflow: hidden;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 400px;
-      /* チェッカーボードパターン（透過確認用） */
+      overflow: hidden;
+      /* 透過確認用チェッカーボード */
       background-image: 
-        linear-gradient(45deg, #333 25%, transparent 25%), 
-        linear-gradient(-45deg, #333 25%, transparent 25%), 
-        linear-gradient(45deg, transparent 75%, #333 75%), 
-        linear-gradient(-45deg, transparent 75%, #333 75%);
+        linear-gradient(45deg, #222 25%, transparent 25%), 
+        linear-gradient(-45deg, #222 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #222 75%), 
+        linear-gradient(-45deg, transparent 75%, #222 75%);
       background-size: 20px 20px;
       background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
     }
+
     canvas {
       max-width: 100%;
-      height: auto;
+      max-height: 100%;
+      object-fit: contain;
       display: block;
     }
-    /* レイヤーの重なり順を設定 */
-    #originalCanvas {
-      position: relative;
-      z-index: 1;
-    }
-    #colorCanvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 2;
-      pointer-events: none;
-    }
-    #lineCanvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 3;
-      pointer-events: none;
-    }
+
+    #originalCanvas { position: absolute; z-index: 1; }
+    #colorCanvas { position: absolute; z-index: 2; pointer-events: none; }
+    #lineCanvas { position: absolute; z-index: 3; pointer-events: none; }
     .canvas-wrapper {
       position: relative;
-      display: inline-block;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
     }
-    input[type="file"] {
+
+    /* UIコンテナ (パネル + ツールバー) */
+    .ui-container {
+      position: relative;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    /* パネル部分 (スマホではツールバーの上にポップアップ風に出る) */
+    .panels {
+      display: none; /* デフォルト非表示。ボタン押下で表示 */
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px;
+      max-height: 30vh;
+      overflow-y: auto;
+    }
+    .panels.active {
+      display: block;
+    }
+
+    .panel {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .panel.active {
+      display: flex;
+    }
+
+    /* ツールバー (最下部固定) */
+    .toolbar {
+      display: flex;
+      height: var(--ui-height);
+      background: #1e1e24;
+    }
+    .tool-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      border-right: 1px solid var(--border);
+    }
+    .tool-btn:last-child { border-right: none; }
+    .tool-btn.active { background: var(--card); color: var(--accent); font-weight: bold; }
+    .tool-icon { font-size: 20px; }
+
+    /* コントロール部品 */
+    .control-item { display: flex; flex-direction: column; gap: 8px; }
+    .control-header { display: flex; justify-content: space-between; font-size: 14px; }
+    input[type="range"] { width: 100%; }
+    
+    .btn-primary, .file-label {
       background: var(--accent);
       color: #fff;
       border: none;
-      padding: 8px 12px;
+      padding: 10px 16px;
       border-radius: 4px;
       cursor: pointer;
+      text-align: center;
+      font-weight: bold;
+      display: block;
+    }
+    .btn-primary:active, .file-label:active { background: var(--accent-hover); }
+    input[type="file"] { display: none; }
+
+    /* 色選択UI */
+    .color-picker-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 0;
+      background: none;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch { border: 1px solid var(--border); border-radius: 4px; }
+
+    /* 
+     * --- レイアウト（PC向け上書き） ---
+     */
+    @media (min-width: 768px) {
+      .app-container { flex-direction: row-reverse; } /* 左キャンバス、右サイドバー */
+      .ui-container {
+        width: 320px;
+        height: 100%;
+        border-top: none;
+        border-left: 1px solid var(--border);
+        flex-direction: column-reverse; /* ツールバーを上に */
+      }
+      .toolbar { border-bottom: 1px solid var(--border); height: 70px; }
+      .panels {
+        display: block; /* PCでは常に表示 */
+        flex: 1;
+        border-bottom: none;
+        max-height: none;
+      }
     }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>下書き・構図抽出 (超軽量・3レイヤー版)</h2>
-
-  <div class="controls">
-    <div class="control-item">
-      <label>画像を選択 / 撮影</label>
-      <input type="file" id="fileInput" accept="image/*">
-    </div>
-    <div class="control-item">
-      <label>面(カラー)の単純化: <span id="colorVal">4</span></label>
-      <input type="range" id="colorSteps" min="1" max="8" value="4">
-      <small style="color:#aaa; font-size:10px;">※1は白背景(線のみ抽出用)</small>
-    </div>
-    <div class="control-item">
-      <label>線の抽出感度: <span id="edgeVal">50</span></label>
-      <input type="range" id="edgeThreshold" min="10" max="150" value="50">
-    </div>
-    <div class="control-item">
-      <label>元画像 不透明度: <span id="origAlphaVal">100%</span></label>
-      <input type="range" id="origAlpha" min="0" max="100" value="100">
-    </div>
-    <div class="control-item">
-      <label>カラー面 不透明度: <span id="colorAlphaVal">100%</span></label>
-      <input type="range" id="colorAlpha" min="0" max="100" value="100">
-    </div>
-    <div class="control-item">
-      <label>線画レイヤー 不透明度: <span id="lineAlphaVal">100%</span></label>
-      <input type="range" id="lineAlpha" min="0" max="100" value="100">
-    </div>
-  </div>
-
+<div class="app-container">
+  
+  <!-- キャンバスエリア -->
   <div class="viewport">
     <div class="canvas-wrapper">
       <canvas id="originalCanvas"></canvas>
@@ -155,9 +220,133 @@
       <canvas id="lineCanvas"></canvas>
     </div>
   </div>
+
+  <!-- UIエリア -->
+  <div class="ui-container">
+    
+    <!-- 設定パネル群 -->
+    <div class="panels" id="panelsContainer">
+      
+      <!-- 画像パネル -->
+      <div class="panel" id="panel-image">
+        <label class="file-label">
+          📁 画像を選択 / 撮影
+          <input type="file" id="fileInput" accept="image/*">
+        </label>
+        <div class="control-item" style="margin-top: 10px;">
+          <div class="control-header">
+            <span>元画像 不透明度</span>
+            <span id="origAlphaVal">100%</span>
+          </div>
+          <input type="range" id="origAlpha" min="0" max="100" value="100">
+        </div>
+      </div>
+
+      <!-- カラーパネル -->
+      <div class="panel" id="panel-color">
+        <div class="control-item">
+          <div class="control-header">
+            <span>面の単純化 (1でベタ塗り背景)</span>
+            <span id="colorVal">4</span>
+          </div>
+          <input type="range" id="colorSteps" min="1" max="8" value="4">
+        </div>
+        
+        <div class="control-item">
+          <div class="control-header">
+            <span>カスタム背景色 (単純化1の時のみ)</span>
+          </div>
+          <div class="color-picker-wrap">
+            <input type="color" id="bgColor" value="#ffffff">
+            <span style="font-size: 12px; color: #aaa;">線画だけの時はここを変更</span>
+          </div>
+        </div>
+
+        <div class="control-item">
+          <div class="control-header">
+            <span>カラー面 不透明度</span>
+            <span id="colorAlphaVal">100%</span>
+          </div>
+          <input type="range" id="colorAlpha" min="0" max="100" value="100">
+        </div>
+      </div>
+
+      <!-- 線画パネル -->
+      <div class="panel" id="panel-line">
+        <div class="control-item">
+          <div class="control-header">
+            <span>線の抽出感度 (値が小さいほど線が増える)</span>
+            <span id="edgeVal">50</span>
+          </div>
+          <input type="range" id="edgeThreshold" min="10" max="150" value="50">
+        </div>
+        <div class="control-item">
+          <div class="control-header">
+            <span>線画 不透明度</span>
+            <span id="lineAlphaVal">100%</span>
+          </div>
+          <input type="range" id="lineAlpha" min="0" max="100" value="100">
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ツールバー (切替ボタン) -->
+    <div class="toolbar">
+      <button class="tool-btn" data-target="panel-image">
+        <span class="tool-icon">🖼️</span>
+        <span>画像</span>
+      </button>
+      <button class="tool-btn" data-target="panel-color">
+        <span class="tool-icon">🎨</span>
+        <span>カラー/背景</span>
+      </button>
+      <button class="tool-btn" data-target="panel-line">
+        <span class="tool-icon">✒️</span>
+        <span>線画</span>
+      </button>
+    </div>
+
+  </div>
+
 </div>
 
 <script>
+// --- UI タブ切替ロジック (アイビスペイント風) ---
+const toolBtns = document.querySelectorAll('.tool-btn');
+const panels = document.querySelectorAll('.panel');
+const panelsContainer = document.getElementById('panelsContainer');
+
+toolBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.getAttribute('data-target');
+    const isMobile = window.innerWidth < 768;
+    
+    // 既にアクティブなボタンをスマホで押した場合は閉じる
+    if (isMobile && btn.classList.contains('active')) {
+      btn.classList.remove('active');
+      panelsContainer.classList.remove('active');
+      document.getElementById(targetId).classList.remove('active');
+      return;
+    }
+
+    // 全リセット
+    toolBtns.forEach(b => b.classList.remove('active'));
+    panels.forEach(p => p.classList.remove('active'));
+
+    // 対象をアクティブ化
+    btn.classList.add('active');
+    panelsContainer.classList.add('active');
+    document.getElementById(targetId).classList.add('active');
+  });
+});
+
+// 初期状態：PCなら「画像パネル」を開いておく
+if (window.innerWidth >= 768) {
+  document.querySelector('[data-target="panel-image"]').click();
+}
+
+// --- 画像処理ロジック ---
 const fileInput = document.getElementById('fileInput');
 const originalCanvas = document.getElementById('originalCanvas');
 const colorCanvas = document.getElementById('colorCanvas');
@@ -179,7 +368,7 @@ fileInput.addEventListener('change', (e) => {
   img.onload = () => {
     let w = img.width;
     let h = img.height;
-    const maxDim = 800; // 軽量なので少し解像度を上げました
+    const maxDim = 800;
     if (w > maxDim || h > maxDim) {
       if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
       else { w = Math.round((w * maxDim) / h); h = maxDim; }
@@ -188,20 +377,33 @@ fileInput.addEventListener('change', (e) => {
     currentWidth = w;
     currentHeight = h;
     
-    // 3つのキャンバスのサイズを同期
     [originalCanvas, colorCanvas, lineCanvas].forEach(c => {
       c.width = w;
       c.height = h;
     });
 
-    // 元画像を描画して保存
     ctxOrig.drawImage(img, 0, 0, w, h);
     originalImageData = ctxOrig.getImageData(0, 0, w, h);
+
+    // 画像読み込み後、自動でカラーパネルを開く(スマホ操作性向上)
+    if (window.innerWidth < 768) {
+      document.querySelector('[data-target="panel-color"]').click();
+    }
 
     processImage();
   };
   img.src = URL.createObjectURL(file);
 });
+
+// HEXカラーをRGBに変換
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : { r: 255, g: 255, b: 255 };
+}
 
 function processImage() {
   if (!originalImageData) return;
@@ -209,32 +411,33 @@ function processImage() {
   const steps = parseInt(document.getElementById('colorSteps').value, 10);
   const threshold = parseInt(document.getElementById('edgeThreshold').value, 10);
   
+  // カスタム背景色の取得
+  const bgColorHex = document.getElementById('bgColor').value;
+  const customBg = hexToRgb(bgColorHex);
+
   const w = currentWidth;
   const h = currentHeight;
   
   const colorData = new Uint8ClampedArray(originalImageData.data);
   const lineImgData = ctxLine.createImageData(w, h);
   const lineData = lineImgData.data;
-  
   const gray = new Uint8Array(w * h);
 
-  // 1. カラー単純化（ステップ1の場合は真っ白にする）
+  // 1. カラー単純化（ステップ1の場合はカスタム背景色で埋める）
   for (let i = 0; i < colorData.length; i += 4) {
     let r = colorData[i];
     let g = colorData[i+1];
     let b = colorData[i+2];
     
-    // 線画抽出用のグレースケールデータを作成
     gray[i/4] = r * 0.299 + g * 0.587 + b * 0.114;
 
     if (steps === 1) {
-      // レベル1: 白背景（カラー面を描画しない代わりに白で埋める）
-      colorData[i] = 255;
-      colorData[i+1] = 255;
-      colorData[i+2] = 255;
+      // 好きな色を背景に適用
+      colorData[i] = customBg.r;
+      colorData[i+1] = customBg.g;
+      colorData[i+2] = customBg.b;
       colorData[i+3] = 255;
     } else {
-      // レベル2以降: 段階的なポスタリゼーション
       const stepFactor = 255 / (steps - 1);
       colorData[i]   = Math.round(r / stepFactor) * stepFactor;
       colorData[i+1] = Math.round(g / stepFactor) * stepFactor;
@@ -269,13 +472,11 @@ function processImage() {
       const i = (y * w + x) * 4;
       
       if (magnitude > threshold) {
-        // 線部分は黒
         lineData[i] = 0;
         lineData[i+1] = 0;
         lineData[i+2] = 0;
         lineData[i+3] = 255;
       } else {
-        // 背景は透明
         lineData[i+3] = 0;
       }
     }
@@ -291,6 +492,9 @@ function processImage() {
     processImage();
   });
 });
+
+// 背景色変更イベント
+document.getElementById('bgColor').addEventListener('input', processImage);
 
 // 不透明度スライダーの連動
 const alphaControls = [
