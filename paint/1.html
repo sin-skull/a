@@ -3,33 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2D下書き・構図ジェネレーター (ロード対策版)</title>
+  <title>2D下書き・構図ジェネレーター (超軽量・外部通信なし版)</title>
   <style>
-    /* 
-    ================================================
-    開発日記ログ
-    日時: 2026年8月20日 05:00 JST  
-    タイトル: モバイル環境でのOpenCVロード停止問題の突破
-    
-    【今回の決定・変更事項】
-    1. エンジン配信元の変更 (突破の根拠): 
-       重くてタイムアウトしやすい公式 (docs.opencv.org) から、
-       高速で安定したCDN (jsdelivr / @techstark/opencv-js) に変更。
-    2. ロード状態の可視化:
-       画面上部に「エンジン読込中...」等のステータスを表示し、
-       いつ画像を選択して良いか、エラーが起きたかをユーザーが視認できるように改修。
-    3. エラーハンドリングの追加:
-       `onerror` イベントを追加し、読み込み失敗時に理由を表示。
-    ================================================
-    */
-
     :root {
       --bg: #1e1e24;
       --card: #2b2b36;
       --text: #f0f0f5;
       --accent: #4f8cff;
-      --warning: #ff4f4f;
-      --success: #4fff8c;
     }
     body {
       margin: 0;
@@ -44,18 +24,6 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
-    }
-    #statusBanner {
-      background: var(--warning);
-      color: #fff;
-      padding: 10px;
-      border-radius: 8px;
-      text-align: center;
-      font-weight: bold;
-    }
-    .ready {
-      background: var(--success) !important;
-      color: #000 !important;
     }
     .controls {
       background: var(--card);
@@ -82,18 +50,6 @@
       align-items: center;
       min-height: 400px;
     }
-    #loading {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.7);
-      padding: 20px;
-      border-radius: 8px;
-      font-weight: bold;
-      z-index: 10;
-      display: none;
-    }
     canvas {
       max-width: 100%;
       height: auto;
@@ -103,14 +59,13 @@
       position: absolute;
       top: 0;
       left: 0;
-      mix-blend-mode: multiply;
       pointer-events: none;
     }
     .canvas-wrapper {
       position: relative;
       display: inline-block;
     }
-    button, input[type="file"] {
+    input[type="file"] {
       background: var(--accent);
       color: #fff;
       border: none;
@@ -119,33 +74,24 @@
       cursor: pointer;
     }
   </style>
-  <!-- 変更点: より安定・高速なCDNからOpenCV.jsを読み込む。エラー検知も追加 -->
-  <script async src="https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.9.0/dist/opencv.js" onload="onOpenCvReady();" onerror="onOpenCvError();" type="text/javascript"></script>
 </head>
 <body>
 
 <div class="container">
-  <h2>下書き・構図抽出ビューア</h2>
-  
-  <!-- 追加点: ロード状態を視覚的に表示するバナー -->
-  <div id="statusBanner">画像処理エンジンをダウンロード中...（数秒〜数十秒かかります）</div>
+  <h2>下書き・構図抽出 (超軽量版)</h2>
 
   <div class="controls">
     <div class="control-item">
       <label>画像を選択 / 撮影</label>
-      <input type="file" id="fileInput" accept="image/*" disabled> <!-- ロード完了まで無効化 -->
+      <input type="file" id="fileInput" accept="image/*">
     </div>
     <div class="control-item">
       <label>面(カラー)の単純化: <span id="colorVal">4</span></label>
       <input type="range" id="colorSteps" min="2" max="8" value="4">
     </div>
     <div class="control-item">
-      <label>主線の太さ: <span id="lineWeightVal">5</span></label>
-      <input type="range" id="lineWeight" min="3" max="15" step="2" value="5">
-    </div>
-    <div class="control-item">
-      <label>主線の濃さ: <span id="lineDarknessVal">3.0</span></label>
-      <input type="range" id="lineDarkness" min="1.0" max="10.0" step="0.5" value="3.0">
+      <label>線の抽出感度: <span id="edgeVal">50</span></label>
+      <input type="range" id="edgeThreshold" min="10" max="150" value="50">
     </div>
     <div class="control-item">
       <label>線画レイヤー不透明度: <span id="lineAlphaVal">100%</span></label>
@@ -154,8 +100,7 @@
   </div>
 
   <div class="viewport">
-    <div id="loading">処理中...</div>
-    <div class="canvas-wrapper" id="canvasWrapper">
+    <div class="canvas-wrapper">
       <canvas id="colorCanvas"></canvas>
       <canvas id="lineCanvas"></canvas>
     </div>
@@ -163,133 +108,127 @@
 </div>
 
 <script>
-let cvReady = false;
-let originalMat = null;
-
-const statusBanner = document.getElementById('statusBanner');
 const fileInput = document.getElementById('fileInput');
-
-function onOpenCvReady() {
-  cvReady = true;
-  statusBanner.innerText = "エンジンの準備完了！画像を選択してください。";
-  statusBanner.classList.add('ready');
-  fileInput.disabled = false; // ボタンを有効化
-  console.log("OpenCV.js is ready.");
-}
-
-function onOpenCvError() {
-  statusBanner.innerText = "エンジンの読み込みに失敗しました。ページをリロードするか、通信環境を確認してください。";
-  console.error("Failed to load OpenCV.js");
-}
-
 const colorCanvas = document.getElementById('colorCanvas');
 const lineCanvas = document.getElementById('lineCanvas');
-const loading = document.getElementById('loading');
+const ctxColor = colorCanvas.getContext('2d', { willReadFrequently: true });
+const ctxLine = lineCanvas.getContext('2d', { willReadFrequently: true });
+
+let originalImageData = null;
+let currentWidth = 0;
+let currentHeight = 0;
 
 fileInput.addEventListener('change', (e) => {
-  if (!cvReady) return alert("画像処理エンジンのロード中です。少々お待ちください。");
   const file = e.target.files[0];
   if (!file) return;
 
   const img = new Image();
   img.onload = () => {
+    // 処理を軽くするため最大600pxにリサイズ
     let w = img.width;
     let h = img.height;
-    const maxDim = 800; 
+    const maxDim = 600; 
     if (w > maxDim || h > maxDim) {
       if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
       else { w = Math.round((w * maxDim) / h); h = maxDim; }
     }
 
+    currentWidth = w;
+    currentHeight = h;
     colorCanvas.width = w;
     colorCanvas.height = h;
     lineCanvas.width = w;
     lineCanvas.height = h;
 
-    const ctx = colorCanvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, w, h);
-    
-    if (originalMat) originalMat.delete();
-    originalMat = cv.imread(colorCanvas);
+    ctxColor.drawImage(img, 0, 0, w, h);
+    originalImageData = ctxColor.getImageData(0, 0, w, h);
 
-    processLayers();
+    processImage();
   };
   img.src = URL.createObjectURL(file);
 });
 
-function processLayers() {
-  if (!originalMat) return;
+function processImage() {
+  if (!originalImageData) return;
+
+  const steps = parseInt(document.getElementById('colorSteps').value, 10);
+  const threshold = parseInt(document.getElementById('edgeThreshold').value, 10);
   
-  loading.style.display = 'block';
+  const w = currentWidth;
+  const h = currentHeight;
   
-  setTimeout(() => {
-    try {
-      // 1. カラー単純化
-      let rgbMat = new cv.Mat();
-      cv.cvtColor(originalMat, rgbMat, cv.COLOR_RGBA2RGB);
+  // カラー用と線画用のデータを準備
+  const colorData = new Uint8ClampedArray(originalImageData.data);
+  const lineImgData = ctxLine.createImageData(w, h);
+  const lineData = lineImgData.data;
+  
+  const factor = 255 / steps;
+  
+  // グレースケール変換用配列（エッジ検出用）
+  const gray = new Uint8Array(w * h);
+
+  // 1. カラー単純化（ポスタリゼーション）とグレースケール化を同時に実行
+  for (let i = 0; i < colorData.length; i += 4) {
+    let r = colorData[i];
+    let g = colorData[i+1];
+    let b = colorData[i+2];
+    
+    // グレースケール保存
+    gray[i/4] = r * 0.299 + g * 0.587 + b * 0.114;
+
+    // 色の単純化
+    colorData[i]   = Math.floor(r / factor) * factor;
+    colorData[i+1] = Math.floor(g / factor) * factor;
+    colorData[i+2] = Math.floor(b / factor) * factor;
+  }
+
+  // カラーキャンバスに描画
+  const newColorImgData = new ImageData(colorData, w, h);
+  ctxColor.putImageData(newColorImgData, 0, 0);
+
+  // 2. 線画抽出（Sobelフィルタ）
+  const gx = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+  const gy = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      let sumX = 0;
+      let sumY = 0;
       
-      let colorMat = new cv.Mat();
-      cv.bilateralFilter(rgbMat, colorMat, 5, 50, 50);
-      
-      const steps = parseInt(document.getElementById('colorSteps').value, 10);
-      const factor = 255 / steps;
-      let data = colorMat.data;
-      
-      for (let i = 0; i < data.length; i += 3) {
-        data[i]     = Math.floor(data[i] / factor) * factor;
-        data[i + 1] = Math.floor(data[i + 1] / factor) * factor;
-        data[i + 2] = Math.floor(data[i + 2] / factor) * factor;
+      for (let ky = -1; ky <= 1; ky++) {
+        for (let kx = -1; kx <= 1; kx++) {
+          const val = gray[(y + ky) * w + (x + kx)];
+          const weightX = gx[(ky + 1) * 3 + (kx + 1)];
+          const weightY = gy[(ky + 1) * 3 + (kx + 1)];
+          sumX += val * weightX;
+          sumY += val * weightY;
+        }
       }
       
-      let rgbaMat = new cv.Mat();
-      cv.cvtColor(colorMat, rgbaMat, cv.COLOR_RGB2RGBA);
-      cv.imshow('colorCanvas', rgbaMat);
+      const magnitude = Math.sqrt(sumX * sumX + sumY * sumY);
+      const i = (y * w + x) * 4;
       
-      rgbMat.delete(); colorMat.delete(); rgbaMat.delete();
-
-      // 2. 線画抽出 (DoG)
-      let gray = new cv.Mat();
-      cv.cvtColor(originalMat, gray, cv.COLOR_RGBA2GRAY);
-
-      let g1 = new cv.Mat();
-      let g2 = new cv.Mat();
-
-      cv.GaussianBlur(gray, g1, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
-      let ksize = parseInt(document.getElementById('lineWeight').value, 10);
-      cv.GaussianBlur(gray, g2, new cv.Size(ksize, ksize), 0, 0, cv.BORDER_DEFAULT);
-
-      let diff = new cv.Mat();
-      cv.subtract(g1, g2, diff);
-
-      let whiteBg = new cv.Mat(gray.rows, gray.cols, cv.CV_8UC1, new cv.Scalar(255));
-      let edges = new cv.Mat();
-
-      let darkness = parseFloat(document.getElementById('lineDarkness').value);
-      cv.convertScaleAbs(diff, diff, darkness, 0);
-      cv.subtract(whiteBg, diff, edges);
-
-      cv.imshow('lineCanvas', edges);
-
-      gray.delete(); g1.delete(); g2.delete(); diff.delete(); whiteBg.delete(); edges.delete();
-    } catch (e) {
-      console.error(e);
-      alert("処理中にエラーが発生しました。別の画像を試すか、リロードしてください。");
-    } finally {
-      loading.style.display = 'none';
+      if (magnitude > threshold) {
+        // エッジ（黒い線）
+        lineData[i] = 0;   // R
+        lineData[i+1] = 0; // G
+        lineData[i+2] = 0; // B
+        lineData[i+3] = 255; // Alpha
+      } else {
+        // 背景（透明にして下のカラーを透けさせる）
+        lineData[i+3] = 0; // Alpha 0
+      }
     }
-  }, 50);
+  }
+
+  ctxLine.putImageData(lineImgData, 0, 0);
 }
 
-const inputs = [
-  { elId: 'colorSteps', valId: 'colorVal' },
-  { elId: 'lineWeight', valId: 'lineWeightVal' },
-  { elId: 'lineDarkness', valId: 'lineDarknessVal' }
-];
-
-inputs.forEach(inputObj => {
-  document.getElementById(inputObj.elId).addEventListener('input', (e) => {
-    document.getElementById(inputObj.valId).innerText = e.target.value;
-    processLayers();
+// イベントリスナー
+['colorSteps', 'edgeThreshold'].forEach(id => {
+  document.getElementById(id).addEventListener('input', (e) => {
+    document.getElementById(id === 'colorSteps' ? 'colorVal' : 'edgeVal').innerText = e.target.value;
+    processImage();
   });
 });
 
