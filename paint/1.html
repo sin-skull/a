@@ -69,10 +69,19 @@
     .gallery-item { width: 60px; height: 60px; border-radius: 4px; border: 2px solid transparent; cursor: pointer; object-fit: cover; flex-shrink: 0; background: #111; }
     .gallery-item.active { border-color: var(--accent); }
     
-    #cropModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; }
-    #cropModal.active { display: flex; }
-    .crop-container { flex: 1; overflow: hidden; background: #111; }
-    .crop-actions { display: flex; padding: 16px; gap: 10px; background: #222; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+    /* フルスクリーン・モーダル用（トリミング & 保存用） */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; }
+    .modal.active { display: flex; }
+    
+    /* 保存プレビュー用モーダル */
+    .save-modal-content { background: var(--card); padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; box-sizing: border-box; }
+    .save-modal-content h3 { margin-top: 0; margin-bottom: 8px; color: var(--text); }
+    .save-modal-content p { font-size: 13px; color: #ffeb3b; margin-bottom: 16px; line-height: 1.4; }
+    #resultImageContainer { flex: 1; display: flex; justify-content: center; align-items: center; background: #fff; padding: 10px; border-radius: 4px; overflow: hidden; margin-bottom: 16px; }
+    #resultImageContainer img { max-width: 100%; max-height: 50vh; object-fit: contain; }
+
+    .crop-container { flex: 1; overflow: hidden; background: #111; width: 100%; }
+    .crop-actions { display: flex; padding: 16px; gap: 10px; background: #222; width: 100%; box-sizing: border-box; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
 
     @media (min-width: 768px) {
       .app-container { flex-direction: row-reverse; }
@@ -85,11 +94,22 @@
 </head>
 <body>
 
-<div id="cropModal">
+<!-- トリミングモーダル -->
+<div id="cropModal" class="modal">
   <div class="crop-container"><img id="cropImage" src="" alt="Picture"></div>
   <div class="crop-actions">
     <button class="btn btn-outline" id="cropCancel">キャンセル</button>
     <button class="btn btn-success" id="cropConfirm">切り抜き確定</button>
+  </div>
+</div>
+
+<!-- 保存回避用モーダル（確実な長押し保存用） -->
+<div id="saveResultModal" class="modal">
+  <div class="save-modal-content">
+    <h3>✅ 画像を生成しました</h3>
+    <p>自動ダウンロードが始まらない場合は、下の画像を<strong>長押し</strong>して「写真に追加」または「画像を保存」を選択してください。</p>
+    <div id="resultImageContainer"></div>
+    <button class="btn btn-outline" id="closeSaveModal">閉じる</button>
   </div>
 </div>
 
@@ -413,49 +433,77 @@ document.getElementById('deleteImgBtn').addEventListener('click', () => {
 });
 
 // ==========================================
-// 確実なダウンロード処理用ヘルパー関数群
+// 確実なダウンロード ＆ 長押し保存モーダル処理
 // ==========================================
+
+const saveResultModal = document.getElementById('saveResultModal');
+const resultImageContainer = document.getElementById('resultImageContainer');
+
+document.getElementById('closeSaveModal').addEventListener('click', () => {
+  saveResultModal.classList.remove('active');
+});
+
+function showSaveModal(dataUri) {
+  resultImageContainer.innerHTML = ''; // クリア
+  const img = new Image();
+  img.src = dataUri;
+  resultImageContainer.appendChild(img);
+  saveResultModal.classList.add('active');
+}
+
 function triggerDownload(url, filename) {
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
-  document.body.appendChild(link); // 画面に見えない状態で要素を追加（必須）
-  link.click();
-  document.body.removeChild(link); // クリック後に削除
+  document.body.appendChild(link); 
+  // 一部のブラウザがDOM更新を待つためにsetTimeoutでクリック
+  setTimeout(() => {
+    link.click();
+    setTimeout(() => document.body.removeChild(link), 1000);
+  }, 50);
 }
 
-function downloadBase64AsBlob(base64, filename) {
-  const arr = base64.split(',');
-  const mime = arr[0].match(/:(.*?);/)[1];
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while(n--){ u8arr[n] = bstr.charCodeAt(n); }
-  const blob = new Blob([u8arr], {type: mime});
-  const url = URL.createObjectURL(blob);
-  triggerDownload(url, filename);
-  setTimeout(() => URL.revokeObjectURL(url), 1000); // メモリ解放
-}
-
-// ==========================================
-// 各種保存ボタンのイベント
-// ==========================================
 document.getElementById('downloadPngBtn').addEventListener('click', () => {
   const item = appData.images.find(i => i.id === appData.currentId);
   if (!item || !item.finalBase64) return alert('画像がありません。');
-  downloadBase64AsBlob(item.finalBase64, `draft_${item.id}.png`);
+  
+  // 1. 自動ダウンロードを試みる
+  try {
+    const arr = item.finalBase64.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+    const blob = new Blob([u8arr], {type: mime});
+    const url = URL.createObjectURL(blob);
+    triggerDownload(url, `draft_${item.id}.png`);
+    setTimeout(() => URL.revokeObjectURL(url), 10000); // 余裕を持って解放
+  } catch (e) { console.error("Auto download failed", e); }
+  
+  // 2. 確実に保存させるためのプレビューモーダルを表示
+  showSaveModal(item.finalBase64);
 });
 
 document.getElementById('downloadSvgBtn').addEventListener('click', () => {
   const item = appData.images.find(i => i.id === appData.currentId);
   if (!item || !item.finalBase64) return alert('画像がありません。');
+  
   const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${currentWidth}" height="${currentHeight}">
     <image href="${item.finalBase64}" width="${currentWidth}" height="${currentHeight}"/>
   </svg>`;
-  const blob = new Blob([svgString], {type: "image/svg+xml"});
-  const url = URL.createObjectURL(blob);
-  triggerDownload(url, `draft_${item.id}.svg`);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  
+  // 1. 自動ダウンロード
+  try {
+    const blob = new Blob([svgString], {type: "image/svg+xml"});
+    const url = URL.createObjectURL(blob);
+    triggerDownload(url, `draft_${item.id}.svg`);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch(e) { console.error(e); }
+
+  // 2. モーダル用にData URIへ変換して表示（長押し保存可能にする）
+  const svgDataUri = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgString);
+  showSaveModal(svgDataUri);
 });
 
 document.getElementById('saveDataBtn').addEventListener('click', () => {
@@ -463,7 +511,7 @@ document.getElementById('saveDataBtn').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(appData)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   triggerDownload(url, `studio_project_${Date.now()}.json`);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 });
 
 document.getElementById('loadDataInput').addEventListener('change', (e) => {
