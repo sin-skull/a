@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>簡易企画書エディタ</title>
+    <style>
+        /* Apple-like Minimalist Design System */
+        :root {
+            --bg-body: #f5f5f7;
+            --bg-sidebar: rgba(255, 255, 255, 0.8);
+            --bg-main: #ffffff;
+            --bg-input: #f5f5f7;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --accent: #0071e3;
+            --accent-hover: #0077ed;
+            --border: #d2d2d7;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --radius: 12px;
+            --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-sidebar);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s;
+        }
+
+        .btn-icon:hover {
+            opacity: 0.7;
+        }
+
+        .project-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .project-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .project-item:hover {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+
+        .project-item.active {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .project-item.active .project-date {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .project-title {
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .project-date {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-main);
+            position: relative;
+        }
+
+        .toolbar {
+            height: 60px;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-main);
+        }
+
+        .toolbar-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toolbar-status.saved::before {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 8px;
+            background-color: #34c759;
+            border-radius: 50%;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: #e5e5ea;
+        }
+
+        .btn-danger {
+            background-color: transparent;
+            color: #ff3b30;
+        }
+        .btn-danger:hover {
+            background-color: #ffe5e5;
+        }
+
+        /* Editor Area */
+        .editor-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .editor-wrapper {
+            width: 100%;
+            max-width: 720px;
+            padding: 0 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 24px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .hint {
+            font-weight: 400;
+            font-size: 12px;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background-color: var(--bg-input);
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            font-size: 15px;
+            font-family: var(--font-family);
+            color: var(--text-primary);
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            background-color: white;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            line-height: 1.5;
+        }
+
+        .sales-points {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #fafafa;
+            padding: 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .sales-point-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sales-point-number {
+            font-weight: 600;
+            color: var(--text-secondary);
+            width: 24px;
+        }
+
+        /* Radio Buttons for Material */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: var(--bg-input);
+            padding: 16px;
+            border-radius: var(--radius);
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .radio-label input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .radio-note {
+            font-size: 12px;
+            color: #ff3b30;
+            margin-top: 4px;
+            padding-left: 28px;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            pointer-events: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: 250px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .toolbar {
+                flex-wrap: wrap;
+                height: auto;
+                padding: 12px;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>企画書リスト</h2>
+            <button class="btn-icon" onclick="createNewProject()" title="新規作成">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+        </div>
+        <div class="project-list" id="project-list">
+            <!-- Projects will be rendered here -->
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="toolbar">
+            <div class="toolbar-status saved" id="save-status">自動保存されています</div>
+            <div class="toolbar-actions">
+                <button class="btn btn-danger" onclick="deleteCurrentProject()">削除</button>
+                <button class="btn btn-secondary" onclick="exportToTxt()">TXT保存</button>
+                <button class="btn btn-primary" onclick="copyToClipboard()">コピペ用コピー</button>
+            </div>
+        </div>
+
+        <div class="editor-container" id="editor-container" style="display: none;">
+            <div class="editor-wrapper">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>【タイトル名】</label>
+                        <input type="text" name="title" class="input-field" placeholder="企画のタイトルを入力">
+                    </div>
+                    <div class="form-group" style="max-width: 200px;">
+                        <label>氏名</label>
+                        <input type="text" name="name" class="input-field" placeholder="あなたの名前">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>【機種】</label>
+                        <input type="text" name="device" class="input-field" placeholder="例: iOS / Android / Web">
+                    </div>
+                    <div class="form-group">
+                        <label>【ジャンル】</label>
+                        <input type="text" name="genre" class="input-field" placeholder="例: アクション / ユーティリティ">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>【ターゲット層】</label>
+                    <input type="text" name="target" class="input-field" placeholder="例: 20代〜30代のビジネスパーソン">
+                </div>
+
+                <div class="form-group">
+                    <label>【企画意図】</label>
+                    <textarea name="intent" class="input-field" placeholder="なぜこの企画を立案したのか、背景や目的を記入します"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>【コンセプト】</label>
+                    <textarea name="concept" class="input-field" placeholder="一言でいうとどのようなものか、中核となる体験を記入します"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>【セールスポイント】</label>
+                    <div class="sales-points">
+                        <div class="sales-point-item">
+                            <span class="sales-point-number">(1)</span>
+                            <input type="text" name="sp1" class="input-field" placeholder="セールスポイント 1">
+                        </div>
+                        <div class="sales-point-item">
+                            <span class="sales-point-number">(2)</span>
+                            <input type="text" name="sp2" class="input-field" placeholder="セールスポイント 2">
+                        </div>
+                        <div class="sales-point-item">
+                            <span class="sales-point-number">(3)</span>
+                            <input type="text" name="sp3" class="input-field" placeholder="セールスポイント 3">
+                        </div>
+                        <div class="sales-point-item">
+                            <span class="sales-point-number">(4)</span>
+                            <input type="text" name="sp4" class="input-field" placeholder="セールスポイント 4">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>【特記事項】 <span class="hint">※イメージ図や概要がわかる説明文など</span></label>
+                    <textarea name="notes" class="input-field" placeholder="その他、補足事項があれば自由に記入してください" style="min-height: 150px;"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>イラスト・写真を使用した場合の素材元</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="material" value="irasutoya" class="input-radio">
+                            いらすとやの素材
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="material" value="self" class="input-radio">
+                            自作 または 自分で撮影
+                        </label>
+                        <div class="radio-note">※上記以外の素材・AIで生成した画像は使用不可</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div id="empty-state" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; color: var(--text-secondary);">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 16px; opacity: 0.5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <p>左側のメニューから選択するか、新規作成してください</p>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">コピーしました</div>
+
+    <script>
+        // State management
+        let projects = [];
+        let currentProjectId = null;
+
+        // Elements
+        const projectListEl = document.getElementById('project-list');
+        const editorContainer = document.getElementById('editor-container');
+        const emptyState = document.getElementById('empty-state');
+        const inputs = document.querySelectorAll('.input-field');
+        const radios = document.querySelectorAll('.input-radio');
+        const saveStatus = document.getElementById('save-status');
+
+        // Initialize
+        function init() {
+            const savedData = localStorage.getItem('apple_kikakusho_data');
+            if (savedData) {
+                projects = JSON.parse(savedData);
+            }
+
+            if (projects.length === 0) {
+                createNewProject();
+            } else {
+                renderSidebar();
+                selectProject(projects[0].id);
+            }
+
+            // Setup Event Listeners for Auto-save
+            inputs.forEach(input => {
+                input.addEventListener('input', handleInput);
+            });
+            radios.forEach(radio => {
+                radio.addEventListener('change', handleRadioChange);
+            });
+        }
+
+        // Auto-save handlers
+        function handleInput(e) {
+            if (!currentProjectId) return;
+            const key = e.target.name;
+            const val = e.target.value;
+            const project = projects.find(p => p.id === currentProjectId);
+            
+            if (project) {
+                project[key] = val;
+                project.updatedAt = new Date().toISOString();
+                saveToLocalStorage();
+                
+                // Update sidebar title in real-time
+                if (key === 'title') {
+                    renderSidebar();
+                }
+                showSavedStatus();
+            }
+        }
+
+        function handleRadioChange(e) {
+            if (!currentProjectId) return;
+            const project = projects.find(p => p.id === currentProjectId);
+            if (project) {
+                project.material = e.target.value;
+                project.updatedAt = new Date().toISOString();
+                saveToLocalStorage();
+                showSavedStatus();
+            }
+        }
+
+        function showSavedStatus() {
+            saveStatus.textContent = "保存しました";
+            saveStatus.classList.add('saved');
+            clearTimeout(window.saveTimeout);
+            window.saveTimeout = setTimeout(() => {
+                saveStatus.textContent = "自動保存されています";
+            }, 2000);
+        }
+
+        // CRUD Operations
+        function saveToLocalStorage() {
+            localStorage.setItem('apple_kikakusho_data', JSON.stringify(projects));
+        }
+
+        function createNewProject() {
+            const newProject = {
+                id: Date.now().toString(),
+                title: "",
+                name: "",
+                intent: "",
+                device: "",
+                genre: "",
+                concept: "",
+                target: "",
+                sp1: "", sp2: "", sp3: "", sp4: "",
+                notes: "",
+                material: "",
+                updatedAt: new Date().toISOString()
+            };
+            
+            projects.unshift(newProject);
+            saveToLocalStorage();
+            renderSidebar();
+            selectProject(newProject.id);
+            
+            // Focus on title input automatically
+            setTimeout(() => {
+                document.querySelector('input[name="title"]').focus();
+            }, 100);
+        }
+
+        function deleteCurrentProject() {
+            if (!currentProjectId) return;
+            if (confirm("この企画書を削除してもよろしいですか？")) {
+                projects = projects.filter(p => p.id !== currentProjectId);
+                saveToLocalStorage();
+                renderSidebar();
+                
+                if (projects.length > 0) {
+                    selectProject(projects[0].id);
+                } else {
+                    currentProjectId = null;
+                    editorContainer.style.display = 'none';
+                    emptyState.style.display = 'flex';
+                }
+            }
+        }
+
+        // UI Updates
+        function renderSidebar() {
+            projectListEl.innerHTML = '';
+            
+            projects.forEach(project => {
+                const div = document.createElement('div');
+                div.className = `project-item ${project.id === currentProjectId ? 'active' : ''}`;
+                div.onclick = () => selectProject(project.id);
+                
+                const title = document.createElement('div');
+                title.className = 'project-title';
+                title.textContent = project.title || '無題の企画書';
+                
+                const date = document.createElement('div');
+                date.className = 'project-date';
+                const d = new Date(project.updatedAt);
+                date.textContent = `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                
+                div.appendChild(title);
+                div.appendChild(date);
+                projectListEl.appendChild(div);
+            });
+        }
+
+        function selectProject(id) {
+            currentProjectId = id;
+            const project = projects.find(p => p.id === id);
+            
+            if (!project) return;
+
+            // Show Editor, Hide Empty state
+            editorContainer.style.display = 'flex';
+            emptyState.style.display = 'none';
+
+            // Populate inputs
+            inputs.forEach(input => {
+                input.value = project[input.name] || '';
+            });
+
+            // Populate radios
+            radios.forEach(radio => {
+                radio.checked = (radio.value === project.material);
+            });
+
+            renderSidebar(); // Update active state class
+        }
+
+        // Export & Copy functionality
+        function generateFormattedText() {
+            const p = projects.find(p => p.id === currentProjectId);
+            if (!p) return "";
+
+            const checkIrasutoya = p.material === 'irasutoya' ? '■' : '□';
+            const checkSelf = p.material === 'self' ? '■' : '□';
+
+            return `簡易企画書
+
+【タイトル名】${p.title || ''}
+【氏名】${p.name || ''}
+
+【企画意図】
+${p.intent || ''}
+
+【機種】${p.device || ''}
+【ジャンル】${p.genre || ''}
+【ターゲット層】${p.target || ''}
+
+【コンセプト】
+${p.concept || ''}
+
+【セールスポイント】
+(1) ${p.sp1 || ''}
+(2) ${p.sp2 || ''}
+(3) ${p.sp3 || ''}
+(4) ${p.sp4 || ''}
+
+【特記事項】※イメージ図や概要がわかる説明文など
+${p.notes || ''}
+
+イラスト・写真を使用した場合、どちらか該当する方を■にしてください。
+ → ${checkIrasutoya} いらすとやの素材
+ → ${checkSelf} 自作or自分で撮影
+※左記以外の素材・AIで生成した画像は使用不可
+`;
+        }
+
+        function copyToClipboard() {
+            if (!currentProjectId) return;
+            const text = generateFormattedText();
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("クリップボードにコピーしました");
+            }).catch(err => {
+                console.error('コピーに失敗しました', err);
+                showToast("コピーに失敗しました");
+            });
+        }
+
+        function exportToTxt() {
+            if (!currentProjectId) return;
+            const p = projects.find(p => p.id === currentProjectId);
+            const text = generateFormattedText();
+            
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${p.title || '無題の企画書'}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Run app
+        init();
+
+    </script>
+</body>
+</html>
