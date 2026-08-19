@@ -3,8 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2D下書き・構図ジェネレーター (超軽量・外部通信なし版)</title>
+  <title>2D下書き・構図ジェネレーター (完成版)</title>
   <style>
+    /* 
+    ================================================
+    開発日記ログ (統合版)
+    日時: 2026年8月20日 05:06 JST  
+    タイトル: 写真からの2D下書き線抽出ツールの変遷と完成
+    
+    【これまでの開発経緯と決定事項】
+    1. プロジェクト開始:
+       生成AIを使わず、写真からイラストのアタリや主線となる美しい線を抽出する軽量ツールの作成を開始。
+    2. 画像処理エンジンの挫折と転換:
+       当初はOpenCV.js（DoG法など）を導入したが、スマホブラウザ（Safari等）では9MBの通信やメモリ制限によりロードが停止する致命的な問題が発生。
+       ネット回線に依存する設計を放棄し、HTML+Vanilla JS（標準Canvas API）のみで完結する超軽量・オフライン動作型へと方針を大転換した。
+    3. 最終UI・機能の実装 (今回):
+       - レイヤー構造を3層（下から：元画像、カラー面、線画）に拡張。
+       - それぞれの不透明度を個別に調整可能にし、トレース台のような使い勝手を実現。
+       - カラー単純化のレベル1を「白背景（カラー面なし）」として定義。これにより、「うっすら透かした元画像 ＋ 抽出した黒線」という下書きに最適な表示モードを可能にした。
+    ================================================
+    */
+
     :root {
       --bg: #1e1e24;
       --card: #2b2b36;
@@ -49,16 +68,37 @@
       justify-content: center;
       align-items: center;
       min-height: 400px;
+      /* チェッカーボードパターン（透過確認用） */
+      background-image: 
+        linear-gradient(45deg, #333 25%, transparent 25%), 
+        linear-gradient(-45deg, #333 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #333 75%), 
+        linear-gradient(-45deg, transparent 75%, #333 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
     }
     canvas {
       max-width: 100%;
       height: auto;
       display: block;
     }
+    /* レイヤーの重なり順を設定 */
+    #originalCanvas {
+      position: relative;
+      z-index: 1;
+    }
+    #colorCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
     #lineCanvas {
       position: absolute;
       top: 0;
       left: 0;
+      z-index: 3;
       pointer-events: none;
     }
     .canvas-wrapper {
@@ -78,7 +118,7 @@
 <body>
 
 <div class="container">
-  <h2>下書き・構図抽出 (超軽量版)</h2>
+  <h2>下書き・構図抽出 (超軽量・3レイヤー版)</h2>
 
   <div class="controls">
     <div class="control-item">
@@ -87,20 +127,30 @@
     </div>
     <div class="control-item">
       <label>面(カラー)の単純化: <span id="colorVal">4</span></label>
-      <input type="range" id="colorSteps" min="2" max="8" value="4">
+      <input type="range" id="colorSteps" min="1" max="8" value="4">
+      <small style="color:#aaa; font-size:10px;">※1は白背景(線のみ抽出用)</small>
     </div>
     <div class="control-item">
       <label>線の抽出感度: <span id="edgeVal">50</span></label>
       <input type="range" id="edgeThreshold" min="10" max="150" value="50">
     </div>
     <div class="control-item">
-      <label>線画レイヤー不透明度: <span id="lineAlphaVal">100%</span></label>
+      <label>元画像 不透明度: <span id="origAlphaVal">100%</span></label>
+      <input type="range" id="origAlpha" min="0" max="100" value="100">
+    </div>
+    <div class="control-item">
+      <label>カラー面 不透明度: <span id="colorAlphaVal">100%</span></label>
+      <input type="range" id="colorAlpha" min="0" max="100" value="100">
+    </div>
+    <div class="control-item">
+      <label>線画レイヤー 不透明度: <span id="lineAlphaVal">100%</span></label>
       <input type="range" id="lineAlpha" min="0" max="100" value="100">
     </div>
   </div>
 
   <div class="viewport">
     <div class="canvas-wrapper">
+      <canvas id="originalCanvas"></canvas>
       <canvas id="colorCanvas"></canvas>
       <canvas id="lineCanvas"></canvas>
     </div>
@@ -109,8 +159,11 @@
 
 <script>
 const fileInput = document.getElementById('fileInput');
+const originalCanvas = document.getElementById('originalCanvas');
 const colorCanvas = document.getElementById('colorCanvas');
 const lineCanvas = document.getElementById('lineCanvas');
+
+const ctxOrig = originalCanvas.getContext('2d', { willReadFrequently: true });
 const ctxColor = colorCanvas.getContext('2d', { willReadFrequently: true });
 const ctxLine = lineCanvas.getContext('2d', { willReadFrequently: true });
 
@@ -124,10 +177,9 @@ fileInput.addEventListener('change', (e) => {
 
   const img = new Image();
   img.onload = () => {
-    // 処理を軽くするため最大600pxにリサイズ
     let w = img.width;
     let h = img.height;
-    const maxDim = 600; 
+    const maxDim = 800; // 軽量なので少し解像度を上げました
     if (w > maxDim || h > maxDim) {
       if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
       else { w = Math.round((w * maxDim) / h); h = maxDim; }
@@ -135,13 +187,16 @@ fileInput.addEventListener('change', (e) => {
 
     currentWidth = w;
     currentHeight = h;
-    colorCanvas.width = w;
-    colorCanvas.height = h;
-    lineCanvas.width = w;
-    lineCanvas.height = h;
+    
+    // 3つのキャンバスのサイズを同期
+    [originalCanvas, colorCanvas, lineCanvas].forEach(c => {
+      c.width = w;
+      c.height = h;
+    });
 
-    ctxColor.drawImage(img, 0, 0, w, h);
-    originalImageData = ctxColor.getImageData(0, 0, w, h);
+    // 元画像を描画して保存
+    ctxOrig.drawImage(img, 0, 0, w, h);
+    originalImageData = ctxOrig.getImageData(0, 0, w, h);
 
     processImage();
   };
@@ -157,32 +212,37 @@ function processImage() {
   const w = currentWidth;
   const h = currentHeight;
   
-  // カラー用と線画用のデータを準備
   const colorData = new Uint8ClampedArray(originalImageData.data);
   const lineImgData = ctxLine.createImageData(w, h);
   const lineData = lineImgData.data;
   
-  const factor = 255 / steps;
-  
-  // グレースケール変換用配列（エッジ検出用）
   const gray = new Uint8Array(w * h);
 
-  // 1. カラー単純化（ポスタリゼーション）とグレースケール化を同時に実行
+  // 1. カラー単純化（ステップ1の場合は真っ白にする）
   for (let i = 0; i < colorData.length; i += 4) {
     let r = colorData[i];
     let g = colorData[i+1];
     let b = colorData[i+2];
     
-    // グレースケール保存
+    // 線画抽出用のグレースケールデータを作成
     gray[i/4] = r * 0.299 + g * 0.587 + b * 0.114;
 
-    // 色の単純化
-    colorData[i]   = Math.floor(r / factor) * factor;
-    colorData[i+1] = Math.floor(g / factor) * factor;
-    colorData[i+2] = Math.floor(b / factor) * factor;
+    if (steps === 1) {
+      // レベル1: 白背景（カラー面を描画しない代わりに白で埋める）
+      colorData[i] = 255;
+      colorData[i+1] = 255;
+      colorData[i+2] = 255;
+      colorData[i+3] = 255;
+    } else {
+      // レベル2以降: 段階的なポスタリゼーション
+      const stepFactor = 255 / (steps - 1);
+      colorData[i]   = Math.round(r / stepFactor) * stepFactor;
+      colorData[i+1] = Math.round(g / stepFactor) * stepFactor;
+      colorData[i+2] = Math.round(b / stepFactor) * stepFactor;
+      colorData[i+3] = 255;
+    }
   }
 
-  // カラーキャンバスに描画
   const newColorImgData = new ImageData(colorData, w, h);
   ctxColor.putImageData(newColorImgData, 0, 0);
 
@@ -209,14 +269,14 @@ function processImage() {
       const i = (y * w + x) * 4;
       
       if (magnitude > threshold) {
-        // エッジ（黒い線）
-        lineData[i] = 0;   // R
-        lineData[i+1] = 0; // G
-        lineData[i+2] = 0; // B
-        lineData[i+3] = 255; // Alpha
+        // 線部分は黒
+        lineData[i] = 0;
+        lineData[i+1] = 0;
+        lineData[i+2] = 0;
+        lineData[i+3] = 255;
       } else {
-        // 背景（透明にして下のカラーを透けさせる）
-        lineData[i+3] = 0; // Alpha 0
+        // 背景は透明
+        lineData[i+3] = 0;
       }
     }
   }
@@ -224,7 +284,7 @@ function processImage() {
   ctxLine.putImageData(lineImgData, 0, 0);
 }
 
-// イベントリスナー
+// パラメータ変更イベント
 ['colorSteps', 'edgeThreshold'].forEach(id => {
   document.getElementById(id).addEventListener('input', (e) => {
     document.getElementById(id === 'colorSteps' ? 'colorVal' : 'edgeVal').innerText = e.target.value;
@@ -232,9 +292,18 @@ function processImage() {
   });
 });
 
-document.getElementById('lineAlpha').addEventListener('input', (e) => {
-  document.getElementById('lineAlphaVal').innerText = e.target.value + '%';
-  document.getElementById('lineCanvas').style.opacity = e.target.value / 100;
+// 不透明度スライダーの連動
+const alphaControls = [
+  { id: 'origAlpha', target: originalCanvas, label: 'origAlphaVal' },
+  { id: 'colorAlpha', target: colorCanvas, label: 'colorAlphaVal' },
+  { id: 'lineAlpha', target: lineCanvas, label: 'lineAlphaVal' }
+];
+
+alphaControls.forEach(ctrl => {
+  document.getElementById(ctrl.id).addEventListener('input', (e) => {
+    document.getElementById(ctrl.label).innerText = e.target.value + '%';
+    ctrl.target.style.opacity = e.target.value / 100;
+  });
 });
 </script>
 </body>
