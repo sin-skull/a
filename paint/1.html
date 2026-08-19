@@ -3,13 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2D下書き・構図ジェネレーター (修正版)</title>
+  <title>2D下書き・構図ジェネレーター (ロード対策版)</title>
   <style>
+    /* 
+    ================================================
+    開発日記ログ
+    日時: 2026年8月20日 05:00 JST  
+    タイトル: モバイル環境でのOpenCVロード停止問題の突破
+    
+    【今回の決定・変更事項】
+    1. エンジン配信元の変更 (突破の根拠): 
+       重くてタイムアウトしやすい公式 (docs.opencv.org) から、
+       高速で安定したCDN (jsdelivr / @techstark/opencv-js) に変更。
+    2. ロード状態の可視化:
+       画面上部に「エンジン読込中...」等のステータスを表示し、
+       いつ画像を選択して良いか、エラーが起きたかをユーザーが視認できるように改修。
+    3. エラーハンドリングの追加:
+       `onerror` イベントを追加し、読み込み失敗時に理由を表示。
+    ================================================
+    */
+
     :root {
       --bg: #1e1e24;
       --card: #2b2b36;
       --text: #f0f0f5;
       --accent: #4f8cff;
+      --warning: #ff4f4f;
+      --success: #4fff8c;
     }
     body {
       margin: 0;
@@ -24,6 +44,18 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
+    }
+    #statusBanner {
+      background: var(--warning);
+      color: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .ready {
+      background: var(--success) !important;
+      color: #000 !important;
     }
     .controls {
       background: var(--card);
@@ -87,17 +119,21 @@
       cursor: pointer;
     }
   </style>
-  <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
+  <!-- 変更点: より安定・高速なCDNからOpenCV.jsを読み込む。エラー検知も追加 -->
+  <script async src="https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.9.0/dist/opencv.js" onload="onOpenCvReady();" onerror="onOpenCvError();" type="text/javascript"></script>
 </head>
 <body>
 
 <div class="container">
-  <h2>下書き・構図抽出ビューア (滑らか主線・バグ修正版)</h2>
+  <h2>下書き・構図抽出ビューア</h2>
+  
+  <!-- 追加点: ロード状態を視覚的に表示するバナー -->
+  <div id="statusBanner">画像処理エンジンをダウンロード中...（数秒〜数十秒かかります）</div>
 
   <div class="controls">
     <div class="control-item">
       <label>画像を選択 / 撮影</label>
-      <input type="file" id="fileInput" accept="image/*">
+      <input type="file" id="fileInput" accept="image/*" disabled> <!-- ロード完了まで無効化 -->
     </div>
     <div class="control-item">
       <label>面(カラー)の単純化: <span id="colorVal">4</span></label>
@@ -130,12 +166,22 @@
 let cvReady = false;
 let originalMat = null;
 
+const statusBanner = document.getElementById('statusBanner');
+const fileInput = document.getElementById('fileInput');
+
 function onOpenCvReady() {
   cvReady = true;
+  statusBanner.innerText = "エンジンの準備完了！画像を選択してください。";
+  statusBanner.classList.add('ready');
+  fileInput.disabled = false; // ボタンを有効化
   console.log("OpenCV.js is ready.");
 }
 
-const fileInput = document.getElementById('fileInput');
+function onOpenCvError() {
+  statusBanner.innerText = "エンジンの読み込みに失敗しました。ページをリロードするか、通信環境を確認してください。";
+  console.error("Failed to load OpenCV.js");
+}
+
 const colorCanvas = document.getElementById('colorCanvas');
 const lineCanvas = document.getElementById('lineCanvas');
 const loading = document.getElementById('loading');
@@ -149,7 +195,7 @@ fileInput.addEventListener('change', (e) => {
   img.onload = () => {
     let w = img.width;
     let h = img.height;
-    const maxDim = 800; // 処理負荷を下げるため最大800pxに制限
+    const maxDim = 800; 
     if (w > maxDim || h > maxDim) {
       if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
       else { w = Math.round((w * maxDim) / h); h = maxDim; }
@@ -174,39 +220,34 @@ fileInput.addEventListener('change', (e) => {
 function processLayers() {
   if (!originalMat) return;
   
-  // UIをブロックしないようにローディング表示を先に出す
   loading.style.display = 'block';
   
   setTimeout(() => {
     try {
-      // 1. カラー単純化（面構成）処理
+      // 1. カラー単純化
       let rgbMat = new cv.Mat();
-      // 4チャンネル(RGBA)から3チャンネル(RGB)に変換（これがエラーの原因でした）
       cv.cvtColor(originalMat, rgbMat, cv.COLOR_RGBA2RGB);
       
       let colorMat = new cv.Mat();
-      // 少しパラメータを下げて処理を高速化
       cv.bilateralFilter(rgbMat, colorMat, 5, 50, 50);
       
       const steps = parseInt(document.getElementById('colorSteps').value, 10);
       const factor = 255 / steps;
       let data = colorMat.data;
       
-      // RGBなので i+=3 で回す
       for (let i = 0; i < data.length; i += 3) {
         data[i]     = Math.floor(data[i] / factor) * factor;
         data[i + 1] = Math.floor(data[i + 1] / factor) * factor;
         data[i + 2] = Math.floor(data[i + 2] / factor) * factor;
       }
       
-      // 再びRGBAに戻してキャンバスに描画
       let rgbaMat = new cv.Mat();
       cv.cvtColor(colorMat, rgbaMat, cv.COLOR_RGB2RGBA);
       cv.imshow('colorCanvas', rgbaMat);
       
       rgbMat.delete(); colorMat.delete(); rgbaMat.delete();
 
-      // 2. 線画抽出処理（DoG: 差分ガウシアン法）
+      // 2. 線画抽出 (DoG)
       let gray = new cv.Mat();
       cv.cvtColor(originalMat, gray, cv.COLOR_RGBA2GRAY);
 
@@ -239,7 +280,6 @@ function processLayers() {
   }, 50);
 }
 
-// パラメータ変更イベント
 const inputs = [
   { elId: 'colorSteps', valId: 'colorVal' },
   { elId: 'lineWeight', valId: 'lineWeightVal' },
