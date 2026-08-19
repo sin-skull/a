@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>2D下書き・構図Studio (Pro版)</title>
   
-  <!-- Cropper.js (トリミング用) -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-  <!-- jsPDF (PDF出力用) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
@@ -41,7 +39,7 @@
     .ui-container { position: relative; background: var(--card); border-top: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
     
     .panels { display: none; background: var(--card); border-bottom: 1px solid var(--border); padding: 16px; max-height: 40dvh; overflow-y: auto; }
-    .panels.active { display: block; } /* ←この表示がバグで機能していませんでした */
+    .panels.active { display: block; }
     .panel { display: none; flex-direction: column; gap: 16px; }
     .panel.active { display: flex; }
 
@@ -105,7 +103,6 @@
   </div>
 
   <div class="ui-container">
-    <!-- スマホで初期表示させるために最初から active を付けておく -->
     <div class="panels active" id="panelsContainer">
       
       <div class="panel active" id="panel-gallery">
@@ -179,29 +176,25 @@ let appData = { images: [], currentId: null };
 let currentWidth = 0; let currentHeight = 0;
 let originalImageData = null;
 
-// --- バグ修正箇所：UI タブ切替ロジック ---
+// UI タブ切替
 const toolBtns = document.querySelectorAll('.tool-btn');
 const panels = document.querySelectorAll('.panel');
-const panelsContainer = document.getElementById('panelsContainer'); // これを追加
+const panelsContainer = document.getElementById('panelsContainer');
 
 toolBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     const target = btn.getAttribute('data-target');
     const isMobile = window.innerWidth < 768;
-
-    // スマホでアクティブなボタンをもう一度押した時は閉じる
     if (isMobile && btn.classList.contains('active')) {
       btn.classList.remove('active');
-      panelsContainer.classList.remove('active'); // バグ原因：ここが抜けていた
+      panelsContainer.classList.remove('active');
       document.getElementById(target).classList.remove('active');
       return;
     }
-
     toolBtns.forEach(b => b.classList.remove('active'));
     panels.forEach(p => p.classList.remove('active'));
-    
     btn.classList.add('active');
-    panelsContainer.classList.add('active'); // バグ原因：ここが抜けていた
+    panelsContainer.classList.add('active');
     document.getElementById(target).classList.add('active');
   });
 });
@@ -419,39 +412,58 @@ document.getElementById('deleteImgBtn').addEventListener('click', () => {
   renderGallery(); loadCurrentItem();
 });
 
+// ==========================================
+// 確実なダウンロード処理用ヘルパー関数群
+// ==========================================
+function triggerDownload(url, filename) {
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link); // 画面に見えない状態で要素を追加（必須）
+  link.click();
+  document.body.removeChild(link); // クリック後に削除
+}
+
+function downloadBase64AsBlob(base64, filename) {
+  const arr = base64.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+  const blob = new Blob([u8arr], {type: mime});
+  const url = URL.createObjectURL(blob);
+  triggerDownload(url, filename);
+  setTimeout(() => URL.revokeObjectURL(url), 1000); // メモリ解放
+}
+
+// ==========================================
+// 各種保存ボタンのイベント
+// ==========================================
 document.getElementById('downloadPngBtn').addEventListener('click', () => {
   const item = appData.images.find(i => i.id === appData.currentId);
-  if (!item) return alert('画像がありません。');
-  const link = document.createElement('a');
-  link.download = `draft_${item.id}.png`;
-  link.href = item.finalBase64;
-  link.click();
+  if (!item || !item.finalBase64) return alert('画像がありません。');
+  downloadBase64AsBlob(item.finalBase64, `draft_${item.id}.png`);
 });
 
-// --- 新規追加：SVGエクスポート機能 ---
 document.getElementById('downloadSvgBtn').addEventListener('click', () => {
   const item = appData.images.find(i => i.id === appData.currentId);
-  if (!item) return alert('画像がありません。');
-  
-  // 現在の画像をSVG空間に埋め込む手法
+  if (!item || !item.finalBase64) return alert('画像がありません。');
   const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${currentWidth}" height="${currentHeight}">
     <image href="${item.finalBase64}" width="${currentWidth}" height="${currentHeight}"/>
   </svg>`;
-  
   const blob = new Blob([svgString], {type: "image/svg+xml"});
-  const link = document.createElement('a');
-  link.download = `draft_${item.id}.svg`;
-  link.href = URL.createObjectURL(blob);
-  link.click();
+  const url = URL.createObjectURL(blob);
+  triggerDownload(url, `draft_${item.id}.svg`);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
 document.getElementById('saveDataBtn').addEventListener('click', () => {
   if (appData.images.length === 0) return alert('保存するデータがありません。');
   const blob = new Blob([JSON.stringify(appData)], { type: 'application/json' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `studio_project_${Date.now()}.json`;
-  link.click();
+  const url = URL.createObjectURL(blob);
+  triggerDownload(url, `studio_project_${Date.now()}.json`);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
 document.getElementById('loadDataInput').addEventListener('change', (e) => {
