@@ -210,9 +210,13 @@
     background:linear-gradient(90deg, rgba(0,0,0,.3), rgba(255,255,255,.05) 40%, rgba(0,0,0,.3));
   }
   @media (orientation:landscape){
-    .cases-row{ padding-left:10px; padding-right:10px; }
-    .bookcase-unit{ width: calc(100vw - 20px); }
+    body.is-phone-landscape .cases-row{ padding-left:10px; padding-right:10px; }
+    body.is-phone-landscape .bookcase-unit{ width: calc(100vw - 20px); }
   }
+  body.pc-triple .cases-row{ padding-left:16px; padding-right:16px; justify-content:center; }
+  body.pc-triple .bookcase-unit{ width:min(30vw, 380px); }
+  body.pc-rowpair .cases-row{ padding-left:16px; padding-right:16px; }
+  body.pc-rowpair .bookcase-unit{ width:min(70vw, 820px); }
   .bookcase-unit::before{left:0; border-radius:5px 0 0 5px;}
   .bookcase-unit::after{right:0; border-radius:0 5px 5px 0;}
   
@@ -736,6 +740,16 @@
   .tutorial-arrow-btn:disabled{ opacity:.3; }
   .tutorial-bottom-nav{ display:flex; align-items:center; gap:18px; }
   .tutorial-finish-btn{ font-size:13px; padding:9px 22px; }
+
+  /* ---------- Q&A（アコーディオン） ---------- */
+  .qna-category{ font-size:11px; font-weight:700; opacity:.65; margin:16px 0 4px; }
+  .qna-category:first-child{ margin-top:0; }
+  .qna-item{ border-bottom:1px solid rgba(128,128,128,.25); padding:9px 0; }
+  .qna-q{ font-weight:700; font-size:13px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .qna-q .qna-caret{ transition:transform .15s ease; flex:0 0 auto; opacity:.7; }
+  .qna-item.open .qna-q .qna-caret{ transform:rotate(90deg); }
+  .qna-a{ font-size:12.5px; line-height:1.65; margin-top:8px; white-space:pre-wrap; display:none; opacity:.9; }
+  .qna-item.open .qna-a{ display:block; }
 </style>
 </head>
 <body>
@@ -756,6 +770,23 @@
     <div>📚 積読/購入済: <span id="stat-owned">0</span> 冊</div>
     <div>🛒 欲しい: <span id="stat-want">0</span> 冊</div>
     <div>⏱ 平均読了時間: <span id="stat-avg-time">-</span></div>
+  </div>
+
+  <div class="sidebar-header" id="pcSectionHeader" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;" hidden>PC・タブレット表示設定</div>
+  <div id="pcSectionBody" style="padding: 10px 20px;" hidden>
+    <p class="edit-hint" style="margin:0 0 8px;">スマホでは表示されない、PC・タブレット専用の設定です</p>
+    <p class="edit-hint" style="margin:0 0 6px;">本の配置・サイズに使うデータ</p>
+    <div class="scan-mode-toggle" style="margin-bottom:14px;">
+      <button class="btn ghost" id="pcOrientAutoBtn" type="button" style="flex:1; font-size:11.5px;">自動</button>
+      <button class="btn ghost" id="pcOrientPortraitBtn" type="button" style="flex:1; font-size:11.5px;">縦画面として</button>
+      <button class="btn ghost" id="pcOrientLandscapeBtn" type="button" style="flex:1; font-size:11.5px;">横画面として</button>
+    </div>
+    <p class="edit-hint" style="margin:0 0 6px;">本棚の並べ方</p>
+    <div class="scan-mode-toggle">
+      <button class="btn ghost" id="pcLayoutNormalBtn" type="button" style="flex:1; font-size:11.5px;">1列表示</button>
+      <button class="btn ghost" id="pcLayoutTripleBtn" type="button" style="flex:1; font-size:11.5px;">3列表示</button>
+      <button class="btn ghost" id="pcLayoutRowpairBtn" type="button" style="flex:1; font-size:11.5px;">段を横に</button>
+    </div>
   </div>
 
   <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">表示サイズ (横に並ぶ数)</div>
@@ -803,6 +834,7 @@
   <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">サポート</div>
   <div style="padding: 10px 20px;">
     <button class="theme-btn" id="showTutorialBtn" type="button" style="margin-bottom:8px;">📖 使い方ガイドを見る</button>
+    <button class="theme-btn" id="showQnaBtn" type="button" style="margin-bottom:8px;">❓ Q&A（よくある質問）</button>
     <button class="theme-btn" id="showTermsBtn" type="button" style="margin-bottom:8px;">📄 利用規約・免責事項を見る</button>
     <button class="theme-btn" id="contactFormBtn" type="button" style="margin-bottom:8px;">✉️ お問い合わせ</button>
     <button class="theme-btn" id="surveyFormBtn" type="button">📝 アンケートに答える</button>
@@ -818,6 +850,18 @@
     <div class="modal-actions">
       <button class="btn ghost" id="termsModalCloseBtn" hidden>閉じる</button>
       <button class="btn" id="termsModalAgreeBtn">同意して使い始める</button>
+    </div>
+  </div>
+</div>
+
+<!-- Q&A（よくある質問） -->
+<div class="modal hidden" id="qnaModal">
+  <div class="modal-card" style="max-width:480px;">
+    <h2 style="margin-top:0; font-size:16px;">❓ よくある質問（Q&A）</h2>
+    <p class="edit-hint" style="margin:0 0 10px;">使い方ガイド（チュートリアル）はAIが作成しています。分かりにくい点があれば、こちらのQ&Aや「お問い合わせ」もあわせてご活用ください。</p>
+    <div id="qnaList" style="max-height:60vh; overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="qnaCloseBtn">閉じる</button>
     </div>
   </div>
 </div>
@@ -1296,7 +1340,9 @@
     currentSortCriterion: 'kana', // 本リストの並び順
     bulkDisplayMode: 'cover', // 追加分（スキャン・検索）の初期表示
     termsAccepted: false, // 利用規約に同意済みか
-    tutorialSeen: false // チュートリアルを見終えたか（初回だけ自動表示する）
+    tutorialSeen: false, // チュートリアルを見終えたか（初回だけ自動表示する）
+    pcForceOrientation: null, // PC/タブレットのみ：手動指定した縦横（null=自動 / 'portrait' / 'landscape'）
+    pcLayoutMode: 'normal' // PC/タブレットのみ：'normal'(1列) / 'triple'(3列) / 'rowpair'(段を横に)
   };
   var searchQueue = []; 
   var editMode = false;
@@ -1325,7 +1371,50 @@
   }, true);
 
   var SPINE_COLORS = ['#7b3f3f','#3e5c55','#3a4e6e','#6b5b3e','#4b3b57','#5c6b3e','#7a4b2e','#39424e','#8b5e3c','#4e4b7b'];
-  function isLandscape(){ return window.innerWidth > window.innerHeight; }
+  // PC・タブレット判定：正確な機種判定はできないので、画面の短い方の辺で判定する
+  // （スマホは縦でも横でも短い辺が小さいままなので、この方法でおおむね正しく区別できる）
+  function isPcOrTablet(){
+    return Math.min(window.innerWidth, window.innerHeight) >= 600;
+  }
+  // 本の配置データ・サイズ設定に「縦画面用」「横画面用」のどちらを使うかを決める判定。
+  // スマホ：物理的な画面の向きだけで自動判定（今まで通り、変更なし）。
+  // PC・タブレット：画面が常に横長のため自動判定に頼れない。そのため
+  // ・3列表示モード中は常に「縦画面」（スマホ縦画面を3つ並べる、という位置づけのため）
+  // ・サイドバーの「縦画面として/横画面として」で手動指定した値があればそれ
+  // ・指定が無ければ、これまで通り画面比率で自動判定
+  function isLandscape(){
+    if (isPcOrTablet()){
+      if (state.pcLayoutMode === 'triple') return false;
+      if (state.pcForceOrientation) return state.pcForceOrientation === 'landscape';
+    }
+    return window.innerWidth > window.innerHeight;
+  }
+  // 段の中を横画面のように2つペアで並べるかどうか。
+  // スマホは物理回転（isLandscape）で決まる（今まで通り）。
+  // PC・タブレットは「段を横に」レイアウトを選んだ時だけペア表示にする
+  // （PCは画面が常に横長なので、isLandscapeだけに頼ると常にペア表示になってしまうため）。
+  function shouldPairRows(){
+    if (isPcOrTablet()) return state.pcLayoutMode === 'rowpair';
+    return isLandscape();
+  }
+  // 今の設定で実際に描画されるべき本棚（.bookcase-unit）の横幅（px）。
+  // CSSの見た目（.pc-triple / .pc-rowpair / body.is-phone-landscape）と一致させておく必要がある
+  // （本のサイズ計算 computeSizes() がこれを使うため）。
+  function currentBookcaseWidth(){
+    if (isPcOrTablet()){
+      if (state.pcLayoutMode === 'triple') return Math.min(window.innerWidth * 0.30, 380);
+      if (state.pcLayoutMode === 'rowpair') return Math.min(window.innerWidth * 0.70, 820);
+      return Math.min(window.innerWidth * 0.92, 560);
+    }
+    if (isLandscape()) return window.innerWidth - 20; // スマホを物理的に横向きにした時（従来通り）
+    return Math.min(window.innerWidth * 0.92, 560);
+  }
+  // CSSの表示切り替え（pc-triple / pc-rowpair / is-phone-landscape）をbodyのクラスに反映する
+  function updateBodyModeClasses(){
+    document.body.classList.toggle('is-phone-landscape', !isPcOrTablet() && window.innerWidth > window.innerHeight);
+    document.body.classList.toggle('pc-triple', isPcOrTablet() && state.pcLayoutMode === 'triple');
+    document.body.classList.toggle('pc-rowpair', isPcOrTablet() && state.pcLayoutMode === 'rowpair');
+  }
   // 縦・横で別々の位置を持たせる：横向き専用の座標があればそれを使い、
   // なければ縦向き（既定）の座標にフォールバックする
   // スタンプは縦横で別々の存在になったので（isLandscapeでフィルタ）、
@@ -1395,6 +1484,8 @@
         state.bulkDisplayMode = (p.bulkDisplayMode === 'spine') ? 'spine' : 'cover';
         state.termsAccepted = !!p.termsAccepted;
         state.tutorialSeen = !!p.tutorialSeen;
+        state.pcForceOrientation = (p.pcForceOrientation === 'portrait' || p.pcForceOrientation === 'landscape') ? p.pcForceOrientation : null;
+        state.pcLayoutMode = (p.pcLayoutMode === 'triple' || p.pcLayoutMode === 'rowpair') ? p.pcLayoutMode : 'normal';
         
         state.books = state.books.filter(function(b){
           if (b.isSign){
@@ -1443,10 +1534,8 @@
   // Reusable: turns a (coverCount, spineCount) pair into actual pixel sizes.
   // Used both for the global default and for any per-row override.
   function computeSizes(coverCount, spineCount){
-    // 横画面は本棚が画面いっぱいになる（bookcase-unit の landscape 用CSSと合わせる）
-    var shelfW = isLandscape()
-      ? (window.innerWidth - 20 - 24 - 20)
-      : (Math.min(window.innerWidth * 0.92, 560) - 24 - 20);
+    // 本棚（.bookcase-unit）の実際の横幅を基準に計算する（CSSの見た目と一致させる）
+    var shelfW = currentBookcaseWidth() - 24 - 20;
     if (shelfW < 200) shelfW = 300;
     var coverW = Math.max(30, Math.floor(shelfW / coverCount));
     var spineW = Math.max(10, Math.floor(shelfW / spineCount));
@@ -1559,7 +1648,7 @@
     updateBookSizes(); renderShelf(); persist();
   });
   window.addEventListener('resize', function(){
-    updateBookSizes(); refreshGlobalSizeSliders(); renderShelf();
+    updateBookSizes(); refreshGlobalSizeSliders(); renderShelf(); updateBodyModeClasses(); applyPcSectionVisibility();
   });
 
   // ========== UI制御 ==========
@@ -1589,6 +1678,9 @@
   // 本棚同士の横スクロールと区別がつかず邪魔になるので「左端から」限定にする。
   // 1番左の本棚を見ている時（＝それ以上左にスクロールしない時）や、本棚ビュー
   // 以外の画面では、その心配がないので画面のどこからでもスワイプで開ける。
+  // ただしマウス（PC）の場合は、そもそもマウスのドラッグでは本棚の横スクロール
+  // が起きない（横スクロールはスクロールバーやホイールで行うため）ので、
+  // 常に画面のどこからでもスワイプで開けるようにする。
   // 閉じる時：メニューが開いている間は、逆方向（左）へのスワイプでいつでも
   // 閉じられる。
   (function(){
@@ -1596,7 +1688,8 @@
     var OPEN_THRESHOLD = 50; // このぶん動いたら開く/閉じる
     var startX = null, startY = null, tracking = false, mode = null; // mode: 'open' | 'close'
 
-    function canSwipeAnywhereToOpen(){
+    function canSwipeAnywhereToOpen(pointerType){
+      if (pointerType === 'mouse') return true;
       if (!document.getElementById('view-bookshelf').classList.contains('active')) return true;
       return state.cases.length <= 1 || currentCaseIndex === 0;
     }
@@ -1608,7 +1701,7 @@
         startX = e.clientX; startY = e.clientY; tracking = true;
         return;
       }
-      if (e.clientX > EDGE_WIDTH && !canSwipeAnywhereToOpen()) return;
+      if (e.clientX > EDGE_WIDTH && !canSwipeAnywhereToOpen(e.pointerType)) return;
       mode = 'open';
       startX = e.clientX; startY = e.clientY; tracking = true;
     });
@@ -1884,6 +1977,35 @@
   });
   document.getElementById('bulkGenreSelect').addEventListener('change', function(){ applyBulkField(this, 'genre'); });
   document.getElementById('bulkTagSelect').addEventListener('change', function(){ applyBulkField(this, 'tag'); });
+
+  // ---- PC・タブレット専用：表示設定（スマホでは非表示） ----
+  function applyPcSectionVisibility(){
+    var show = isPcOrTablet();
+    document.getElementById('pcSectionHeader').hidden = !show;
+    document.getElementById('pcSectionBody').hidden = !show;
+  }
+  function refreshPcSectionUI(){
+    var orientVal = state.pcForceOrientation; // null / 'portrait' / 'landscape'
+    document.getElementById('pcOrientAutoBtn').classList.toggle('ghost', !!orientVal);
+    document.getElementById('pcOrientPortraitBtn').classList.toggle('ghost', orientVal !== 'portrait');
+    document.getElementById('pcOrientLandscapeBtn').classList.toggle('ghost', orientVal !== 'landscape');
+    var layoutVal = state.pcLayoutMode; // 'normal' / 'triple' / 'rowpair'
+    document.getElementById('pcLayoutNormalBtn').classList.toggle('ghost', layoutVal !== 'normal');
+    document.getElementById('pcLayoutTripleBtn').classList.toggle('ghost', layoutVal !== 'triple');
+    document.getElementById('pcLayoutRowpairBtn').classList.toggle('ghost', layoutVal !== 'rowpair');
+  }
+  function applyPcSettingChange(){
+    persist();
+    refreshPcSectionUI();
+    updateBodyModeClasses();
+    updateBookSizes(); refreshGlobalSizeSliders(); renderShelf();
+  }
+  document.getElementById('pcOrientAutoBtn').addEventListener('click', function(){ state.pcForceOrientation = null; applyPcSettingChange(); });
+  document.getElementById('pcOrientPortraitBtn').addEventListener('click', function(){ state.pcForceOrientation = 'portrait'; applyPcSettingChange(); });
+  document.getElementById('pcOrientLandscapeBtn').addEventListener('click', function(){ state.pcForceOrientation = 'landscape'; applyPcSettingChange(); });
+  document.getElementById('pcLayoutNormalBtn').addEventListener('click', function(){ state.pcLayoutMode = 'normal'; applyPcSettingChange(); });
+  document.getElementById('pcLayoutTripleBtn').addEventListener('click', function(){ state.pcLayoutMode = 'triple'; applyPcSettingChange(); });
+  document.getElementById('pcLayoutRowpairBtn').addEventListener('click', function(){ state.pcLayoutMode = 'rowpair'; applyPcSettingChange(); });
 
   // 段（棚）を横にスクロールしたまま放っておくと、5秒後に左端へ自動で戻る。
   // ON/OFFはこのボタンで切り替えられる。
@@ -3719,10 +3841,10 @@
           signBar.style.color = sign.textColor || '#fff';
           if (editMode) signBar.addEventListener('click', function(){ openSignEditor(shelfId); });
 
-          if (isLandscape() && sign.landscapeSpan && pairPartnerShelfId(shelfId) && !state.shelfSigns[pairPartnerShelfId(shelfId)]){
+          if (shouldPairRows() && sign.landscapeSpan && pairPartnerShelfId(shelfId) && !state.shelfSigns[pairPartnerShelfId(shelfId)]){
             signBar.classList.add('landscape-span');
           }
-          if (editMode && isLandscape()){
+          if (editMode && shouldPairRows()){
             let shelfIdForHandle = shelfId;
             var spanHandle = document.createElement('div');
             spanHandle.className = 'sign-span-handle';
@@ -3871,7 +3993,7 @@
 
       // 横向きの時だけ、隣り合う2段を横に並べて1段分の見た目にまとめる
       // （データ上は別々の段のまま — 縦に戻せば自動でそのまま元通り）
-      if (isLandscape() && rowWraps.length > 1){
+      if (shouldPairRows() && rowWraps.length > 1){
         for (var pi=0; pi<rowWraps.length; pi+=2){
           if (rowWraps[pi+1]){
             var pair = document.createElement('div');
@@ -5169,6 +5291,83 @@
     openTutorial();
   });
 
+  // ========== Q&A（よくある質問） ==========
+  var QNA_DATA = [
+    { cat:'基本', q:'このアプリのデータはどこに保存されますか？',
+      a:'この端末（お使いのブラウザ）の中にだけ保存されます。開発者のサーバーには送信されません。ブラウザのデータを消したり機種変更をすると失われるため、サイドバーの「💾データをバックアップ」で定期的にファイルを書き出しておくことをおすすめします。' },
+    { cat:'基本', q:'別の端末やブラウザに引き継ぎたい',
+      a:'自動では同期されません。今の端末で「💾データをバックアップ」を実行してファイルを保存し、別の端末で「📥データを復元」からそのファイルを読み込むことで移せます。' },
+    { cat:'本の追加', q:'本はどうやって追加しますか？',
+      a:'「本を追加する」画面から、📷カメラでバーコードを読み取る／⌨️手動でISBNやタイトルを入力する／🆕ISBNの無い本（同人誌・自作本など）を新規作成する、の3通りで追加できます。追加した本は一旦「キュー」に溜まり、「一括追加」ボタンでまとめて本棚に反映されます。' },
+    { cat:'本の追加', q:'ISBNの無い本（同人誌・自作本・特典本など）を登録したい',
+      a:'「本を追加する」画面の「🆕新規作成」タブから、タイトル・著者・出版社/サークル名・表紙画像などを手入力してキューに追加できます。' },
+    { cat:'本の追加', q:'検索しても見つからない、違う情報が表示される',
+      a:'openBDやGoogle Booksのデータベースを使って検索しているため、表記ゆれなどで見つからないことがあります。追加した後は本の詳細画面の✏️編集から、タイトル・著者・表紙などを手動で修正できます。' },
+    { cat:'本の追加', q:'情報を後からまとめて更新したい',
+      a:'サイドバーの「🔄発売日など情報を一括再取得」から、ISBN登録済みの本の足りない情報（発売日など）だけをまとめて取得し直せます。すでに入っている情報は上書きされません。' },
+    { cat:'本棚の操作', q:'本を移動したい',
+      a:'ヘッダーの✥（移動モード）をONにし、動かしたい本をタップすると持ち上がります。次に移動先をタップすると、そこにあった本と入れ替わります。' },
+    { cat:'本棚の操作', q:'段を増やしたい・減らしたい',
+      a:'✏️編集モードをONにし、段を長押しすると＋（下に段を追加）・⚙️（段のサイズ設定）・×（この段を削除）のボタンが表示されます。' },
+    { cat:'本棚の操作', q:'段の大きさ（横に並ぶ冊数）を、その段だけ変えたい',
+      a:'編集モードで段を長押しし、⚙️をタップすると、その段だけの表紙・背表紙の数を個別に設定できます。個別設定していない段は、サイドバーの「表示サイズ」の変更が一括で反映されます。' },
+    { cat:'本棚の操作', q:'本棚（本棚全体）を増やしたい',
+      a:'ヘッダーの＋ボタン→「本棚を追加」で新しい本棚が増えます。本棚同士は横にスワイプ（スライド）して切り替えられます。' },
+    { cat:'本棚の操作', q:'段や本棚の順番を入れ替えたい',
+      a:'編集モードで、段の左に出る≡ハンドルをタップし、続けて入れ替えたい別の段の≡をタップすると、2つの段の中身が入れ替わります。' },
+    { cat:'スタンプ・サイン', q:'スタンプ・サインとは何ですか？',
+      a:'どちらも本棚を装飾する機能です。スタンプは画像やテキストを棚の好きな位置に自由に配置できるもの、サインは段の上に帯状に表示する見出し（ジャンル札のようなもの）です。' },
+    { cat:'スタンプ・サイン', q:'スタンプを追加したい',
+      a:'ヘッダーの＋ボタン→「スタンプを追加」から、画像ファイル・画像URL・テキストのいずれかで追加できます。過去に使ったものは履歴から選び直せます。' },
+    { cat:'スタンプ・サイン', q:'サイン・スタンプの表示/非表示を切り替えたい',
+      a:'ヘッダーの👀ボタンをタップするたびに「両方非表示→スタンプのみ→サインのみ→両方表示」の4段階で切り替わります。' },
+    { cat:'検索・タグ', q:'本棚の中の本を検索したい',
+      a:'ヘッダーの🔎から検索バーが開き、タイトル・ジャンル・タグ・状態（欲しい/購入済み/読み中/済）で絞り込めます。' },
+    { cat:'検索・タグ', q:'複数の本にまとめてタグを付けたい',
+      a:'🔎検索バーを開き「🏷️一括タグ」をONにすると、本をタップして選択できるようになり、下に出るバーからジャンル・タグをまとめて追加/削除できます。' },
+    { cat:'読書記録', q:'読んだ時間を記録したい',
+      a:'「⏱計測」画面で、購入済み・読み中の本のスイッチをONにすると計測がスタートします。読み終えたら「終了」を押すと読了として記録され、状態が「済」になります。' },
+    { cat:'読書記録', q:'読書の記録をグラフで見たい',
+      a:'「⏱計測」画面の「📊グラフ」タブから、全体の平均、本1冊ごとの詳細、複数冊の比較、の3つの見方でグラフを確認できます。' },
+    { cat:'その他', q:'誤って消してしまった本を元に戻したい',
+      a:'サイドバーの「🗂 本の履歴（消した本）」から、消した本（最大100件）を今見ている本棚に復元できます。' },
+    { cat:'その他', q:'表示している本の背表紙の色を変えたい',
+      a:'本の詳細画面を編集モードで開くと「本の色」の項目があり、そこで個別に色を指定できます（「自動に戻す」でタイトル等から自動生成した色に戻せます）。' },
+    { cat:'その他', q:'特定の本の取り扱いをやめてほしい（著作権など）',
+      a:'サイドメニューの「✉️お問い合わせ」からご連絡ください。内容を確認のうえ対応いたします。' },
+    { cat:'その他', q:'このQ&Aやチュートリアルで解決しない場合は？',
+      a:'サイドバーの「✉️お問い合わせ」から直接ご連絡ください。' }
+  ];
+  function renderQna(){
+    var list = document.getElementById('qnaList');
+    list.innerHTML = '';
+    var lastCat = null;
+    QNA_DATA.forEach(function(item){
+      if (item.cat !== lastCat){
+        var catEl = document.createElement('div'); catEl.className = 'qna-category'; catEl.textContent = item.cat;
+        list.appendChild(catEl);
+        lastCat = item.cat;
+      }
+      var wrap = document.createElement('div'); wrap.className = 'qna-item';
+      var qEl = document.createElement('div'); qEl.className = 'qna-q';
+      var qText = document.createElement('span'); qText.textContent = item.q;
+      var caret = document.createElement('span'); caret.className = 'qna-caret'; caret.textContent = '›';
+      qEl.appendChild(qText); qEl.appendChild(caret);
+      var aEl = document.createElement('div'); aEl.className = 'qna-a'; aEl.textContent = item.a;
+      qEl.addEventListener('click', function(){ wrap.classList.toggle('open'); });
+      wrap.appendChild(qEl); wrap.appendChild(aEl);
+      list.appendChild(wrap);
+    });
+  }
+  document.getElementById('showQnaBtn').addEventListener('click', function(){
+    sidebarOverlay.classList.remove('open'); sidebarMenu.classList.remove('open');
+    renderQna();
+    document.getElementById('qnaModal').classList.remove('hidden');
+  });
+  document.getElementById('qnaCloseBtn').addEventListener('click', function(){
+    document.getElementById('qnaModal').classList.add('hidden');
+  });
+
   // ========== 利用規約モーダル・お問い合わせ・アンケート ==========
   function openTermsModal(gating){
     document.getElementById('termsModalBody').textContent = TERMS_TEXT;
@@ -5226,6 +5425,9 @@
   applyHelpUI();
   applyHeaderExpandUI();
   applyPopStage();
+  applyPcSectionVisibility();
+  refreshPcSectionUI();
+  updateBodyModeClasses();
   if (state.listViewActive) toggleListViewBtn.click();
   renderShelf();
 
