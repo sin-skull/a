@@ -213,10 +213,8 @@
     body.is-phone-landscape .cases-row{ padding-left:10px; padding-right:10px; }
     body.is-phone-landscape .bookcase-unit{ width: calc(100vw - 20px); }
   }
-  body.pc-triple .cases-row{ padding-left:16px; padding-right:16px; justify-content:center; }
-  body.pc-triple .bookcase-unit{ width:min(30vw, 380px); }
-  body.pc-rowpair .cases-row{ padding-left:16px; padding-right:16px; }
-  body.pc-rowpair .bookcase-unit{ width:min(70vw, 820px); }
+  body.is-pc-mode .cases-row{ padding-left:16px; padding-right:16px; justify-content:flex-start; }
+  body.is-pc-mode .cases-row.fits-centered{ justify-content:center; }
   .bookcase-unit::before{left:0; border-radius:5px 0 0 5px;}
   .bookcase-unit::after{right:0; border-radius:0 5px 5px 0;}
   
@@ -776,17 +774,18 @@
   <div id="pcSectionBody" style="padding: 10px 20px;" hidden>
     <p class="edit-hint" style="margin:0 0 8px;">スマホでは表示されない、PC・タブレット専用の設定です</p>
     <p class="edit-hint" style="margin:0 0 6px;">本の配置・サイズに使うデータ</p>
-    <div class="scan-mode-toggle" style="margin-bottom:14px;">
+    <div class="scan-mode-toggle" style="margin-bottom:16px;">
       <button class="btn ghost" id="pcOrientAutoBtn" type="button" style="flex:1; font-size:11.5px;">自動</button>
       <button class="btn ghost" id="pcOrientPortraitBtn" type="button" style="flex:1; font-size:11.5px;">縦画面として</button>
       <button class="btn ghost" id="pcOrientLandscapeBtn" type="button" style="flex:1; font-size:11.5px;">横画面として</button>
     </div>
-    <p class="edit-hint" style="margin:0 0 6px;">本棚の並べ方</p>
-    <div class="scan-mode-toggle">
-      <button class="btn ghost" id="pcLayoutNormalBtn" type="button" style="flex:1; font-size:11.5px;">1列表示</button>
-      <button class="btn ghost" id="pcLayoutTripleBtn" type="button" style="flex:1; font-size:11.5px;">3列表示</button>
-      <button class="btn ghost" id="pcLayoutRowpairBtn" type="button" style="flex:1; font-size:11.5px;">段を横に</button>
-    </div>
+    <label style="font-size:13px; display:flex; justify-content:space-between; margin-bottom:6px;">
+      <span>本棚を横に並べる数:</span><span id="lblPcColumnCount">1 列</span>
+    </label>
+    <input type="range" id="inpPcColumnCount" min="1" max="6" value="1" style="width:100%; margin-bottom:4px; accent-color: var(--accent);">
+    <p class="edit-hint" style="margin:0 0 14px;">画面の横幅にちょうど収まるよう、本棚の幅は自動調整されます</p>
+    <button class="theme-btn" id="pcRowPairBtn" type="button">▭▭ 段を横に並べる：<span id="pcRowPairState">OFF</span></button>
+    <p class="edit-hint" style="margin:6px 0 0;">列数と組み合わせて使えます（ONにすると各本棚の幅も自動で広がります）</p>
   </div>
 
   <div class="sidebar-header" style="font-size: 14px; border-top: 1px solid var(--accent); padding-top:16px;">表示サイズ (横に並ぶ数)</div>
@@ -1342,7 +1341,8 @@
     termsAccepted: false, // 利用規約に同意済みか
     tutorialSeen: false, // チュートリアルを見終えたか（初回だけ自動表示する）
     pcForceOrientation: null, // PC/タブレットのみ：手動指定した縦横（null=自動 / 'portrait' / 'landscape'）
-    pcLayoutMode: 'normal' // PC/タブレットのみ：'normal'(1列) / 'triple'(3列) / 'rowpair'(段を横に)
+    pcColumnCount: 1, // PC/タブレットのみ：本棚を横に何列分の幅で表示するか（シークバー、1〜6）
+    pcRowPair: false // PC/タブレットのみ：段を横にペア表示するか（列数とは独立、組み合わせ可）
   };
   var searchQueue = []; 
   var editMode = false;
@@ -1379,41 +1379,51 @@
   // 本の配置データ・サイズ設定に「縦画面用」「横画面用」のどちらを使うかを決める判定。
   // スマホ：物理的な画面の向きだけで自動判定（今まで通り、変更なし）。
   // PC・タブレット：画面が常に横長のため自動判定に頼れない。そのため
-  // ・3列表示モード中は常に「縦画面」（スマホ縦画面を3つ並べる、という位置づけのため）
+  // ・列数が2以上（複数の本棚を並べて表示中）の時は常に「縦画面」データ
+  // 　（スマホ縦画面の本棚を複数並べる、という位置づけのため）
   // ・サイドバーの「縦画面として/横画面として」で手動指定した値があればそれ
   // ・指定が無ければ、これまで通り画面比率で自動判定
   function isLandscape(){
     if (isPcOrTablet()){
-      if (state.pcLayoutMode === 'triple') return false;
+      if ((state.pcColumnCount || 1) > 1) return false;
       if (state.pcForceOrientation) return state.pcForceOrientation === 'landscape';
     }
     return window.innerWidth > window.innerHeight;
   }
   // 段の中を横画面のように2つペアで並べるかどうか。
   // スマホは物理回転（isLandscape）で決まる（今まで通り）。
-  // PC・タブレットは「段を横に」レイアウトを選んだ時だけペア表示にする
+  // PC・タブレットは「段を横に並べる」をONにした時だけペア表示にする。列数
+  // （何本棚並べるか）とは完全に独立していて、両方同時にONにもできる
   // （PCは画面が常に横長なので、isLandscapeだけに頼ると常にペア表示になってしまうため）。
   function shouldPairRows(){
-    if (isPcOrTablet()) return state.pcLayoutMode === 'rowpair';
+    if (isPcOrTablet()) return !!state.pcRowPair;
     return isLandscape();
   }
+  // PC・タブレットで実際に本棚（.bookcase-unit）1つぶんに割り当てる横幅（px）を、
+  // 画面の実際の横幅から計算する。指定した列数がぴったり画面に収まり、両端が
+  // 欠けないようにするのが目的。「段を横に並べる」がONの時は、1本棚あたり
+  // 横に2段ぶん表示することになるので、単純に幅を2倍にして自動調整する。
+  function computePcBookcaseWidthPx(){
+    var n = Math.max(1, Math.min(6, state.pcColumnCount || 1));
+    var GAP = 30; // .cases-row の gap と合わせる
+    var SIDE_PADDING = 32; // .cases-row の左右パディング（16px x 2）と合わせる
+    var available = window.innerWidth - SIDE_PADDING - GAP * (n - 1);
+    var unit = Math.max(220, available / n);
+    if (state.pcRowPair) unit = unit * 2;
+    return Math.round(unit);
+  }
   // 今の設定で実際に描画されるべき本棚（.bookcase-unit）の横幅（px）。
-  // CSSの見た目（.pc-triple / .pc-rowpair / body.is-phone-landscape）と一致させておく必要がある
+  // CSSの見た目（dynamicStyles / body.is-phone-landscape）と一致させておく必要がある
   // （本のサイズ計算 computeSizes() がこれを使うため）。
   function currentBookcaseWidth(){
-    if (isPcOrTablet()){
-      if (state.pcLayoutMode === 'triple') return Math.min(window.innerWidth * 0.30, 380);
-      if (state.pcLayoutMode === 'rowpair') return Math.min(window.innerWidth * 0.70, 820);
-      return Math.min(window.innerWidth * 0.92, 560);
-    }
+    if (isPcOrTablet()) return computePcBookcaseWidthPx();
     if (isLandscape()) return window.innerWidth - 20; // スマホを物理的に横向きにした時（従来通り）
     return Math.min(window.innerWidth * 0.92, 560);
   }
-  // CSSの表示切り替え（pc-triple / pc-rowpair / is-phone-landscape）をbodyのクラスに反映する
+  // CSSの表示切り替え（is-pc-mode / is-phone-landscape）をbodyのクラスに反映する
   function updateBodyModeClasses(){
     document.body.classList.toggle('is-phone-landscape', !isPcOrTablet() && window.innerWidth > window.innerHeight);
-    document.body.classList.toggle('pc-triple', isPcOrTablet() && state.pcLayoutMode === 'triple');
-    document.body.classList.toggle('pc-rowpair', isPcOrTablet() && state.pcLayoutMode === 'rowpair');
+    document.body.classList.toggle('is-pc-mode', isPcOrTablet());
   }
   // 縦・横で別々の位置を持たせる：横向き専用の座標があればそれを使い、
   // なければ縦向き（既定）の座標にフォールバックする
@@ -1485,7 +1495,8 @@
         state.termsAccepted = !!p.termsAccepted;
         state.tutorialSeen = !!p.tutorialSeen;
         state.pcForceOrientation = (p.pcForceOrientation === 'portrait' || p.pcForceOrientation === 'landscape') ? p.pcForceOrientation : null;
-        state.pcLayoutMode = (p.pcLayoutMode === 'triple' || p.pcLayoutMode === 'rowpair') ? p.pcLayoutMode : 'normal';
+        state.pcColumnCount = (typeof p.pcColumnCount === 'number' && p.pcColumnCount >= 1 && p.pcColumnCount <= 6) ? p.pcColumnCount : 1;
+        state.pcRowPair = !!p.pcRowPair;
         
         state.books = state.books.filter(function(b){
           if (b.isSign){
@@ -1568,9 +1579,14 @@
     var counts = currentGlobalCounts();
     currentSizes = computeSizes(counts.coverCount, counts.spineCount);
     var styleEl = document.getElementById('dynamicStyles');
+    var pcWidthRule = '';
+    if (isPcOrTablet()){
+      pcWidthRule = 'body.is-pc-mode .bookcase-unit{ width:' + computePcBookcaseWidthPx() + 'px; }';
+    }
     styleEl.textContent = `
       :root { --stamp-w: ${currentSizes.stampW}px; }
       .book--stamp { width: var(--stamp-w); height: var(--stamp-w); }
+      ${pcWidthRule}
     `;
   }
   // サイドバーのスライダーは、今の向き（縦／横）に応じた値を出し入れする
@@ -1815,7 +1831,52 @@
   var paginationDots = document.getElementById('paginationDots');
   var scrollTimeout;
   const trashArea = document.getElementById('trash-area');
-  
+
+  // ---- マウスでのドラッグスクロール（PC向け）----
+  // タッチは指でそのまま横スクロールできるが、マウスは「掴んでドラッグ」しないと
+  // 本棚を横に送れないため、マウスの時だけドラッグでスクロールできるようにする。
+  // サイドバーの開閉スワイプ（document側）と競合しないよう、本棚エリア内で
+  // 始まったマウス操作はここで止め、document側には伝えない。
+  (function(){
+    var dragging = false, movedEnough = false, justDragged = false;
+    var startX = 0, startScrollLeft = 0;
+    var DRAG_THRESHOLD = 8;
+    casesRow.addEventListener('pointerdown', function(e){
+      if (e.pointerType !== 'mouse') return;
+      if (e.target.closest('.free-item, .resize-handle, .rotate-handle, .row-corner-btn, .row-reorder-handle, .sign-span-handle, button, input, select, textarea')) return;
+      e.stopPropagation();
+      dragging = true; movedEnough = false;
+      startX = e.clientX;
+      startScrollLeft = casesRow.scrollLeft;
+    });
+    casesRow.addEventListener('pointermove', function(e){
+      if (!dragging) return;
+      var dx = e.clientX - startX;
+      if (!movedEnough && Math.abs(dx) > DRAG_THRESHOLD){
+        movedEnough = true;
+        casesRow.classList.add('is-dragging-container');
+      }
+      if (movedEnough){
+        casesRow.scrollLeft = startScrollLeft - dx;
+      }
+    });
+    function endDrag(){
+      if (dragging && movedEnough){
+        justDragged = true;
+        casesRow.classList.remove('is-dragging-container');
+        setTimeout(function(){ justDragged = false; }, 0);
+      }
+      dragging = false; movedEnough = false;
+    }
+    casesRow.addEventListener('pointerup', endDrag);
+    casesRow.addEventListener('pointerleave', endDrag);
+    casesRow.addEventListener('pointercancel', endDrag);
+    // ドラッグでスクロールした直後に、その場でクリック扱いされて本が開いてしまうのを防ぐ
+    casesRow.addEventListener('click', function(e){
+      if (justDragged){ e.stopPropagation(); e.preventDefault(); }
+    }, true);
+  })();
+
   document.getElementById('toggleEditBtn').addEventListener('click', function(){
     editMode = !editMode;
     this.classList.toggle('active', editMode);
@@ -1989,10 +2050,10 @@
     document.getElementById('pcOrientAutoBtn').classList.toggle('ghost', !!orientVal);
     document.getElementById('pcOrientPortraitBtn').classList.toggle('ghost', orientVal !== 'portrait');
     document.getElementById('pcOrientLandscapeBtn').classList.toggle('ghost', orientVal !== 'landscape');
-    var layoutVal = state.pcLayoutMode; // 'normal' / 'triple' / 'rowpair'
-    document.getElementById('pcLayoutNormalBtn').classList.toggle('ghost', layoutVal !== 'normal');
-    document.getElementById('pcLayoutTripleBtn').classList.toggle('ghost', layoutVal !== 'triple');
-    document.getElementById('pcLayoutRowpairBtn').classList.toggle('ghost', layoutVal !== 'rowpair');
+    var n = state.pcColumnCount || 1;
+    document.getElementById('inpPcColumnCount').value = n;
+    document.getElementById('lblPcColumnCount').textContent = n + ' 列';
+    document.getElementById('pcRowPairState').textContent = state.pcRowPair ? 'ON' : 'OFF';
   }
   function applyPcSettingChange(){
     persist();
@@ -2003,9 +2064,14 @@
   document.getElementById('pcOrientAutoBtn').addEventListener('click', function(){ state.pcForceOrientation = null; applyPcSettingChange(); });
   document.getElementById('pcOrientPortraitBtn').addEventListener('click', function(){ state.pcForceOrientation = 'portrait'; applyPcSettingChange(); });
   document.getElementById('pcOrientLandscapeBtn').addEventListener('click', function(){ state.pcForceOrientation = 'landscape'; applyPcSettingChange(); });
-  document.getElementById('pcLayoutNormalBtn').addEventListener('click', function(){ state.pcLayoutMode = 'normal'; applyPcSettingChange(); });
-  document.getElementById('pcLayoutTripleBtn').addEventListener('click', function(){ state.pcLayoutMode = 'triple'; applyPcSettingChange(); });
-  document.getElementById('pcLayoutRowpairBtn').addEventListener('click', function(){ state.pcLayoutMode = 'rowpair'; applyPcSettingChange(); });
+  document.getElementById('inpPcColumnCount').addEventListener('input', function(){
+    state.pcColumnCount = parseInt(this.value, 10) || 1;
+    applyPcSettingChange();
+  });
+  document.getElementById('pcRowPairBtn').addEventListener('click', function(){
+    state.pcRowPair = !state.pcRowPair;
+    applyPcSettingChange();
+  });
 
   // 段（棚）を横にスクロールしたまま放っておくと、5秒後に左端へ自動で戻る。
   // ON/OFFはこのボタンで切り替えられる。
@@ -4030,6 +4096,15 @@
     if (casesRow.classList.contains('is-filtered')) applyFilter(); 
     if (needsPersist) persist();
     if (listViewActive) renderBookList();
+    updateCasesRowAlignment();
+  }
+  // 本棚（.bookcase-unit）の合計幅が表示エリアに収まる時は中央寄せ、
+  // 収まらない（横スクロールが必要）時は左詰め、に自動で切り替える（PC・タブレットのみ影響）。
+  function updateCasesRowAlignment(){
+    requestAnimationFrame(function(){
+      var fits = casesRow.scrollWidth <= casesRow.clientWidth + 2;
+      casesRow.classList.toggle('fits-centered', fits);
+    });
   }
 
   function finalizeGrids(){
